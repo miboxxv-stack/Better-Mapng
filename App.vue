@@ -43,7 +43,7 @@
         @update:uploaded-area-mode="handleUploadedAreaModeChange"
         @update:processingMetersPerPixel="handleProcessingMetersPerPixelChange"
         @zoom-change="store.setZoom"
-        @generate="handleGenerate"
+        @generate="(preview, fetchOSM, elevationSource, gpxzApiKey, elevationUnitOverride, metersPerPixel, enhanceRoads, levelRoads) => handleGenerate(preview, fetchOSM, elevationSource, gpxzApiKey, elevationUnitOverride, metersPerPixel, enhanceRoads, levelRoads)"
         @fetch-osm="handleFetchOSM"
         @surrounding-tiles-change="(v) => surroundingTilePositions = v"
         @import-data="handleImportData"
@@ -484,13 +484,15 @@ const signatureForKey = (key) => {
 
 // Build a cache key from the parameters that affect terrain generation.
 // If this key matches the last generation, we can skip re-fetching.
-const buildGenerationKey = (c, res, osm, elevationSource, gpxzKey, uploadedElevationFile = null, elevationUnitOverride = 'auto', processingMpp = 1) => {
+const buildGenerationKey = (c, res, osm, elevationSource, gpxzKey, uploadedElevationFile = null, elevationUnitOverride = 'auto', processingMpp = 1, enhanceRoads = false, levelRoads = false) => {
   return JSON.stringify({
     lat: c.lat,
     lng: c.lng,
     resolution: res,
     processingMetersPerPixel: processingMpp,
     osm,
+    enhanceRoads,
+    levelRoads,
     elevationSource,
     gpxzKeySig: elevationSource === 'gpxz' ? signatureForKey(gpxzKey) : '',
     elevationUnitOverride,
@@ -587,7 +589,7 @@ const applyLoadingUpdate = (update) => {
   }
 };
 
-const handleGenerate = async (showPreview, fetchOSM, elevationSource = 'default', gpxzApiKey = '', elevationUnitOverride = 'auto', processingMpp = 1) => {
+const handleGenerate = async (showPreview, fetchOSM, elevationSource = 'default', gpxzApiKey = '', elevationUnitOverride = 'auto', processingMpp = 1, enhanceRoads = false, levelRoads = false) => {
   const normalizedSource = String(elevationSource || 'default').toLowerCase();
   const useUSGS = normalizedSource === 'usgs';
   const useGPXZ = normalizedSource === 'gpxz';
@@ -602,6 +604,8 @@ const handleGenerate = async (showPreview, fetchOSM, elevationSource = 'default'
     uploadedElevationFile.value,
     elevationUnitOverride,
     processingMpp,
+    enhanceRoads,
+    levelRoads
   );
 
   // If we already have terrain data for the exact same parameters, reuse it
@@ -612,6 +616,8 @@ const handleGenerate = async (showPreview, fetchOSM, elevationSource = 'default'
     // Check if only the OSM toggle changed (was off, now on)
     const onlyOsmAdded =
       !cachedParams.osm && newParams.osm &&
+      cachedParams.enhanceRoads === newParams.enhanceRoads &&
+      cachedParams.levelRoads === newParams.levelRoads &&
       cachedParams.lat === newParams.lat &&
       cachedParams.lng === newParams.lng &&
       cachedParams.resolution === newParams.resolution &&
@@ -696,6 +702,8 @@ const handleGenerate = async (showPreview, fetchOSM, elevationSource = 'default'
           processingMetersPerPixel: Number(processingMpp || 1),
           targetBounds,
           preferNativeCoverage: uploadedAreaMode.value !== 'crop',
+          enhanceRoads,
+          levelRoads,
         },
       );
     } else {
@@ -712,6 +720,8 @@ const handleGenerate = async (showPreview, fetchOSM, elevationSource = 'default'
         signal,
         {
           processingMetersPerPixel: Number(processingMpp || 1),
+          enhanceRoads,
+          levelRoads,
         },
       );
     }
@@ -796,6 +806,8 @@ const handleImportData = (data) => {
           null,
           'auto',
           processingMetersPerPixel.value,
+          false, // enhanceRoads default to false on import
+          false // levelRoads default to false on import
       );
   }
 

@@ -313,7 +313,11 @@
     "processingResolutionOptionStandard": "1.0 m/px (Standard)",
     "includeOsmFeatures": "Include OSM Features",
     "centerCoordinates": "Center Coordinates",
-    "configurationSession": "Configuration & Session"
+    "configurationSession": "Configuration & Session",
+    "enhanceRoads": "Smooth Roads",
+    "enhanceRoadsHint": "Smooths bumps along the road. Skips bridges.",
+    "levelRoads": "Level Roads (Pathing)",
+    "levelRoadsHint": "Forces roads to have zero transverse tilt (flat side-to-side)."
   },
   "batchExport": {
     "title": "Export Options",

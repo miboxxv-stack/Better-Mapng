@@ -14,6 +14,7 @@ import {
 } from "./resamplerClient";
 import { createLocalToWGS84 } from "./geoUtils";
 import { fetchKron86GridForBounds, isWithinKron86Coverage } from "./kron86.js";
+import { smoothRoadsInHeightmap } from "./roadSmoother.js";
 
 // Constants
 const TILE_SIZE = 256;
@@ -936,6 +937,8 @@ export const fetchTerrainData = async (
     globalTileConcurrency = 20,
     processingMetersPerPixel = 1,
     targetBounds = null,
+    enhanceRoads = false,
+    levelRoads = false,
   } = generationOptions || {};
   // Normalize longitude to handle world wrapping
   const normalizedCenter = {
@@ -1350,6 +1353,27 @@ export const fetchTerrainData = async (
     fetchBounds,
   );
 
+  // 7. Fetch OSM Data
+  let osmFeatures = [];
+  let osmRequestInfo = null;
+  if (includeOSM || enhanceRoads || levelRoads) {
+    signal?.throwIfAborted();
+    onProgress?.("Fetching OpenStreetMap data...");
+    osmFeatures = await fetchOSMData(finalBounds);
+    osmRequestInfo = getLastOSMRequestInfo() || {
+      ...getOSMQueryParameters(finalBounds),
+      endpointUsed: null,
+      startedAt: new Date().toISOString(),
+      completedAt: new Date().toISOString(),
+      elementCount: 0,
+    };
+  }
+
+  if ((enhanceRoads || levelRoads) && osmFeatures.length > 0) {
+    onProgress?.("Smoothing roads in heightmap...");
+    smoothRoadsInHeightmap(heightMap, width, height, finalBounds, osmFeatures, effectiveMetersPerPixel, enhanceRoads, levelRoads);
+  }
+
   // 6. Calculate Min/Max
   let minHeight = Infinity;
   let maxHeight = -Infinity;
@@ -1362,22 +1386,6 @@ export const fetchTerrainData = async (
   }
   if (minHeight === Infinity) minHeight = 0;
   if (maxHeight === -Infinity) maxHeight = 0;
-
-  // 7. Fetch OSM Data
-  let osmFeatures = [];
-  let osmRequestInfo = null;
-  if (includeOSM) {
-    signal?.throwIfAborted();
-    onProgress?.("Fetching OpenStreetMap data...");
-    osmFeatures = await fetchOSMData(finalBounds);
-    osmRequestInfo = getLastOSMRequestInfo() || {
-      ...getOSMQueryParameters(finalBounds),
-      endpointUsed: null,
-      startedAt: new Date().toISOString(),
-      completedAt: new Date().toISOString(),
-      elementCount: 0,
-    };
-  }
 
   onProgress?.("Finalizing terrain data...");
   const satelliteTextureUrl = await canvasToSatelliteBlobUrl(finalSatCanvas);
@@ -1468,6 +1476,8 @@ export const loadTerrainFromTif = async (
     processingMetersPerPixel = 1,
     targetBounds = null,
     preferNativeCoverage = true,
+    enhanceRoads = false,
+    levelRoads = false,
   } = generationOptions || {};
 
   const effectiveMetersPerPixel = Number.isFinite(Number(processingMetersPerPixel)) && Number(processingMetersPerPixel) > 0
@@ -1674,6 +1684,27 @@ export const loadTerrainFromTif = async (
     );
   }
 
+  // ── OSM ──────────────────────────────────────────────────────────────────────
+  let osmFeatures = [];
+  let osmRequestInfo = null;
+  if (includeOSM || enhanceRoads || levelRoads) {
+    signal?.throwIfAborted();
+    emitProgress('Fetching OpenStreetMap data...');
+    osmFeatures = await fetchOSMData(finalBounds);
+    osmRequestInfo = getLastOSMRequestInfo() || {
+      ...getOSMQueryParameters(finalBounds),
+      endpointUsed: null,
+      startedAt: new Date().toISOString(),
+      completedAt: new Date().toISOString(),
+      elementCount: 0,
+    };
+  }
+
+  if ((enhanceRoads || levelRoads) && osmFeatures.length > 0) {
+    emitProgress('Smoothing roads in heightmap...');
+    smoothRoadsInHeightmap(heightMap, width, height, finalBounds, osmFeatures, effectiveMetersPerPixel, enhanceRoads, levelRoads);
+  }
+
   // ── Min/Max ──────────────────────────────────────────────────────────────────
   let minHeight = Infinity;
   let maxHeight = -Infinity;
@@ -1686,22 +1717,6 @@ export const loadTerrainFromTif = async (
   }
   if (minHeight === Infinity)  minHeight = 0;
   if (maxHeight === -Infinity) maxHeight = 0;
-
-  // ── OSM ──────────────────────────────────────────────────────────────────────
-  let osmFeatures = [];
-  let osmRequestInfo = null;
-  if (includeOSM) {
-    signal?.throwIfAborted();
-    emitProgress('Fetching OpenStreetMap data...');
-    osmFeatures = await fetchOSMData(finalBounds);
-    osmRequestInfo = getLastOSMRequestInfo() || {
-      ...getOSMQueryParameters(finalBounds),
-      endpointUsed: null,
-      startedAt: new Date().toISOString(),
-      completedAt: new Date().toISOString(),
-      elementCount: 0,
-    };
-  }
 
   emitProgress('Finalizing terrain data...');
   const satelliteTextureUrl = await canvasToSatelliteBlobUrl(finalSatCanvas);
@@ -1767,6 +1782,8 @@ export const loadTerrainFromLaz = async (
     targetBounds                 = null,
     preferNativeCoverage         = true,
     fillLazEdgeGapsWithGlobalDem = true,
+    enhanceRoads                 = false,
+    levelRoads                   = false,
   } = generationOptions || {};
 
   const effectiveMetersPerPixel = Number.isFinite(Number(processingMetersPerPixel)) && Number(processingMetersPerPixel) > 0
@@ -1919,21 +1936,9 @@ export const loadTerrainFromLaz = async (
     fetchBounds,
   );
 
-  // ── Min / Max ─────────────────────────────────────────────────────────────
-  let minHeight = Infinity, maxHeight = -Infinity;
-  for (let i = 0; i < heightMap.length; i++) {
-    const h = heightMap[i];
-    if (h !== NO_DATA_VALUE) {
-      if (h < minHeight) minHeight = h;
-      if (h > maxHeight) maxHeight = h;
-    }
-  }
-  if (minHeight ===  Infinity) minHeight = 0;
-  if (maxHeight === -Infinity) maxHeight = 0;
-
   // ── OSM ───────────────────────────────────────────────────────────────────
   let osmFeatures = [], osmRequestInfo = null;
-  if (includeOSM) {
+  if (includeOSM || enhanceRoads || levelRoads) {
     signal?.throwIfAborted();
     onProgress?.('Fetching OpenStreetMap data...');
     osmFeatures = await fetchOSMData(fetchBounds);
@@ -1945,6 +1950,23 @@ export const loadTerrainFromLaz = async (
       elementCount: 0,
     };
   }
+
+  if ((enhanceRoads || levelRoads) && osmFeatures.length > 0) {
+    onProgress?.("Smoothing roads in heightmap...");
+    smoothRoadsInHeightmap(heightMap, width, height, fetchBounds, osmFeatures, effectiveMetersPerPixel, enhanceRoads, levelRoads);
+  }
+
+  // ── Min / Max ─────────────────────────────────────────────────────────────
+  let minHeight = Infinity, maxHeight = -Infinity;
+  for (let i = 0; i < heightMap.length; i++) {
+    const h = heightMap[i];
+    if (h !== NO_DATA_VALUE) {
+      if (h < minHeight) minHeight = h;
+      if (h > maxHeight) maxHeight = h;
+    }
+  }
+  if (minHeight ===  Infinity) minHeight = 0;
+  if (maxHeight === -Infinity) maxHeight = 0;
 
   onProgress?.('Finalizing terrain data...');
   const satelliteTextureUrl = await canvasToSatelliteBlobUrl(finalSatCanvas);

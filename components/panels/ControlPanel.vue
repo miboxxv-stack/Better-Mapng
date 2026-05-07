@@ -32,7 +32,7 @@
       :use-gpxz="useGPXZ"
       :gpxz-api-key="gpxzApiKey"
       :has-custom-elevation="!!uploadedElevationFile"
-      @generate="(preview) => $emit('generate', preview, fetchOSM, elevationSource, gpxzApiKey, elevationUnitOverride, metersPerPixel)"
+      @generate="(preview) => $emit('generate', preview, fetchOSM, elevationSource, gpxzApiKey, elevationUnitOverride, metersPerPixel, enhanceRoads, levelRoads)"
     />
 
     <!-- Output Settings -->
@@ -138,6 +138,28 @@
           <Trees :size="12" class="text-emerald-600 dark:text-emerald-400" />
           {{ t('controlPanel.includeOsmFeatures') }}
         </BaseToggle>
+      </div>
+
+      <!-- Road Enhancing Toggle -->
+      <div class="p-2 rounded bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600">
+        <BaseToggle v-model="enhanceRoads">
+          <Route :size="12" class="text-[#FF6600]" />
+          {{ t('controlPanel.enhanceRoads') }}
+        </BaseToggle>
+        <p class="mt-1 ml-6 text-[10px] text-gray-500 dark:text-gray-400 leading-tight">
+          {{ t('controlPanel.enhanceRoadsHint') }}
+        </p>
+      </div>
+
+      <!-- Road Pathing Toggle -->
+      <div class="p-2 rounded bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600">
+        <BaseToggle v-model="levelRoads">
+          <Route :size="12" class="text-blue-600 dark:text-blue-400" />
+          {{ t('controlPanel.levelRoads') }}
+        </BaseToggle>
+        <p class="mt-1 ml-6 text-[10px] text-gray-500 dark:text-gray-400 leading-tight">
+          {{ t('controlPanel.levelRoadsHint') }}
+        </p>
       </div>
 
       <!-- Elevation Source Selection -->
@@ -257,7 +279,7 @@
 <script setup>
 import { ref, computed, onMounted, watch } from 'vue';
 import { useI18n } from 'vue-i18n';
-import { MapPin, Box, Trees, ChevronDown, Settings } from 'lucide-vue-next';
+import { MapPin, Box, Trees, ChevronDown, Settings, Route } from 'lucide-vue-next';
 import BaseToggle from '../base/BaseToggle.vue';
 import CoordinatesInput from '../map/CoordinatesInput.vue';
 import ElevationSourceSelector from '../map/ElevationSourceSelector.vue';
@@ -330,6 +352,8 @@ const handleImportJobFile = async (file) => {
 };
 
 const fetchOSM = ref(localStorage.getItem('mapng_fetchOSM') !== 'false');
+const enhanceRoads = ref(localStorage.getItem('mapng_enhanceRoads') === 'true');
+const levelRoads = ref(localStorage.getItem('mapng_levelRoads') === 'true');
 const useUSGS = ref(false);
 const useGPXZ = ref(false);
 const elevationUnitOverride = ref(localStorage.getItem('mapng_elevationUnitOverride') || 'auto');
@@ -360,6 +384,16 @@ watch(elevationSource, (newVal) => {
 // Persist OSM toggle
 watch(fetchOSM, (newVal) => {
   localStorage.setItem('mapng_fetchOSM', String(newVal));
+});
+
+// Persist enhanceRoads toggle
+watch(enhanceRoads, (newVal) => {
+  localStorage.setItem('mapng_enhanceRoads', String(newVal));
+});
+
+// Persist levelRoads toggle
+watch(levelRoads, (newVal) => {
+  localStorage.setItem('mapng_levelRoads', String(newVal));
 });
 
 // Persist GPXZ API key and reset status when it changes
@@ -491,6 +525,8 @@ const isCached = computed(() => {
     lng: props.center.lng,
     resolution: props.resolution,
     osm: fetchOSM.value,
+    enhanceRoads: enhanceRoads.value,
+    levelRoads: levelRoads.value,
     elevationSource: elevationSource.value,
     gpxzKeySig: elevationSource.value === 'gpxz' ? signatureForKey(gpxzApiKey.value) : '',
   });
@@ -516,6 +552,8 @@ const buildRunConfiguration = () => buildRunConfigurationBase({
   zoom: props.zoom,
   resolution: props.resolution,
   includeOSM: fetchOSM.value,
+  enhanceRoads: enhanceRoads.value,
+  levelRoads: levelRoads.value,
   elevationSource: elevationSource.value,
   gpxzApiKey: gpxzApiKey.value,
   gpxzStatus: gpxzStatus.value,
@@ -639,6 +677,16 @@ const applyRunConfiguration = (config) => {
   const includeOSMValue = toBooleanOrNull(src.includeOSM);
   if (includeOSMValue !== null) {
     fetchOSM.value = includeOSMValue;
+  }
+
+  const enhanceRoadsValue = toBooleanOrNull(src.enhanceRoads);
+  if (enhanceRoadsValue !== null) {
+    enhanceRoads.value = enhanceRoadsValue;
+  }
+
+  const levelRoadsValue = toBooleanOrNull(src.levelRoads);
+  if (levelRoadsValue !== null) {
+    levelRoads.value = levelRoadsValue;
   }
 
   const explicitSource = typeof src.elevationSource === 'string' ? src.elevationSource.toLowerCase() : null;
