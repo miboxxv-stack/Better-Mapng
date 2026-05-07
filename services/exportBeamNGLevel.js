@@ -3430,7 +3430,8 @@ function makeForestPlacement(type, point, terrainData, squareSize, seed, scaleMi
 const BEAMNG_TREE_DENSITY_MULTIPLIER = 2.5;
 const BEAMNG_GRASS_DENSITY_MULTIPLIER = 2.0;
 const BEAMNG_MAX_FOREST_PLACEMENTS_PER_TYPE = 12000;
-const BEAMNG_MAX_GROUNDCOVER_ELEMENTS = 150000;
+const BEAMNG_MAX_GROUNDCOVER_ELEMENTS = 650000;
+const BEAMNG_MAX_GROUNDCOVER_OBJECTS = 48;
 
 /**
  * Randomly jitter a lat/lng point by up to N meters using deterministic seed.
@@ -3671,43 +3672,140 @@ function buildGroundCoverObjects(terrainData, squareSize, includeTrees, biome) {
   const grassClumpScale = Math.max(1, Math.sqrt(BEAMNG_GRASS_DENSITY_MULTIPLIER));
   const widthMeters = terrainData.width * squareSize;
   const heightMeters = terrainData.height * squareSize;
-  const radius = Math.max(30, roundTo(Math.min(widthMeters, heightMeters) * 0.48, 3));
+  const mapRadius = Math.max(30, roundTo(Math.min(widthMeters, heightMeters) * 0.48, 3));
   const centerHeight = getTerrainHeightWorld(
     (terrainData.bounds.north + terrainData.bounds.south) * 0.5,
     (terrainData.bounds.east + terrainData.bounds.west) * 0.5,
     terrainData,
   );
 
-  return [{
-    __parent: 'vegetation',
-    class: 'GroundCover',
-    name: 'mapng_grass_cover',
-    persistentId: generatePersistentId(),
-    position: [0, 0, roundTo(centerHeight, 3)],
-    material: groundCover.materialName,
-    gridSize: Math.max(1, Math.round(3 / Math.sqrt(BEAMNG_GRASS_DENSITY_MULTIPLIER))),
-    radius,
-    dissolveRadius: Math.max(40, roundTo(radius * 0.6, 3)),
-    shapeCullRadius: radius,
-    maxBillboardTiltAngle: 40,
-    maxElements: Math.min(
-      BEAMNG_MAX_GROUNDCOVER_ELEMENTS,
-      Math.max(
-        180000,
-        Math.round(((widthMeters * heightMeters) / 6) * BEAMNG_GRASS_DENSITY_MULTIPLIER),
-      ),
-    ),
-    windGustLength: 1.7,
-    windGustStrength: 0.2,
-    windTurbulenceFrequency: 0.3,
-    seed: 11,
-    Types: [
+  const grassFeatures = (terrainData.osmFeatures || []).filter((feature) => {
+    if (feature.type !== 'landuse') return false;
+    if (!Array.isArray(feature.geometry) || feature.geometry.length < 3) return false;
+    const tags = feature.tags || {};
+    return (
+      tags.landuse === 'grass'
+      || tags.landuse === 'meadow'
+      || tags.landuse === 'village_green'
+      || tags.landuse === 'recreation_ground'
+      || tags.landcover === 'grass'
+      || tags.natural === 'grassland'
+      || tags.leisure === 'park'
+      || tags.leisure === 'garden'
+      || tags.leisure === 'pitch'
+      || tags.surface === 'grass'
+    );
+  });
+
+  if (biome?.levelName === 'mapng_template') {
+    const templateTypesLongGrass = [
+      { billboardUVs: [0, 0, 0.545454562, 0.489090919], layer: 'Grass', probability: 0.300000012, sizeMax: 0.349999994, sizeMin: 0.200000003, windScale: 0.0500000007 },
+      { billboardUVs: [0.541666687, 0, 0.458333343, 0.487500012], clumpRadius: 2, layer: 'Grass', probability: 1, sizeMax: 0.400000006, sizeMin: 0.200000003, windScale: 0.0500000007 },
+      { billboardUVs: [0, 0.497916669, 0.641666651, 0.487500012], layer: 'Grass', probability: 1, sizeMax: 0.349999994, sizeMin: 0.200000003, windScale: 0.0500000007 },
+      { billboardUVs: [0.649999976, 0.502083361, 0.349999994, 0.491666675], layer: 'Grass', probability: 1, sizeMax: 0.300000012, sizeMin: 0.200000003, windScale: 0.0500000007 },
+      { billboardUVs: [0.514583349, 0.0078125, 0.485416681, 0.464843988], probability: 0.400000006, sizeMax: 0.400000006, sizeMin: 0.300000012, windScale: 0.0500000007 },
+      { billboardUVs: [0, 0, 0.550000012, 0.490999997], probability: 0.200000003, sizeMax: 0.300000012, sizeMin: 0.25, windScale: 0.0500000007 },
+      { billboardUVs: [0.668749988, 0.522833228, 0.331250012, 0.466833383], probability: 0.300000012, sizeMax: 0.25, sizeMin: 0.200000003, windScale: 0.0500000007 },
+      { billboardUVs: [0.496093988, 0.75, 0.503906012, 0.25], probability: null, sizeMax: 0.100000001, sizeMin: 0.0799999982, windScale: 0.0500000007 },
+    ];
+    const templateTypesFlowerGrass = [
+      { billboardUVs: [0.808593988, 0.398436993, 0.191405997, 0.226560995], clumpExponent: null, clumpRadius: null, layer: 'Flowers', probability: 0.300000012, sizeMax: 0.449999988, sizeMin: 0.300000012, windScale: 0.200000003 },
+      { billboardUVs: [0.644531012, 0.402345002, 0.203124002, 0.218749002], clumpExponent: -0.300000012, clumpRadius: 0.5, layer: 'Flowers', maxClumpCount: 2, minClumpCount: 2, probability: 0.5, sizeMax: 0.449999988, sizeMin: 0.349999994, windScale: 0.200000003 },
+      { billboardUVs: [0, 0.359504849, 0.18020834, 0.205990344], clumpExponent: null, clumpRadius: null, layer: 'Flowers', maxClumpCount: 4, minClumpCount: 3, probability: 0.00999999978, sizeMax: 0.5, sizeMin: 0.419999987, windScale: 0.100000001 },
+      { billboardUVs: [0.157237172, 0.704189062, 0.243769377, 0.289538532], clumpExponent: null, clumpRadius: 0.5, maxClumpCount: 4, minClumpCount: 2, probability: 0.100000001, sizeMax: 0.550000012, sizeMin: 0.449999988, windScale: 0.100000001 },
+      { billboardUVs: [0.327467173, 0.367344826, 0.30659467, 0.317013353], clumpExponent: -0.100000001, clumpRadius: null, maxClumpCount: 5, minClumpCount: 2, probability: 0.150000006, sizeMax: 0.800000012, sizeMin: 0.5, windScale: 0.200000003 },
+      {}, {}, {},
+    ];
+
+    const templateObjects = [];
+    const emitTemplateCover = ({ centerLat, centerLng, radius, areaSqM, material, types, seed }) => {
+      const [x, y] = geoToWorldPoint(centerLat, centerLng, terrainData, squareSize, 0);
+      templateObjects.push({
+        __parent: 'vegetation',
+        class: 'GroundCover',
+        name: `mapng_template_cover_${templateObjects.length + 1}`,
+        persistentId: generatePersistentId(),
+        position: [roundTo(x, 3), roundTo(y, 3), roundTo(getTerrainHeightWorld(centerLat, centerLng, terrainData), 3)],
+        material,
+        Types: types,
+        dissolveRadius: Math.max(30, roundTo(radius * 0.75, 3)),
+        gridSize: areaSqM > 45000 ? 12 : 10,
+        maxBillboardTiltAngle: 60,
+        maxElements: Math.min(400000, Math.max(90000, Math.round(areaSqM * 1.9))),
+        noShapes: true,
+        radius: roundTo(radius, 3),
+        seed,
+        shapeCullRadius: roundTo(Math.max(29, radius * 0.98), 3),
+        shapesCastShadows: false,
+        windGustFrequency: 0.100000001,
+        windGustLength: 0.5,
+        windGustStrength: 0.0500000007,
+        windTurbulenceFrequency: 0.5,
+        windTurbulenceStrength: 0.100000001,
+      });
+    };
+
+    for (const feature of grassFeatures.slice(0, BEAMNG_MAX_GROUNDCOVER_OBJECTS)) {
+      const ring = isClosedRing(feature.geometry) ? feature.geometry.slice(0, -1) : feature.geometry;
+      if (ring.length < 3) continue;
+      let centerLat = 0;
+      let centerLng = 0;
+      const worldPoints = [];
+      for (const pt of ring) {
+        centerLat += pt.lat;
+        centerLng += pt.lng;
+        worldPoints.push(geoToWorldPoint(pt.lat, pt.lng, terrainData, squareSize, 0));
+      }
+      centerLat /= ring.length;
+      centerLng /= ring.length;
+
+      let areaSqM = 0;
+      for (let i = 0; i < worldPoints.length; i++) {
+        const a = worldPoints[i];
+        const b = worldPoints[(i + 1) % worldPoints.length];
+        areaSqM += (a[0] * b[1]) - (b[0] * a[1]);
+      }
+      areaSqM = Math.abs(areaSqM) * 0.5;
+      if (!Number.isFinite(areaSqM) || areaSqM < 180) continue;
+
+      const radius = Math.max(24, Math.min(130, Math.sqrt(areaSqM / Math.PI) * 1.1));
+      const tags = feature.tags || {};
+      const isFlowerLike = tags.landuse === 'meadow' || tags.leisure === 'garden';
+      emitTemplateCover({
+        centerLat,
+        centerLng,
+        radius,
+        areaSqM,
+        material: isFlowerLike ? 'GC_Flowers_1' : (templateObjects.length % 2 === 0 ? 'GC_Grass_close' : 'GC_Grass_close_2'),
+        types: isFlowerLike ? templateTypesFlowerGrass : templateTypesLongGrass,
+        seed: 10 + templateObjects.length,
+      });
+    }
+
+    if (templateObjects.length === 0) {
+      emitTemplateCover({
+        centerLat: (terrainData.bounds.north + terrainData.bounds.south) * 0.5,
+        centerLng: (terrainData.bounds.east + terrainData.bounds.west) * 0.5,
+        radius: 80,
+        areaSqM: Math.max(25000, widthMeters * heightMeters * 0.08),
+        material: 'GC_Grass_close',
+        types: templateTypesLongGrass,
+        seed: 17,
+      });
+    }
+
+    return templateObjects;
+  }
+
+  const buildGrassTypes = (scaleMultiplier = 1) => {
+    const clumpScale = grassClumpScale * scaleMultiplier;
+    return [
       {
         billboardUVs: [0.496093988, 0, 0.503906012, 0.47656101],
         clumpRadius: 1.5,
         layer: groundCover.terrainLayer,
-        maxClumpCount: Math.round(10 * grassClumpScale),
-        minClumpCount: Math.round(4 * grassClumpScale),
+        maxClumpCount: Math.round(10 * clumpScale),
+        minClumpCount: Math.round(4 * clumpScale),
         probability: 1,
         sizeMax: 0.7,
         sizeMin: 0.42,
@@ -3716,8 +3814,8 @@ function buildGroundCoverObjects(terrainData, squareSize, includeTrees, biome) {
       {
         billboardUVs: [0, 0, 0.507812023, 0.488281012],
         layer: groundCover.terrainLayer,
-        maxClumpCount: Math.round(8 * grassClumpScale),
-        minClumpCount: Math.round(3 * grassClumpScale),
+        maxClumpCount: Math.round(8 * clumpScale),
+        minClumpCount: Math.round(3 * clumpScale),
         probability: 0.7,
         sizeMax: 0.65,
         sizeMin: 0.38,
@@ -3726,8 +3824,8 @@ function buildGroundCoverObjects(terrainData, squareSize, includeTrees, biome) {
       {
         billboardUVs: [0, 0.50781101, 0.5, 0.49218899],
         layer: groundCover.terrainLayer,
-        maxClumpCount: Math.round(7 * grassClumpScale),
-        minClumpCount: Math.round(3 * grassClumpScale),
+        maxClumpCount: Math.round(7 * clumpScale),
+        minClumpCount: Math.round(3 * clumpScale),
         probability: 0.55,
         sizeMax: 0.58,
         sizeMin: 0.34,
@@ -3737,16 +3835,119 @@ function buildGroundCoverObjects(terrainData, squareSize, includeTrees, biome) {
         billboardUVs: [0.5, 0.503906012, 0.5, 0.496093988],
         clumpRadius: 0.35,
         layer: groundCover.terrainLayer,
-        maxClumpCount: Math.round(8 * grassClumpScale),
-        minClumpCount: Math.round(3 * grassClumpScale),
+        maxClumpCount: Math.round(8 * clumpScale),
+        minClumpCount: Math.round(3 * clumpScale),
         probability: 0.45,
         sizeMax: 0.52,
         sizeMin: 0.32,
         windScale: 0.2,
       },
       {}, {}, {}, {},
-    ],
+    ];
+  };
+
+  const groundCoverObjects = [{
+    __parent: 'vegetation',
+    class: 'GroundCover',
+    name: 'mapng_grass_cover',
+    persistentId: generatePersistentId(),
+    position: [0, 0, roundTo(centerHeight, 3)],
+    material: groundCover.materialName,
+    gridSize: Math.max(1, Math.round(2 / Math.sqrt(BEAMNG_GRASS_DENSITY_MULTIPLIER))),
+    radius: mapRadius,
+    dissolveRadius: Math.max(40, roundTo(mapRadius * 0.65, 3)),
+    shapeCullRadius: mapRadius,
+    maxBillboardTiltAngle: 40,
+    maxElements: Math.min(
+      BEAMNG_MAX_GROUNDCOVER_ELEMENTS,
+      Math.max(
+        260000,
+        Math.round(((widthMeters * heightMeters) / 4.5) * BEAMNG_GRASS_DENSITY_MULTIPLIER),
+      ),
+    ),
+    windGustLength: 1.7,
+    windGustStrength: 0.2,
+    windTurbulenceFrequency: 0.3,
+    seed: 11,
+    Types: buildGrassTypes(1),
   }];
+
+  // Add dense per-area grass cover for OSM polygons tagged as grass-like fields.
+  let areaObjectIndex = 0;
+  for (const feature of grassFeatures) {
+    if (groundCoverObjects.length >= BEAMNG_MAX_GROUNDCOVER_OBJECTS) break;
+    const ring = isClosedRing(feature.geometry) ? feature.geometry.slice(0, -1) : feature.geometry;
+    if (ring.length < 3) continue;
+
+    let centroidLat = 0;
+    let centroidLng = 0;
+    let minX = Infinity;
+    let maxX = -Infinity;
+    let minY = Infinity;
+    let maxY = -Infinity;
+    const worldPoints = [];
+
+    for (const pt of ring) {
+      centroidLat += pt.lat;
+      centroidLng += pt.lng;
+      const [x, y] = geoToWorldPoint(pt.lat, pt.lng, terrainData, squareSize, 0);
+      worldPoints.push([x, y]);
+      minX = Math.min(minX, x);
+      maxX = Math.max(maxX, x);
+      minY = Math.min(minY, y);
+      maxY = Math.max(maxY, y);
+    }
+
+    centroidLat /= ring.length;
+    centroidLng /= ring.length;
+
+    let areaSqM = 0;
+    for (let i = 0; i < worldPoints.length; i++) {
+      const [x1, y1] = worldPoints[i];
+      const [x2, y2] = worldPoints[(i + 1) % worldPoints.length];
+      areaSqM += (x1 * y2) - (x2 * y1);
+    }
+    areaSqM = Math.abs(areaSqM) * 0.5;
+    if (!Number.isFinite(areaSqM) || areaSqM < 120) continue;
+
+    const approxRadius = Math.max(
+      14,
+      Math.min(
+        260,
+        Math.max(
+          Math.sqrt(areaSqM / Math.PI) * 1.1,
+          Math.max(maxX - minX, maxY - minY) * 0.55,
+        ),
+      ),
+    );
+    const centerHeightWorld = getTerrainHeightWorld(centroidLat, centroidLng, terrainData);
+    const [centerX, centerY] = geoToWorldPoint(centroidLat, centroidLng, terrainData, squareSize, 0);
+
+    groundCoverObjects.push({
+      __parent: 'vegetation',
+      class: 'GroundCover',
+      name: `mapng_grass_field_${++areaObjectIndex}`,
+      persistentId: generatePersistentId(),
+      position: [roundTo(centerX, 3), roundTo(centerY, 3), roundTo(centerHeightWorld, 3)],
+      material: groundCover.materialName,
+      gridSize: areaSqM > 60000 ? 3 : 2,
+      radius: roundTo(approxRadius, 3),
+      dissolveRadius: roundTo(Math.max(20, approxRadius * 0.8), 3),
+      shapeCullRadius: roundTo(Math.max(approxRadius, approxRadius * 1.25), 3),
+      maxBillboardTiltAngle: 40,
+      maxElements: Math.min(
+        BEAMNG_MAX_GROUNDCOVER_ELEMENTS,
+        Math.max(50000, Math.round(areaSqM * 2.8 * BEAMNG_GRASS_DENSITY_MULTIPLIER)),
+      ),
+      windGustLength: 1.7,
+      windGustStrength: 0.2,
+      windTurbulenceFrequency: 0.3,
+      seed: 100 + areaObjectIndex,
+      Types: buildGrassTypes(1.25),
+    });
+  }
+
+  return groundCoverObjects;
 }
 
 /**

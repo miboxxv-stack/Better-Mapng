@@ -1076,10 +1076,41 @@ function getVegetationSelector(biome, selectorName) {
 
 export function resolveTreeTypeForTags(biome, tags = {}) {
   const species = `${tags.species || ''} ${tags['species:en'] || ''}`.toLowerCase();
-  if (species.includes('olive')) return getVegetationSelector(biome, 'olive') ?? getVegetationSelector(biome, 'default');
-  if (species.includes('cypress')) return getVegetationSelector(biome, 'cypress') ?? getVegetationSelector(biome, 'default');
-  if (species.includes('palm') || tags.leaf_type === 'palm') return getVegetationSelector(biome, 'palm') ?? getVegetationSelector(biome, 'default');
-  if (tags.leaf_type === 'needleleaved' || tags.wood === 'coniferous') return getVegetationSelector(biome, 'needle') ?? getVegetationSelector(biome, 'default');
+  const genus = String(tags.genus || '').toLowerCase();
+  const leafType = String(tags.leaf_type || '').toLowerCase();
+  const leafCycle = String(tags.leaf_cycle || '').toLowerCase();
+  const natural = String(tags.natural || '').toLowerCase();
+  const wetland = String(tags.wetland || '').toLowerCase();
+  const wood = String(tags.wood || '').toLowerCase();
+
+  if (species.includes('olive') || genus.includes('olea')) {
+    return getVegetationSelector(biome, 'olive') ?? getVegetationSelector(biome, 'default');
+  }
+  if (species.includes('cypress') || genus.includes('cupress')) {
+    return getVegetationSelector(biome, 'cypress') ?? getVegetationSelector(biome, 'default');
+  }
+  if (species.includes('palm') || genus.includes('phoenix') || leafType === 'palm') {
+    return getVegetationSelector(biome, 'palm') ?? getVegetationSelector(biome, 'default');
+  }
+
+  const suggestsConifer = leafType === 'needleleaved'
+    || leafCycle === 'evergreen'
+    || wood === 'coniferous'
+    || species.includes('pine')
+    || species.includes('fir')
+    || species.includes('spruce')
+    || species.includes('cedar')
+    || genus.includes('pinus')
+    || genus.includes('abies')
+    || genus.includes('picea');
+  if (suggestsConifer) {
+    return getVegetationSelector(biome, 'needle') ?? getVegetationSelector(biome, 'default');
+  }
+
+  if (natural === 'mangrove' || wetland === 'mangrove' || wetland === 'swamp') {
+    return getVegetationSelector(biome, 'bush') ?? getVegetationSelector(biome, 'default');
+  }
+
   return getVegetationSelector(biome, 'default') ?? getVegetationSelector(biome, 'bush');
 }
 
