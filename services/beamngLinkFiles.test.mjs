@@ -9,19 +9,20 @@ test('rewrites external level paths and emits deterministic link files', () => {
   const rewritten = links.rewriteAssetPath('/levels/west_coast_usa/art/shapes/objects/guardrail1.dae');
   assert.equal(
     rewritten,
-    '/levels/mapng_demo/linked/levels/west_coast_usa/art/shapes/objects/guardrail1.dae',
+    '/levels/mapng_demo/map_assets/official_assets/west_coast_usa_assets/levels/west_coast_usa/art/shapes/objects/guardrail1.dae',
   );
 
   const linkFiles = links.getLinkFiles();
   assert.equal(linkFiles.length, 1);
   assert.equal(
     linkFiles[0].path,
-    'levels/mapng_demo/linked/levels/west_coast_usa/art/shapes/objects/guardrail1.dae.link',
+    'levels/mapng_demo/map_assets/official_assets/west_coast_usa_assets/levels/west_coast_usa/art/shapes/objects/guardrail1.dae.link',
   );
 
   const content = JSON.parse(linkFiles[0].contents);
   assert.deepEqual(content, {
     path: '/levels/west_coast_usa/art/shapes/objects/guardrail1.dae',
+    type: 'normal',
   });
 });
 
@@ -44,7 +45,7 @@ test('rewrites nested object path values deeply', () => {
 
   assert.equal(
     rewritten.shapeFile,
-    'levels/mapng_demo/linked/levels/italy/art/shapes/trees/trees_italy/cypress_tree.dae',
+    'levels/mapng_demo/map_assets/official_assets/italy_assets/levels/italy/art/shapes/trees/trees_italy/cypress_tree.dae',
   );
   assert.equal(
     rewritten.Stages[0].colorMap,

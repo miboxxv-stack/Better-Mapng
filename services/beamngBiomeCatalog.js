@@ -1029,6 +1029,22 @@ export const BEAMNG_BIOMES = [
 const BIOME_BY_ID = new Map(BEAMNG_BIOMES.map((biome) => [biome.id, biome]));
 let shapeMaterialLibraryPromise = null;
 
+const DEFAULT_TRAFFIC_PROFILE = {
+  country: 'levels.common.country.usa',
+  rightHandDrive: false,
+};
+
+const BIOME_TRAFFIC_PROFILES = {
+  italy: {
+    country: 'levels.common.country.italy',
+    rightHandDrive: false,
+  },
+  european: {
+    country: 'levels.common.country.germany',
+    rightHandDrive: false,
+  },
+};
+
 const normalizeLevelName = (value) => String(value || '').toLowerCase();
 
 export function getBeamNGBiomeById(biomeId) {
@@ -1134,6 +1150,10 @@ export function getWaterProfile(biome) {
 
 export function getGlobalEnvironmentMap(biome) {
   return biome?.environmentProfile?.globalEnvironmentMap ?? 'cubemap_italy_reflection';
+}
+
+export function getTrafficProfile(biome) {
+  return BIOME_TRAFFIC_PROFILES[biome?.id] ?? DEFAULT_TRAFFIC_PROFILE;
 }
 
 export function doesBiomeMatchLevel(biome, levelName) {

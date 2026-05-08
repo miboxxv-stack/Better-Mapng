@@ -17,6 +17,7 @@ import {
   getGroundCoverProfile,
   getManagedForestTemplate,
   getRockCandidates,
+  getTrafficProfile,
   getWaterProfile,
   resolveBushType,
   resolveTreeTypeForTags,
@@ -46,11 +47,13 @@ function sanitizeLevelId(name) {
 function validateGeneratedBeamNGStructure(zip, base) {
   const requiredFiles = [
     `${base}/info.json`,
+    `${base}/city.sites.json`,
     `${base}/map.json`,
     `${base}/theTerrain.ter`,
     `${base}/theTerrain.terrain.json`,
     `${base}/main.decals.json`,
     `${base}/main.forestbrushes4.json`,
+    `${base}/art/decals/managedDecalData.json`,
     `${base}/main.level.json`,
     `${base}/main/items.level.json`,
     `${base}/main/MissionGroup/items.level.json`,
@@ -1329,6 +1332,15 @@ function generateDecalRoads(terrainData, squareSize) {
 
   const roadSplinesByName = new Map();
   const segmentCounterByName = new Map();
+  const usedGroupNames = new Map();
+  const LAYER_CODE = {
+    Base: 'b',
+    'Center Line': 'cl',
+    'Edge Line - Left': 'ell',
+    'Edge Line - Right': 'elr',
+    'Edge Blend - Left': 'ebl',
+    'Edge Blend - Right': 'ebr',
+  };
 
   const getOrCreateSplineGroup = (groupName) => {
     if (roadSplinesByName.has(groupName)) return roadSplinesByName.get(groupName);
@@ -1347,8 +1359,11 @@ function generateDecalRoads(terrainData, squareSize) {
     const feature = segmentFeature.sourceFeature;
     const highway = segmentFeature.highway;
     if (!shouldGenerateDecalRoads(highway, feature.tags || {})) continue;
-    const rawName = feature.tags?.name || feature.tags?.ref || `Road_${feature.id}`;
-    const cleanName = rawName.replace(/[^\w\s-]/g, '').trim() || `Road_${feature.id}`;
+    const rawName = feature.tags?.name || feature.tags?.ref || `road_${feature.id}`;
+    const baseName = sanitizeBeamNGObjectName(rawName, `road_${feature.id || 'x'}`);
+    const used = usedGroupNames.get(baseName) || 0;
+    usedGroupNames.set(baseName, used + 1);
+    const cleanName = used > 0 ? sanitizeBeamNGObjectName(`${baseName}_${used + 1}`) : baseName;
     
     const style = HIGHWAY_STYLE[highway] ?? DEFAULT_ROAD_STYLE;
     const isOneWay = isOneWayRoad(feature.tags || {});
@@ -1390,11 +1405,12 @@ function generateDecalRoads(terrainData, squareSize) {
       if (layeredDecals.length > 0) {
         const segCount = (segmentCounterByName.get(cleanName) || 0) + 1;
         segmentCounterByName.set(cleanName, segCount);
-        const nameSuffix = `S${segCount}`;
-        const roadNamePrefix = cleanName.replace(/\s+/g, '_');
+        const nameSuffix = `s${segCount}`;
+        const roadNamePrefix = sanitizeBeamNGObjectName(`dr_${cleanName}`);
         for (let d = 0; d < layeredDecals.length; d++) {
           const decal = layeredDecals[d];
-          decal.name = `${roadNamePrefix}__${decal.name}__${nameSuffix}__L${d + 1}`;
+          const layerCode = LAYER_CODE[decal.name] || `l${d + 1}`;
+          decal.name = sanitizeBeamNGObjectName(`${roadNamePrefix}_${nameSuffix}_${layerCode}`);
           splineGroup.__items.push(decal);
         }
       }
@@ -3081,6 +3097,25 @@ function sanitizeRoadFolderName(value, fallback) {
 }
 
 /**
+ * Sanitize a SimObject name for BeamNG/Torque constraints.
+ * Name must not start with a digit and should stay compact.
+ */
+function sanitizeBeamNGObjectName(value, fallback = 'road') {
+  const ascii = String(value || '')
+    .normalize('NFKD')
+    .replace(/[^\x00-\x7F]/g, '');
+  let cleaned = ascii
+    .replace(/[^A-Za-z0-9_]/g, '_')
+    .replace(/_+/g, '_')
+    .replace(/^_+|_+$/g, '');
+
+  if (!cleaned) cleaned = String(fallback || 'road').replace(/[^A-Za-z0-9_]/g, '_');
+  if (!/^[A-Za-z_]/.test(cleaned)) cleaned = `r_${cleaned}`;
+  if (cleaned.length > 48) cleaned = cleaned.slice(0, 48).replace(/_+$/g, '');
+  return cleaned || 'road';
+}
+
+/**
  * Build road group folder metadata from a Road Architect session.
  */
 function buildRoadFolderGroups(roadArchitectSession) {
@@ -3997,6 +4032,8 @@ function buildGroundCoverObjects(terrainData, squareSize, includeTrees, biome) {
  * @param {boolean} [options.includeRocks=false]            — emit native BeamNG rock forest instances
  * @param {string}  [options.biomeId]                      — BeamNG official level biome id
  * @param {string}  [options.levelName]                     — custom user-facing/generated level name
+ * @param {string}  [options.country]                       — optional BeamNG traffic country key (e.g. levels.common.country.usa)
+ * @param {boolean} [options.rightHandDrive]                — set true for left-side road traffic behavior
  * @param {'osm'|'image'|'none'} [options.pbrSource='osm'] — layer map source: 'osm' uses OSM polygon data,
  *   'image' is accepted for backward compatibility and falls back to OSM inference, 'none' disables PBR materials.
  *   Legacy boolean option `generatePbrMaterials` is still accepted for backward compatibility.
@@ -4019,6 +4056,8 @@ export async function exportBeamNGLevel(terrainData, center, options = {}) {
     roadType = 'architect',
     biomeId,
     levelName: requestedLevelName = '',
+    country,
+    rightHandDrive,
     onProgress,
   } = options;
   // Backward compat: generatePbrMaterials (bool) → pbrSource (string)
@@ -4048,6 +4087,8 @@ export async function exportBeamNGLevel(terrainData, center, options = {}) {
       roadType,
       biomeId,
       levelName: requestedLevelName,
+      country,
+      rightHandDrive,
       pbrSource,
     },
   });
@@ -4149,6 +4190,13 @@ export async function exportBeamNGLevel(terrainData, center, options = {}) {
     console.error(`${BEAMNG_EXPORT_SERVICE_LOG} Invalid or missing biomeId.`, { biomeId });
     throw new Error(`Missing or invalid BeamNG biome: ${biomeId || '(none)'}`);
   }
+  const trafficProfile = getTrafficProfile(biome);
+  const resolvedCountry = typeof country === 'string' && country.trim().length > 0
+    ? country.trim()
+    : trafficProfile.country;
+  const resolvedRightHandDrive = typeof rightHandDrive === 'boolean'
+    ? rightHandDrive
+    : trafficProfile.rightHandDrive;
   const linkRegistry = createBeamNGLinkFileRegistry(levelName);
 
   const size = exportTerrainData.width;
@@ -4311,7 +4359,10 @@ export async function exportBeamNGLevel(terrainData, center, options = {}) {
   zip.folder('levels');
   zip.folder(base);
   zip.folder(`${base}/art`);
+  zip.folder(`${base}/art/cubemaps`);
+  zip.folder(`${base}/art/decals`);
   zip.folder(`${base}/bat`);
+  zip.folder(`${base}/art/prefabs`);
   zip.folder(`${base}/art/terrains`);
   zip.folder(`${base}/main`);
   zip.folder(`${base}/main/MissionGroup`);
@@ -4354,12 +4405,34 @@ export async function exportBeamNGLevel(terrainData, center, options = {}) {
       translationId: 'Default Spawnpoint',
     }],
     title: levelDisplayName,
-    supportsTraffic: false,
+    supportsTraffic: roadType !== 'none',
     supportsTimeOfDay: true,
+    country: resolvedCountry,
+    roadRules: {
+      rightHandDrive: resolvedRightHandDrive
+    }
+  }, null, 2));
+
+  // ── city.sites.json ───────────────────────────────────────────────────────
+  // Seed a valid Sites Editor file so zones/parking can be authored without
+  // creating boilerplate manually in BeamNG World Editor.
+  zip.file(`${base}/city.sites.json`, JSON.stringify({
+    description: 'Description of these Sites. Contains Locations and Zones.',
+    dir: `/levels/${levelName}/`,
+    filename: 'city.sites.json',
+    locations: {},
+    name: 'city.sites.json',
+    parkingSpots: [],
+    zones: [],
   }, null, 2));
 
   // ── map.json ───────────────────────────────────────────────────────────────
   zip.file(`${base}/map.json`, JSON.stringify({ segments: {} }, null, 2));
+
+  // ── art/decals/managedDecalData.json ─────────────────────────────────────
+  // Keep a canonical location for decal definitions even when no custom decals
+  // are authored by the generator.
+  zip.file(`${base}/art/decals/managedDecalData.json`, JSON.stringify({}, null, 2));
 
   // ── editor helper files ───────────────────────────────────────────────────
   zip.file(`${base}/main.decals.json`, JSON.stringify({
@@ -4579,65 +4652,43 @@ export async function exportBeamNGLevel(terrainData, center, options = {}) {
   zip.file(`${base}/theTerrain.terrainheightmap.png`, heightmapBlob);
   heightmapBlob = null;
 
-  // ── art/shapes/ (OSM 3D objects and/or terrain backdrop) ──────────────────
-  // Only written when at least one DAE file is present.
-  if (osmDaeBlob || backdropDaeBlob || forestFiles.length > 0 || groundCoverObjects.length > 0 || mapngFlagFiles.length > 0) {
-    zip.folder(`${base}/art/shapes`);
-    if (mapngFlagFiles.length > 0) zip.folder(`${base}/art/shapes/mapng`);
-
-    if (osmDaeBlob) zip.file(`${base}/art/shapes/osm_objects.dae`, osmDaeBlob);
-    if (backdropDaeBlob) zip.file(`${base}/art/shapes/terrain_backdrop.dae`, backdropDaeBlob);
-    for (const asset of mapngFlagFiles) {
-      const relativePath = asset.path.startsWith('mapng/') ? asset.path.slice('mapng/'.length) : asset.path;
-      if (relativePath === 'main.materials.json') {
-        const materialDefs = JSON.parse(new TextDecoder().decode(asset.data));
-        if (materialDefs.mapng_flag?.Stages?.[0]) {
-          materialDefs.mapng_flag.class = 'Material';
-          materialDefs.mapng_flag.Stages[0].colorMap = `levels/${levelName}/art/shapes/mapng/mapng_flag_d.png`;
-        }
-        zip.file(`${base}/art/shapes/mapng/main.materials.json`, JSON.stringify(materialDefs, null, 2));
-      } else {
-        zip.file(`${base}/art/shapes/mapng/${relativePath}`, asset.data);
-      }
-    }
-
-    // Build a single materials JSON covering all DAEs in this directory.
-    const shapeMaterials = {
-      ...getBiomeRuntimeMaterialDefs(biome),
-    };
+  // ── map_assets/custom_assets/ (OSM 3D objects and/or terrain backdrop) ──────────────────
+  if (osmDaeBlob || backdropDaeBlob || mapngFlagFiles.length > 0) {
     if (osmDaeBlob) {
-      // Vertex-colour Material: BeamNG multiplies diffuseColor × vertex colour.
-      // All OSM mesh materials are named "osm_object" to resolve to this entry.
-      shapeMaterials.osm_object = {
-        class: 'Material',
-        name: 'osm_object',
-        mapTo: 'osm_object',
-        annotation: 'BUILDINGS',
-        Stages: [{ diffuseColor: [1, 1, 1, 1], vertColor: true }],
-        translucentBlendOp: 'None',
-      };
+      zip.folder(`${base}/map_assets/custom_assets/osm_objects`);
+      zip.file(`${base}/map_assets/custom_assets/osm_objects/osm_objects.dae`, osmDaeBlob);
+      zip.file(`${base}/map_assets/custom_assets/osm_objects/main.materials.json`, JSON.stringify({
+        osm_object: {
+          class: 'Material',
+          name: 'osm_object',
+          mapTo: 'osm_object',
+          annotation: 'BUILDINGS',
+          Stages: [{ diffuseColor: [1, 1, 1, 1], vertColor: true }],
+          translucentBlendOp: 'None',
+        }
+      }, null, 2));
     }
     if (backdropDaeBlob) {
-      // Save per-tile satellite textures alongside the DAE.
+      zip.folder(`${base}/map_assets/custom_assets/terrain_backdrop`);
+      zip.file(`${base}/map_assets/custom_assets/terrain_backdrop/terrain_backdrop.dae`, backdropDaeBlob);
+      const shapeMaterials = {};
       if (backdropTextureFiles.length > 0) {
-        zip.folder(`${base}/art/shapes/textures`);
+        zip.folder(`${base}/map_assets/custom_assets/terrain_backdrop/Textures`);
         for (const tex of backdropTextureFiles) {
-          zip.file(`${base}/art/shapes/textures/${tex.name}.${tex.ext}`, tex.data);
-          // One BeamNG Material entry per tile, referencing its satellite texture.
+          zip.file(`${base}/map_assets/custom_assets/terrain_backdrop/Textures/${tex.name}.${tex.ext}`, tex.data);
           shapeMaterials[tex.name] = {
             class: 'Material',
             name: tex.name,
             mapTo: tex.name,
             annotation: 'TERRAIN',
             Stages: [{
-              diffuseMap: `levels/${levelName}/art/shapes/textures/${tex.name}.${tex.ext}`,
+              diffuseMap: `levels/${levelName}/map_assets/custom_assets/terrain_backdrop/Textures/${tex.name}.${tex.ext}`,
               diffuseColor: [1, 1, 1, 1],
             }],
             translucentBlendOp: 'None',
           };
         }
       } else {
-        // No satellite textures available — use a flat earth-tone fallback.
         shapeMaterials.backdrop_terrain = {
           class: 'Material',
           name: 'backdrop_terrain',
@@ -4647,9 +4698,29 @@ export async function exportBeamNGLevel(terrainData, center, options = {}) {
           translucentBlendOp: 'None',
         };
       }
+      zip.file(`${base}/map_assets/custom_assets/terrain_backdrop/main.materials.json`, JSON.stringify(shapeMaterials, null, 2));
     }
-    zip.file(`${base}/art/shapes/main.materials.json`, JSON.stringify(shapeMaterials, null, 2));
+    if (mapngFlagFiles.length > 0) {
+      zip.folder(`${base}/map_assets/custom_assets/mapng_flag`);
+      for (const asset of mapngFlagFiles) {
+        const relativePath = asset.path.startsWith('mapng/') ? asset.path.slice('mapng/'.length) : asset.path;
+        if (relativePath === 'main.materials.json') {
+          const materialDefs = JSON.parse(new TextDecoder().decode(asset.data));
+          if (materialDefs.mapng_flag?.Stages?.[0]) {
+            materialDefs.mapng_flag.class = 'Material';
+            materialDefs.mapng_flag.Stages[0].colorMap = `levels/${levelName}/map_assets/custom_assets/mapng_flag/mapng_flag_d.png`;
+          }
+          zip.file(`${base}/map_assets/custom_assets/mapng_flag/main.materials.json`, JSON.stringify(materialDefs, null, 2));
+        } else {
+          zip.file(`${base}/map_assets/custom_assets/mapng_flag/${relativePath}`, asset.data);
+        }
+      }
+    }
   }
+
+  // Write Biome materials (which used to be in art/shapes/) to map_assets/official_assets/biome_materials/
+  // because they override official names without having specific meshes.
+  zip.file(`${base}/map_assets/official_assets/biome_materials/main.materials.json`, JSON.stringify(getBiomeRuntimeMaterialDefs(biome), null, 2));
 
   // ── art/terrains/terrain.png ───────────────────────────────────────────────
   zip.file(`${base}/art/terrains/terrain.png`, texBlob);
@@ -4853,7 +4924,7 @@ export async function exportBeamNGLevel(terrainData, center, options = {}) {
       name: 'osm_objects',
       persistentId: generatePersistentId(),
       position: [0, 0, 0],
-      shapeName: `/levels/${levelName}/art/shapes/osm_objects.dae`,
+      shapeName: `/levels/${levelName}/map_assets/custom_assets/osm_objects/osm_objects.dae`,
       collisionType: 'Collision Mesh',
       decalType: 'Collision Mesh',
       prebuildCollisionData: 0,
@@ -4870,7 +4941,7 @@ export async function exportBeamNGLevel(terrainData, center, options = {}) {
       name: 'terrain_backdrop',
       persistentId: generatePersistentId(),
       position: [0, 0, 0],
-      shapeName: `/levels/${levelName}/art/shapes/terrain_backdrop.dae`,
+      shapeName: `/levels/${levelName}/map_assets/custom_assets/terrain_backdrop/terrain_backdrop.dae`,
       useInstanceRenderData: true,
     });
   }
@@ -4882,7 +4953,7 @@ export async function exportBeamNGLevel(terrainData, center, options = {}) {
       name: 'mapng_flag_marker',
       persistentId: generatePersistentId(),
       position: mapngFlagPosition,
-      shapeName: `/levels/${levelName}/art/shapes/mapng/flagng.dae`,
+      shapeName: `/levels/${levelName}/map_assets/custom_assets/mapng_flag/flagng.dae`,
       useInstanceRenderData: true,
     });
   }

@@ -33,7 +33,7 @@ export function createBeamNGLinkFileRegistry(exportLevelName) {
       return path;
     }
 
-    const localPathNoSlash = `levels/${exportLevelName}/linked/${parsed.noSlash}`;
+    const localPathNoSlash = `levels/${exportLevelName}/map_assets/official_assets/${parsed.levelName}_assets/${parsed.noSlash}`;
     const redirectPath = `/${parsed.noSlash}`;
 
     const existingTarget = linksByPath.get(localPathNoSlash);
@@ -70,7 +70,7 @@ export function createBeamNGLinkFileRegistry(exportLevelName) {
   function getLinkFiles() {
     return Array.from(linksByPath.entries()).map(([linkPathNoSlash, redirectPath]) => ({
       path: `${linkPathNoSlash}.link`,
-      contents: `${JSON.stringify({ path: redirectPath }, null, 2)}\n`,
+      contents: `${JSON.stringify({ path: redirectPath, type: "normal" }, null, 2)}\n`,
     }));
   }
 
