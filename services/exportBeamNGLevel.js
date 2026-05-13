@@ -4388,6 +4388,8 @@ export async function exportBeamNGLevel(terrainData, center, options = {}) {
   }
 
   // ── info.json ──────────────────────────────────────────────────────────────
+  const worldSizeMeters = Math.round(worldSize * 100) / 100;
+
   zip.file(`${base}/info.json`, JSON.stringify({
     authors: 'mapng',
     biome: biome?.label || biome?.id || 'mapng',
@@ -4397,7 +4399,8 @@ export async function exportBeamNGLevel(terrainData, center, options = {}) {
     previews: ['preview.png'],
     roads: roadType === 'architect' ? 'Road Architect roads from OSM' : 'OSM-derived roads',
     suitablefor: 'Freeroam, testing, and world-building',
-    size: [size, size],
+    // BeamNG displays this as map dimensions in km; provide real-world meters.
+    size: [worldSizeMeters, worldSizeMeters],
     spawnPoints: [{
       name: 'Default',
       objectname: 'spawn_default',
