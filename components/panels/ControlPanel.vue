@@ -122,13 +122,13 @@
 
       <div class="space-y-1">
         <label class="text-xs text-gray-500 dark:text-gray-400">{{ t('controlPanel.processingResolutionLabel') }}</label>
-        <select
-          :value="processingMetersPerPixelNumber"
-          @change="$emit('update:processingMetersPerPixel', Number($event.target.value))"
+        <input
+          v-model="processingMetersPerPixelInput"
+          type="text"
+          inputmode="decimal"
+          @input="handleProcessingMetersPerPixelInput"
           class="w-full border rounded px-2 py-2 text-sm outline-none bg-white dark:bg-gray-800 border-gray-300 dark:border-gray-600 text-gray-900 dark:text-white focus:ring-2 focus:ring-[#FF6600] focus:border-[#FF6600]"
-        >
-          <option v-for="option in processingResolutionOptions" :key="option" :value="option">{{ formatProcessingResolutionOption(option) }}</option>
-        </select>
+        />
         <p class="text-[10px] text-gray-500 dark:text-gray-400">{{ t('controlPanel.processingResolutionHint') }}</p>
       </div>
 
@@ -433,19 +433,36 @@ watch(() => props.terrainData, (newData) => {
   }
 });
 
-const processingResolutionOptions = [0.25, 0.5, 1, 2];
+const processingMetersPerPixelInput = ref('1');
+
+const PROCESSING_RESOLUTION_INPUT_PATTERN = /^\d*\.?\d*$/;
 
 const processingMetersPerPixelNumber = computed(() => {
   const parsed = Number(props.processingMetersPerPixel);
   return Number.isFinite(parsed) && parsed > 0 ? parsed : 1;
 });
 
-const formatProcessingResolutionOption = (value) => {
-  if (value === 0.25) return t('controlPanel.processingResolutionOptionUltra');
-  if (value === 0.5) return t('controlPanel.processingResolutionOptionHigh');
-  if (value === 1) return t('controlPanel.processingResolutionOptionStandard');
-  return `${value.toFixed(1)} m/px`;
+const isValidProcessingResolutionInput = (value) => {
+  const trimmed = String(value ?? '').trim();
+  if (!trimmed || trimmed === '.') return false;
+  if (!PROCESSING_RESOLUTION_INPUT_PATTERN.test(trimmed)) return false;
+  const decimalPart = trimmed.split('.')[1] || '';
+  if (decimalPart.length > 10) return false;
+  const parsed = Number(trimmed);
+  return Number.isFinite(parsed) && parsed > 0;
 };
+
+const handleProcessingMetersPerPixelInput = () => {
+  if (!isValidProcessingResolutionInput(processingMetersPerPixelInput.value)) return;
+  emit('update:processingMetersPerPixel', Number(processingMetersPerPixelInput.value.trim()));
+};
+
+watch(() => props.processingMetersPerPixel, (newValue) => {
+  const parsed = Number(newValue);
+  processingMetersPerPixelInput.value = Number.isFinite(parsed) && parsed > 0
+    ? String(parsed)
+    : '1';
+}, { immediate: true });
 
 const metersPerPixel = computed(() => processingMetersPerPixelNumber.value);
 
@@ -666,7 +683,7 @@ const applyRunConfiguration = (config) => {
 
   const processingMetersPerPixelValue = toNumberOrNull(src.processingMetersPerPixel);
   if (processingMetersPerPixelValue !== null && processingMetersPerPixelValue > 0) {
-    emit('update:processingMetersPerPixel', Math.max(0.05, Math.min(10, processingMetersPerPixelValue)));
+    emit('update:processingMetersPerPixel', processingMetersPerPixelValue);
   }
 
   const zoomValue = toNumberOrNull(src.zoom);

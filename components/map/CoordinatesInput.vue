@@ -51,6 +51,7 @@ const lngInput = ref(props.center.lng.toString());
 const presetLocations = [
   { name: t('map.selectLocation'), lat: 0, lng: 0, disabled: true },
   { name: "Devils Tower, USA", lat: 44.59056, lng: -104.71511 },
+  { name: "Eye of the Sahara, Mauritania", lat: 21.11460876603993, lng: -11.393508911132812 },
   { name: "Glacier View Car Launch, USA", lat: 61.79551798203474, lng: -147.86878824234012 },
   { name: "Johnson Valley OHV, USA", lat: 34.49523, lng: -116.82180 },
   { name: "Kim Jong Un's Mansion", lat: 39.116331473160436, lng: 125.80600069245881 },

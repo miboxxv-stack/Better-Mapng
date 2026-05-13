@@ -317,11 +317,15 @@ const uploadedElevationFile = ref(null);   // File | null
 const uploadedElevationMeta = ref(null);   // parseElevationFile() result | null
 const uploadedAreaMode = ref(localStorage.getItem('mapng_uploaded_area_mode') || 'native');
 const uploadedAscCoordinateSystem = ref(localStorage.getItem('mapng_uploaded_asc_crs') || 'auto');
-const storedProcessingMpp = Number(localStorage.getItem('mapng_processing_mpp') || 1);
+const normalizeProcessingMpp = (value) => {
+  const parsed = Number(value);
+  if (!Number.isFinite(parsed) || parsed <= 0) return 1;
+  return Number(parsed.toFixed(10));
+};
+
+const storedProcessingMpp = normalizeProcessingMpp(localStorage.getItem('mapng_processing_mpp') || 1);
 const processingMetersPerPixel = ref(
-  Number.isFinite(storedProcessingMpp) && storedProcessingMpp > 0
-    ? storedProcessingMpp
-    : 1,
+  storedProcessingMpp,
 );
 
 const getEffectiveProcessingMpp = (value = processingMetersPerPixel.value) => {
@@ -330,8 +334,7 @@ const getEffectiveProcessingMpp = (value = processingMetersPerPixel.value) => {
 };
 
 const handleProcessingMetersPerPixelChange = (value) => {
-  const parsed = Number(value);
-  if (!Number.isFinite(parsed) || parsed <= 0) return;
+  const parsed = normalizeProcessingMpp(value);
   processingMetersPerPixel.value = parsed;
   localStorage.setItem('mapng_processing_mpp', String(parsed));
 };

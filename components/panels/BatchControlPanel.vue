@@ -666,7 +666,7 @@ const applyRunConfiguration = (config) => {
 
   const processingMetersPerPixelValue = toNumberOrNull(src.processingMetersPerPixel);
   if (processingMetersPerPixelValue !== null && processingMetersPerPixelValue > 0) {
-    emit('update:processingMetersPerPixel', Math.max(0.05, Math.min(10, processingMetersPerPixelValue)));
+    emit('update:processingMetersPerPixel', processingMetersPerPixelValue);
   }
 
   const rowsValue = toNumberOrNull(src.gridRows);

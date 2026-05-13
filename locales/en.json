@@ -307,7 +307,7 @@
     "largeAreaRamWarning": "Warning: Large area. May require high RAM.",
     "currentScale": "- Current Scale",
     "processingResolutionLabel": "Processing resolution (meters per pixel)",
-    "processingResolutionHint": "Lower m/px means finer detail over a smaller area for the same output size.",
+    "processingResolutionHint": "Enter any positive m/px value (up to 10 decimal places). Lower m/px means finer detail over a smaller area for the same output size.",
     "processingResolutionOptionUltra": "0.25 m/px (Ultra detail)",
     "processingResolutionOptionHigh": "0.5 m/px (High detail)",
     "processingResolutionOptionStandard": "1.0 m/px (Standard)",

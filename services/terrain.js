@@ -20,6 +20,7 @@ import { smoothRoadsInHeightmap } from "./roadSmoother.js";
 const TILE_SIZE = 256;
 export const TERRAIN_ZOOM = 15; // Fixed high detail zoom level for Terrain
 const SATELLITE_ZOOM = 17; // Higher detail zoom level for Satellite (approx 1.2m/px)
+const MIN_SATELLITE_ZOOM = 0;
 const TILE_API_URL = "https://s3.amazonaws.com/elevation-tiles-prod/terrarium";
 const SATELLITE_API_URL =
   "https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile";
@@ -118,6 +119,13 @@ const convertHeightMapToMeters = (heightMap, scale) => {
 const decodeTerrariumHeight = (r, g, b) => {
   const h = r * 256 + g + b / 256 - 32768;
   return h <= -32760 ? NO_DATA_VALUE : h;
+};
+
+const getSatelliteZoomForProcessingMpp = (processingMetersPerPixel = 1) => {
+  const mpp = Number(processingMetersPerPixel);
+  const normalizedMpp = Number.isFinite(mpp) && mpp > 0 ? mpp : 1;
+  const reduction = normalizedMpp > 1 ? Math.floor(normalizedMpp / 4) : 0;
+  return Math.max(MIN_SATELLITE_ZOOM, SATELLITE_ZOOM - reduction);
 };
 
 const createTerrariumHeightSampler = async (
@@ -898,8 +906,9 @@ const canvasToSatelliteBlobUrl = async (srcCanvas) => {
  *   2. USGS 1 m DEM (if useUSGS and location is within CONUS / Alaska / Hawaii)
  *   3. AWS Terrarium global tiles (always fetched as satellite-texture fallback)
  *
- * Satellite texture is always sourced from Esri World Imagery at zoom 17
- * (~1.2 m/px), independent of the elevation source.
+ * Satellite texture is sourced from Esri World Imagery. Base zoom is 17
+ * (~1.2 m/px) and is reduced by floor(processingMetersPerPixel / 4) when
+ * processingMetersPerPixel > 1 to reduce fetch/memory load.
  *
  * Both height and image resampling are performed off-thread via a Web Worker
  * to avoid blocking the main thread during the expensive per-pixel loop.
@@ -948,6 +957,7 @@ export const fetchTerrainData = async (
   const effectiveMetersPerPixel = Number.isFinite(Number(processingMetersPerPixel)) && Number(processingMetersPerPixel) > 0
     ? Number(processingMetersPerPixel)
     : 1;
+  const satelliteZoom = getSatelliteZoomForProcessingMpp(effectiveMetersPerPixel);
 
   // 1. Define Target Metric Grid
   // Resolution is output pixels; meters-per-pixel controls world coverage.
@@ -1074,9 +1084,9 @@ export const fetchTerrainData = async (
   const maxTileX = Math.floor(se.x / TILE_SIZE);
   const maxTileY = Math.floor(se.y / TILE_SIZE);
 
-  // Calculate tile range covering the fetchBounds for Satellite (Z17)
-  const satNw = project(fetchBounds.north, fetchBounds.west, SATELLITE_ZOOM);
-  const satSe = project(fetchBounds.south, fetchBounds.east, SATELLITE_ZOOM);
+  // Calculate tile range covering the fetchBounds for Satellite
+  const satNw = project(fetchBounds.north, fetchBounds.west, satelliteZoom);
+  const satSe = project(fetchBounds.south, fetchBounds.east, satelliteZoom);
 
   const satMinTileX = Math.floor(satNw.x / TILE_SIZE);
   const satMinTileY = Math.floor(satNw.y / TILE_SIZE);
@@ -1183,10 +1193,10 @@ export const fetchTerrainData = async (
         const drawX = (tx - satMinTileX) * TILE_SIZE;
         const drawY = (ty - satMinTileY) * TILE_SIZE;
 
-        const numTiles = Math.pow(2, SATELLITE_ZOOM);
+        const numTiles = Math.pow(2, satelliteZoom);
         const wrappedTx = ((tx % numTiles) + numTiles) % numTiles;
 
-        const satUrl = `${SATELLITE_API_URL}/${SATELLITE_ZOOM}/${ty}/${wrappedTx}`;
+        const satUrl = `${SATELLITE_API_URL}/${satelliteZoom}/${ty}/${wrappedTx}`;
         const sImg = await loadImage(satUrl, signal);
         if (sImg) {
           satTilesSucceeded++;
@@ -1302,7 +1312,7 @@ export const fetchTerrainData = async (
       lat,
       lng,
       satDataImg,
-      SATELLITE_ZOOM,
+      satelliteZoom,
       satMinTileX,
       satMinTileY,
     );
@@ -1328,7 +1338,7 @@ export const fetchTerrainData = async (
     pixels: satDataImg.data,
     width: satDataImg.width,
     height: satDataImg.height,
-    zoom: SATELLITE_ZOOM,
+    zoom: satelliteZoom,
     minTileX: satMinTileX,
     minTileY: satMinTileY,
   };
@@ -1483,6 +1493,7 @@ export const loadTerrainFromTif = async (
   const effectiveMetersPerPixel = Number.isFinite(Number(processingMetersPerPixel)) && Number(processingMetersPerPixel) > 0
     ? Number(processingMetersPerPixel)
     : 1;
+  const satelliteZoom = getSatelliteZoomForProcessingMpp(effectiveMetersPerPixel);
 
   const normalizedCenter = { lat: center.lat, lng: normalizeLng(center.lng) };
   const emitProgress = (update) => onProgress?.(update);
@@ -1522,8 +1533,8 @@ export const loadTerrainFromTif = async (
   }
 
   // ── Satellite tiles (same as fetchTerrainData, no terrain tiles needed) ────
-  const satNw = project(fetchBounds.north, fetchBounds.west, SATELLITE_ZOOM);
-  const satSe = project(fetchBounds.south, fetchBounds.east, SATELLITE_ZOOM);
+  const satNw = project(fetchBounds.north, fetchBounds.west, satelliteZoom);
+  const satSe = project(fetchBounds.south, fetchBounds.east, satelliteZoom);
   const satMinTileX = Math.floor(satNw.x / TILE_SIZE);
   const satMinTileY = Math.floor(satNw.y / TILE_SIZE);
   const satMaxTileX = Math.floor(satSe.x / TILE_SIZE);
@@ -1557,9 +1568,9 @@ export const loadTerrainFromTif = async (
         detail: `${completed}/${satRequests.length} tiles`,
       });
     }
-    const numTiles = Math.pow(2, SATELLITE_ZOOM);
+    const numTiles = Math.pow(2, satelliteZoom);
     const wrappedTx = ((tx % numTiles) + numTiles) % numTiles;
-    const satUrl = `${SATELLITE_API_URL}/${SATELLITE_ZOOM}/${ty}/${wrappedTx}`;
+    const satUrl = `${SATELLITE_API_URL}/${satelliteZoom}/${ty}/${wrappedTx}`;
     const sImg = await loadImage(satUrl, signal);
     const drawX = (tx - satMinTileX) * TILE_SIZE;
     const drawY = (ty - satMinTileY) * TILE_SIZE;
@@ -1569,7 +1580,7 @@ export const loadTerrainFromTif = async (
 
   const satDataImg = sCtx.getImageData(0, 0, satCanvas.width, satCanvas.height);
   const colorSampler = (lat, lng) => {
-    const p = project(lat, lng, SATELLITE_ZOOM);
+    const p = project(lat, lng, satelliteZoom);
     const localX = p.x - satMinTileX * TILE_SIZE;
     const localY = p.y - satMinTileY * TILE_SIZE;
     const x = Math.floor(localX);
@@ -1594,7 +1605,7 @@ export const loadTerrainFromTif = async (
       pixels: satDataImg.data,
       width: satDataImg.width,
       height: satDataImg.height,
-      zoom: SATELLITE_ZOOM,
+      zoom: satelliteZoom,
       minTileX: satMinTileX,
       minTileY: satMinTileY,
     };
@@ -1670,7 +1681,7 @@ export const loadTerrainFromTif = async (
       pixels: satDataImg.data,
       width: satDataImg.width,
       height: satDataImg.height,
-      zoom: SATELLITE_ZOOM,
+      zoom: satelliteZoom,
       minTileX: satMinTileX,
       minTileY: satMinTileY,
     };
@@ -1789,6 +1800,7 @@ export const loadTerrainFromLaz = async (
   const effectiveMetersPerPixel = Number.isFinite(Number(processingMetersPerPixel)) && Number(processingMetersPerPixel) > 0
     ? Number(processingMetersPerPixel)
     : 1;
+  const satelliteZoom = getSatelliteZoomForProcessingMpp(effectiveMetersPerPixel);
 
   const normalizedCenter = { lat: center.lat, lng: normalizeLng(center.lng) };
 
@@ -1830,8 +1842,8 @@ export const loadTerrainFromLaz = async (
   }
 
   // ── Satellite tiles ───────────────────────────────────────────────────────
-  const satNw = project(fetchBounds.north, fetchBounds.west, SATELLITE_ZOOM);
-  const satSe = project(fetchBounds.south, fetchBounds.east, SATELLITE_ZOOM);
+  const satNw = project(fetchBounds.north, fetchBounds.west, satelliteZoom);
+  const satSe = project(fetchBounds.south, fetchBounds.east, satelliteZoom);
   const satMinTileX   = Math.floor(satNw.x / TILE_SIZE);
   const satMinTileY   = Math.floor(satNw.y / TILE_SIZE);
   const satMaxTileX   = Math.floor(satSe.x / TILE_SIZE);
@@ -1856,9 +1868,9 @@ export const loadTerrainFromLaz = async (
     completed++;
     if (completed % 10 === 0 || completed === satRequests.length)
       onProgress?.(`Downloaded ${completed}/${satRequests.length} satellite tiles...`);
-    const numTiles  = Math.pow(2, SATELLITE_ZOOM);
+    const numTiles  = Math.pow(2, satelliteZoom);
     const wrappedTx = ((tx % numTiles) + numTiles) % numTiles;
-    const satUrl    = `${SATELLITE_API_URL}/${SATELLITE_ZOOM}/${ty}/${wrappedTx}`;
+    const satUrl    = `${SATELLITE_API_URL}/${satelliteZoom}/${ty}/${wrappedTx}`;
     const sImg = await loadImage(satUrl, signal);
     const drawX = (tx - satMinTileX) * TILE_SIZE;
     const drawY = (ty - satMinTileY) * TILE_SIZE;
@@ -1868,7 +1880,7 @@ export const loadTerrainFromLaz = async (
 
   const satDataImg   = sCtx.getImageData(0, 0, satCanvas.width, satCanvas.height);
   const colorSampler = (lat, lng) => {
-    const p = project(lat, lng, SATELLITE_ZOOM);
+    const p = project(lat, lng, satelliteZoom);
     const localX = p.x - satMinTileX * TILE_SIZE;
     const localY = p.y - satMinTileY * TILE_SIZE;
     const x = Math.floor(localX);
@@ -1923,7 +1935,7 @@ export const loadTerrainFromLaz = async (
     pixels:   satDataImg.data,
     width:    satDataImg.width,
     height:   satDataImg.height,
-    zoom:     SATELLITE_ZOOM,
+    zoom:     satelliteZoom,
     minTileX: satMinTileX,
     minTileY: satMinTileY,
   };
