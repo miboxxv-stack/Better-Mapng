@@ -1612,6 +1612,7 @@ export const loadTerrainFromTif = async (
     const source = uploadedRasterData.sourceType === 'grid'
       ? { type: 'grid', data: { tiles: uploadedRasterData.gridTiles || [] } }
       : { type: 'geotiff', data: [{ image: uploadedRasterData.image, raster: uploadedRasterData.raster }] };
+    const skipGapExpansion = String(uploadedRasterData.sourceFormat || '').toLowerCase() === 'gml-zip';
     const result = await resampleHeightAndImageOffThread(
       source,
       colorSampler,
@@ -1632,6 +1633,7 @@ export const loadTerrainFromTif = async (
           : null,
         stage: progress.stage || null,
       }),
+      !skipGapExpansion,
     );
     heightMap = result.heightMap;
     finalBounds = result.bounds;
@@ -2042,6 +2044,42 @@ export const loadTerrainFromUploadedElevation = async (
 ) => {
   const format = String(uploadedElevationData?.sourceFormat || '').toLowerCase();
   const sourceType = String(uploadedElevationData?.sourceType || '').toLowerCase();
+  const isVectorBoundsUpload = sourceType === 'vector' || format === 'gml-vector';
+
+  if (isVectorBoundsUpload) {
+    const {
+      processingMetersPerPixel = 1,
+      targetBounds = null,
+      preferNativeCoverage = true,
+      enhanceRoads = false,
+      levelRoads = false,
+    } = generationOptions || {};
+
+    const bounds = targetBounds
+      || (preferNativeCoverage ? uploadedElevationData?.bounds || null : null);
+    const effectiveCenter = uploadedElevationData?.center || center;
+    onProgress?.('Detected vector GML upload. Using its bounds with global terrain elevation data...');
+
+    return fetchTerrainData(
+      effectiveCenter,
+      resolution,
+      includeOSM,
+      false,
+      false,
+      false,
+      '',
+      undefined,
+      onProgress,
+      signal,
+      {
+        processingMetersPerPixel,
+        targetBounds: bounds,
+        enhanceRoads,
+        levelRoads,
+      },
+    );
+  }
+
   // Prefer explicit format tags, but keep fallbacks for older metadata objects.
   const hasLazHeaderShape = Number.isFinite(Number(uploadedElevationData?.pointFormat))
     && Number.isFinite(Number(uploadedElevationData?.pointDataRecordLength));

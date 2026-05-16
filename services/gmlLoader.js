@@ -70,6 +70,43 @@ const parseNumberList = (text) => {
     .filter((value) => Number.isFinite(value));
 };
 
+const detectVectorGeometryType = (node) => {
+  if (!node || typeof node !== 'object') return null;
+  const hit = findFirstNode(node, (key) => (
+    key === 'LineString'
+    || key === 'MultiLineString'
+    || key === 'Polygon'
+    || key === 'MultiPolygon'
+    || key === 'Point'
+    || key === 'MultiPoint'
+    || key === 'Curve'
+    || key === 'Surface'
+  ));
+  if (!hit) return null;
+
+  const byName = findFirstNode(node, (key) => (
+    key === 'LineString'
+    || key === 'MultiLineString'
+    || key === 'Polygon'
+    || key === 'MultiPolygon'
+    || key === 'Point'
+    || key === 'MultiPoint'
+    || key === 'Curve'
+    || key === 'Surface'
+  ));
+
+  if (!byName) return 'vector';
+  if (findFirstNode(node, (key) => key === 'LineString')) return 'LineString';
+  if (findFirstNode(node, (key) => key === 'MultiLineString')) return 'MultiLineString';
+  if (findFirstNode(node, (key) => key === 'Polygon')) return 'Polygon';
+  if (findFirstNode(node, (key) => key === 'MultiPolygon')) return 'MultiPolygon';
+  if (findFirstNode(node, (key) => key === 'Point')) return 'Point';
+  if (findFirstNode(node, (key) => key === 'MultiPoint')) return 'MultiPoint';
+  if (findFirstNode(node, (key) => key === 'Curve')) return 'Curve';
+  if (findFirstNode(node, (key) => key === 'Surface')) return 'Surface';
+  return 'vector';
+};
+
 const getTupleNumericValue = (chunk) => {
   if (!chunk) return GML_NO_DATA;
   const pieces = String(chunk)
@@ -188,6 +225,107 @@ const parseEnvelopeBounds = (coverageNode) => {
   return {
     bounds: { north, south, east, west },
     srsName: envelope['@_srsName'] || null,
+  };
+};
+
+const parseFeatureCollectionBounds = (xml) => {
+  const box = findFirstNode(xml, (key) => key === 'Box');
+  if (box) {
+    const coords = asArray(box.coord)
+      .map((coord) => {
+        const x = Number(getNodeText(coord?.X));
+        const y = Number(getNodeText(coord?.Y));
+        return Number.isFinite(x) && Number.isFinite(y) ? { x, y } : null;
+      })
+      .filter(Boolean);
+
+    if (coords.length >= 2) {
+      const xs = coords.map((entry) => entry.x);
+      const ys = coords.map((entry) => entry.y);
+      const bounds = {
+        north: Math.max(...ys),
+        south: Math.min(...ys),
+        east: Math.max(...xs),
+        west: Math.min(...xs),
+      };
+      if (
+        Number.isFinite(bounds.north)
+        && Number.isFinite(bounds.south)
+        && Number.isFinite(bounds.east)
+        && Number.isFinite(bounds.west)
+      ) {
+        return bounds;
+      }
+    }
+  }
+
+  // Fallback for simple vector GML that only stores a coordinate list.
+  const coordText = getNodeText(findFirstNode(xml, (key) => key === 'coordinates'));
+  if (coordText) {
+    let west = Infinity;
+    let east = -Infinity;
+    let south = Infinity;
+    let north = -Infinity;
+
+    const tuples = String(coordText).trim().split(/\s+/);
+    for (const tuple of tuples) {
+      const [xStr, yStr] = tuple.split(',');
+      const x = Number(xStr);
+      const y = Number(yStr);
+      if (!Number.isFinite(x) || !Number.isFinite(y)) continue;
+      if (x < west) west = x;
+      if (x > east) east = x;
+      if (y < south) south = y;
+      if (y > north) north = y;
+    }
+
+    if ([west, east, south, north].every(Number.isFinite)) {
+      return { north, south, east, west };
+    }
+  }
+
+  return null;
+};
+
+const parseVectorFeatureCollection = (xml, fileSize = 0) => {
+  const geometryType = detectVectorGeometryType(xml) || 'vector';
+  const bounds = parseFeatureCollectionBounds(xml);
+  if (!bounds) {
+    throw new Error(
+      `Unsupported GML: detected ${geometryType} FeatureCollection data but could not determine bounds. `
+      + 'Upload DEM GridCoverage/RectifiedGrid GML, ASC, or GeoTIFF.',
+    );
+  }
+
+  const summary = summarizeCoverageBounds(bounds);
+  const lineStringNode = findFirstNode(xml, (key, value) => key === 'LineString' && value && typeof value === 'object');
+  const srsName = lineStringNode?.['@_srsName'] || null;
+  const epsgCode = parseEpsgCode(srsName);
+  const featureMembers = asArray(findFirstNode(xml, (key) => key === 'featureMember'));
+
+  return {
+    sourceType: 'vector',
+    sourceFormat: 'gml-vector',
+    formatLabel: 'GML Vector',
+    raster: null,
+    sourceWidth: null,
+    sourceHeight: null,
+    noData: GML_NO_DATA,
+    epsgCode,
+    isGeoTiff: false,
+    isGeoReferenced: true,
+    bounds,
+    center: summary.center,
+    nativeWidth: summary.nativeWidth,
+    nativeHeight: summary.nativeHeight,
+    suggestedResolution: summary.suggestedResolution,
+    nativeMetersPerPixel: summary.nativeMetersPerPixel,
+    fileSize,
+    verticalUnitDetected: UNIT_UNKNOWN,
+    verticalUnitDetectionSource: null,
+    gridTiles: [],
+    vectorGeometryType: geometryType,
+    sourceFileCount: Math.max(1, featureMembers.length || 0),
   };
 };
 
@@ -452,6 +590,11 @@ const parseGmlCoverageText = async (text, fileSize = 0) => {
     return !!findFirstNode(value, (childKey) => childKey === 'Grid' || childKey === 'RectifiedGrid');
   });
   if (!coverage) {
+    const hasFeatureCollection = !!findFirstNode(xml, (key) => key === 'FeatureCollection');
+    const hasFeatureMember = !!findFirstNode(xml, (key) => key === 'featureMember' || key === 'featureMembers');
+    if (hasFeatureCollection || hasFeatureMember) {
+      return parseVectorFeatureCollection(xml, fileSize);
+    }
     throw new Error('Unsupported GML: expected a grid coverage.');
   }
   const parsed = await parseGridCoverageNode(coverage, fileSize);
@@ -466,7 +609,12 @@ export const parseGmlText = async (text) => parseGmlCoverageText(text, 0);
 
 export const parseGmlFile = async (file) => {
   const text = await file.text();
-  return parseGmlCoverageText(text, file.size);
+  try {
+    return await parseGmlCoverageText(text, file.size);
+  } catch (error) {
+    const message = error instanceof Error ? error.message : String(error);
+    throw new Error(`${file.name}: ${message}`);
+  }
 };
 
 export const parseGmlZipFile = async (file) => {
@@ -482,7 +630,13 @@ export const parseGmlZipFile = async (file) => {
   for (const entry of entries) {
     const text = await entry.async('text');
     if (!isLikelyGmlText(text)) continue;
-    parsedSources.push(await parseGmlCoverageText(text, entry._data?.uncompressedSize || 0));
+    try {
+      parsedSources.push(await parseGmlCoverageText(text, entry._data?.uncompressedSize || 0));
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error);
+      if (message.includes('not an elevation grid coverage')) continue;
+      throw new Error(`${entry.name}: ${message}`);
+    }
   }
 
   return combineParsedGridSources(parsedSources, file.size);

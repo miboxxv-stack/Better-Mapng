@@ -193,7 +193,17 @@ const prepareGridTiles = (sourceData) => {
  * @param {object|null} fallbackData - { pixels, width, height, zoom, minTileX, minTileY }
  */
 export const resampleHeightMapOffThread = async (
-    source, center, width, height, interpolation, smooth, fallbackData, fillHoles = true, targetBounds = null, onProgress = null
+    source,
+    center,
+    width,
+    height,
+    interpolation,
+    smooth,
+    fallbackData,
+    fillHoles = true,
+    targetBounds = null,
+    onProgress = null,
+    expandFilledGaps = true,
 ) => {
     // Attempt worker path
     if (getWorker()) {
@@ -239,6 +249,7 @@ export const resampleHeightMapOffThread = async (
                 targetBounds,
                 smooth,
                 fillHoles,
+                expandFilledGaps,
                 tiles: tilesForWorker,
                 fallback: fallbackForWorker,
                 epsgDefs,
@@ -253,7 +264,7 @@ export const resampleHeightMapOffThread = async (
     }
 
     // Fallback: main thread
-    return resampleToMeterGrid(source, center, width, height, interpolation, smooth, fillHoles, targetBounds);
+    return resampleToMeterGrid(source, center, width, height, interpolation, smooth, fillHoles, targetBounds, expandFilledGaps);
 };
 
 export const resampleHeightAndImageOffThread = async (
@@ -269,6 +280,7 @@ export const resampleHeightAndImageOffThread = async (
     imageSourceData,
     targetBounds = null,
     onProgress = null,
+    expandFilledGaps = true,
 ) => {
     if (getWorker() && imageSourceData) {
         try {
@@ -314,6 +326,7 @@ export const resampleHeightAndImageOffThread = async (
                 targetBounds,
                 smooth,
                 fillHoles,
+                expandFilledGaps,
                 tiles: tilesForWorker,
                 fallback: fallbackForWorker,
                 epsgDefs,
@@ -356,6 +369,7 @@ export const resampleHeightAndImageOffThread = async (
             fillHoles,
             targetBounds,
             onProgress,
+            expandFilledGaps,
         ),
         Promise.resolve(safeImageSampler
             ? resampleImageToMeterGrid({ sampler: safeImageSampler }, center, width, height, targetBounds)

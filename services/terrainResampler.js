@@ -257,7 +257,8 @@ export const resampleToMeterGrid = async (
     _interpolation = 'bilinear',
     smooth = false,
     fillHoles = true,
-    targetBounds = null
+    targetBounds = null,
+    expandFilledGaps = true,
 ) => {
     
     const heightMap = new Float32Array(width * height);
@@ -442,9 +443,15 @@ export const resampleToMeterGrid = async (
         console.debug('[Resampler] Hole filling enabled: starting push/pull seed');
         const seededMask = pushPullInpaint(heightMap, width, height, -99999);
         console.debug('[Resampler] Push/pull seed complete');
-        const expandedMask = expandFill(heightMap, width, height, -99999, 64, 3, seededMask);
-        console.debug('[Resampler] Expand fill complete');
-        relaxFilled(heightMap, width, height, -99999, expandedMask || seededMask, 200);
+        let relaxMask = seededMask;
+        if (expandFilledGaps) {
+            const expandedMask = expandFill(heightMap, width, height, -99999, 64, 3, seededMask);
+            console.debug('[Resampler] Expand fill complete');
+            relaxMask = expandedMask || seededMask;
+        } else {
+            console.debug('[Resampler] Expand fill skipped');
+        }
+        relaxFilled(heightMap, width, height, -99999, relaxMask, 200);
         console.debug('[Resampler] Relaxation complete');
     }
 

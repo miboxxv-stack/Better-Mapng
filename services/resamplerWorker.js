@@ -654,7 +654,16 @@ const smoothHeightMap = (heightMap, width, height, noData) => {
  *  1. Hole filling  — pushPull seed → expandFill propagation → Laplacian relax
  *  2. Smoothing     — separable box blur (GPXZ coarse-data mode only)
  */
-const finalizeHeightMap = (heightMap, width, height, noData, smooth, fillHoles, reportProgress = null) => {
+const finalizeHeightMap = (
+    heightMap,
+    width,
+    height,
+    noData,
+    smooth,
+    fillHoles,
+    expandFilledGaps = true,
+    reportProgress = null,
+) => {
     if (fillHoles) {
         const noDataCoverage = measureNoDataCoverage(heightMap, noData);
         if (noDataCoverage.ratio >= LARGE_HOLE_SKIP_RATIO) {
@@ -684,9 +693,15 @@ const finalizeHeightMap = (heightMap, width, height, noData, smooth, fillHoles, 
             });
             return;
         }
-        reportProgress?.({ stage: 'finalize', message: 'Expanding filled gaps...', current: 2, total: 3, force: true });
-        const expandedMask = expandFill(heightMap, width, height, noData, 64, 3, seededMask);
-        relaxFilled(heightMap, width, height, noData, expandedMask || seededMask, 200);
+        let relaxMask = seededMask;
+        if (expandFilledGaps) {
+            reportProgress?.({ stage: 'finalize', message: 'Expanding filled gaps...', current: 2, total: 3, force: true });
+            const expandedMask = expandFill(heightMap, width, height, noData, 64, 3, seededMask);
+            relaxMask = expandedMask || seededMask;
+        } else {
+            reportProgress?.({ stage: 'finalize', message: 'Skipping gap expansion for uploaded elevation.', current: 2, total: 3, force: true });
+        }
+        relaxFilled(heightMap, width, height, noData, relaxMask, 200);
     }
 
     if (smooth) {
@@ -697,7 +712,7 @@ const finalizeHeightMap = (heightMap, width, height, noData, smooth, fillHoles, 
     }
 };
 
-const resampleHeight = async ({ id, center, width, height, targetBounds = null, smooth, fillHoles = true, tiles, fallback, epsgDefs }) => {
+const resampleHeight = async ({ id, center, width, height, targetBounds = null, smooth, fillHoles = true, expandFilledGaps = true, tiles, fallback, epsgDefs }) => {
     const heightMap = new Float32Array(width * height);
     const toWGS84 = createLocalToWGS84(center.lat, center.lng);
 
@@ -727,7 +742,7 @@ const resampleHeight = async ({ id, center, width, height, targetBounds = null, 
         }
     }
 
-    finalizeHeightMap(heightMap, width, height, NO_DATA, smooth, fillHoles, reportProgress);
+    finalizeHeightMap(heightMap, width, height, NO_DATA, smooth, fillHoles, expandFilledGaps, reportProgress);
 
     return {
         heightMap,
@@ -735,7 +750,7 @@ const resampleHeight = async ({ id, center, width, height, targetBounds = null, 
     };
 };
 
-const resampleHeightAndImage = async ({ id, center, width, height, targetBounds = null, smooth, fillHoles = true, tiles, fallback, epsgDefs, imageSource }) => {
+const resampleHeightAndImage = async ({ id, center, width, height, targetBounds = null, smooth, fillHoles = true, expandFilledGaps = true, tiles, fallback, epsgDefs, imageSource }) => {
     const heightMap = new Float32Array(width * height);
     const rgbaBuffer = new Uint8ClampedArray(width * height * 4);
     const toWGS84 = createLocalToWGS84(center.lat, center.lng);
@@ -778,7 +793,7 @@ const resampleHeightAndImage = async ({ id, center, width, height, targetBounds 
         }
     }
 
-    finalizeHeightMap(heightMap, width, height, NO_DATA, smooth, fillHoles, reportProgress);
+    finalizeHeightMap(heightMap, width, height, NO_DATA, smooth, fillHoles, expandFilledGaps, reportProgress);
 
     return {
         heightMap,
