@@ -85,6 +85,24 @@ const rows = computed(() => {
     list.push({ label: 'Native coverage grid', value: `${m.nativeWidth} × ${m.nativeHeight} px` });
   }
 
+  if (String(m.sourceFormat || '').toLowerCase() === 'gml-zip') {
+    if (Number.isFinite(m.zipOverallGridWidthPx) && Number.isFinite(m.zipOverallGridHeightPx)) {
+      list.push({ label: 'ZIP overall grid', value: `${m.zipOverallGridWidthPx} × ${m.zipOverallGridHeightPx} px` });
+    }
+    if (Number.isFinite(m.tileGridColumns) && Number.isFinite(m.tileGridRows)) {
+      list.push({ label: 'ZIP tile layout', value: `${m.tileGridColumns} × ${m.tileGridRows}` });
+    }
+    if (Number.isFinite(m.sourceFileCount)) {
+      list.push({ label: 'ZIP tiles present', value: `${m.sourceFileCount}` });
+    }
+    if (Number.isFinite(m.expectedTileCount)) {
+      list.push({ label: 'ZIP tiles expected', value: `${m.expectedTileCount}` });
+    }
+    if (Number.isFinite(m.missingTileCount)) {
+      list.push({ label: 'ZIP tiles missing', value: `${m.missingTileCount}` });
+    }
+  }
+
   if (m.suggestedResolution) {
     list.push({ label: 'Suggested square export (optional)', value: `${m.suggestedResolution} × ${m.suggestedResolution} px` });
   }

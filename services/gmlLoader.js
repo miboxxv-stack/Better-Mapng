@@ -287,6 +287,168 @@ const parseFeatureCollectionBounds = (xml) => {
   return null;
 };
 
+const inferAxisStep = (values) => {
+  const unique = [...new Set(values
+    .filter((value) => Number.isFinite(value))
+    .map((value) => Number(value.toFixed(9))))]
+    .sort((a, b) => a - b);
+  if (unique.length <= 1) return null;
+  const diffs = [];
+  for (let index = 1; index < unique.length; index++) {
+    const delta = Math.abs(unique[index] - unique[index - 1]);
+    if (delta > 1e-9) diffs.push(delta);
+  }
+  if (!diffs.length) return null;
+  diffs.sort((a, b) => a - b);
+  return diffs[Math.floor(diffs.length / 2)] || null;
+};
+
+const estimateZipTileLayout = (tiles) => {
+  if (!Array.isArray(tiles) || !tiles.length) {
+    return {
+      tileGridColumns: null,
+      tileGridRows: null,
+      expectedTileCount: null,
+      missingTileCount: null,
+      overallGridWidthPx: null,
+      overallGridHeightPx: null,
+      zipTileBounds: [],
+      zipMissingTileBounds: [],
+    };
+  }
+
+  const originsX = tiles.map((tile) => Number(tile.originX)).filter(Number.isFinite);
+  const originsY = tiles.map((tile) => Number(tile.originY)).filter(Number.isFinite);
+  const stepX = inferAxisStep(originsX);
+  const stepY = inferAxisStep(originsY);
+
+  const minX = originsX.length ? Math.min(...originsX) : null;
+  const maxX = originsX.length ? Math.max(...originsX) : null;
+  const minY = originsY.length ? Math.min(...originsY) : null;
+  const maxY = originsY.length ? Math.max(...originsY) : null;
+
+  const uniqueX = [...new Set(originsX.map((value) => Number(value.toFixed(9))))].sort((a, b) => a - b);
+  const uniqueY = [...new Set(originsY.map((value) => Number(value.toFixed(9))))].sort((a, b) => a - b);
+  const xLookup = new Map(uniqueX.map((value, index) => [value, index]));
+  const yLookup = new Map(uniqueY.map((value, index) => [value, index]));
+
+  const tileGridColumns = Number.isFinite(minX) && Number.isFinite(maxX) && stepX
+    ? Math.max(1, Math.round((maxX - minX) / stepX) + 1)
+    : uniqueX.length || null;
+  const tileGridRows = Number.isFinite(minY) && Number.isFinite(maxY) && stepY
+    ? Math.max(1, Math.round((maxY - minY) / stepY) + 1)
+    : uniqueY.length || null;
+
+  const expectedTileCount = Number.isFinite(tileGridColumns) && Number.isFinite(tileGridRows)
+    ? tileGridColumns * tileGridRows
+    : null;
+  const missingTileCount = Number.isFinite(expectedTileCount)
+    ? Math.max(0, expectedTileCount - tiles.length)
+    : null;
+
+  const sampleWidths = tiles.map((tile) => Number(tile.width)).filter((value) => Number.isFinite(value) && value > 0);
+  const sampleHeights = tiles.map((tile) => Number(tile.height)).filter((value) => Number.isFinite(value) && value > 0);
+  const representativeWidth = sampleWidths.length
+    ? sampleWidths.sort((a, b) => a - b)[Math.floor(sampleWidths.length / 2)]
+    : null;
+  const representativeHeight = sampleHeights.length
+    ? sampleHeights.sort((a, b) => a - b)[Math.floor(sampleHeights.length / 2)]
+    : null;
+  const overallGridWidthPx = Number.isFinite(tileGridColumns) && Number.isFinite(representativeWidth)
+    ? Math.round(tileGridColumns * Math.max(1, representativeWidth - 1) + 1)
+    : null;
+  const overallGridHeightPx = Number.isFinite(tileGridRows) && Number.isFinite(representativeHeight)
+    ? Math.round(tileGridRows * Math.max(1, representativeHeight - 1) + 1)
+    : null;
+
+  const zipTileBounds = tiles.map((tile, index) => {
+    const originX = Number(tile.originX);
+    const originY = Number(tile.originY);
+    const col = Number.isFinite(originX) && Number.isFinite(minX) && stepX
+      ? Math.round((originX - minX) / stepX)
+      : xLookup.get(Number(originX.toFixed(9))) ?? null;
+    const row = Number.isFinite(originY) && Number.isFinite(minY) && stepY
+      ? Math.round((originY - minY) / stepY)
+      : yLookup.get(Number(originY.toFixed(9))) ?? null;
+    const label = Number.isFinite(row) && Number.isFinite(col)
+      ? `R${row + 1}C${col + 1}`
+      : `Tile ${index + 1}`;
+
+    return {
+      index,
+      row: Number.isFinite(row) ? row : null,
+      col: Number.isFinite(col) ? col : null,
+      label,
+      sourceName: tile.sourceName || `tile-${index + 1}`,
+      bounds: tile.bounds || null,
+    };
+  });
+
+  const occupied = new Set(
+    zipTileBounds
+      .filter((tile) => Number.isFinite(tile.row) && Number.isFinite(tile.col))
+      .map((tile) => `${tile.row}:${tile.col}`),
+  );
+
+  // Build row/column bound hints from known tiles so missing cells can be shown on map.
+  const rowBounds = new Map();
+  const colBounds = new Map();
+  for (const tile of zipTileBounds) {
+    if (!tile?.bounds) continue;
+    if (Number.isFinite(tile.row) && !rowBounds.has(tile.row)) {
+      rowBounds.set(tile.row, {
+        north: Number(tile.bounds.north),
+        south: Number(tile.bounds.south),
+      });
+    }
+    if (Number.isFinite(tile.col) && !colBounds.has(tile.col)) {
+      colBounds.set(tile.col, {
+        west: Number(tile.bounds.west),
+        east: Number(tile.bounds.east),
+      });
+    }
+  }
+
+  const zipMissingTileBounds = [];
+  if (Number.isFinite(tileGridRows) && Number.isFinite(tileGridColumns) && tileGridRows > 0 && tileGridColumns > 0) {
+    for (let row = 0; row < tileGridRows; row++) {
+      for (let col = 0; col < tileGridColumns; col++) {
+        const key = `${row}:${col}`;
+        if (occupied.has(key)) continue;
+
+        const r = rowBounds.get(row);
+        const c = colBounds.get(col);
+        const bounds = (r && c)
+          ? {
+              north: r.north,
+              south: r.south,
+              west: c.west,
+              east: c.east,
+            }
+          : null;
+
+        zipMissingTileBounds.push({
+          row,
+          col,
+          label: `R${row + 1}C${col + 1}`,
+          bounds,
+        });
+      }
+    }
+  }
+
+  return {
+    tileGridColumns,
+    tileGridRows,
+    expectedTileCount,
+    missingTileCount,
+    overallGridWidthPx,
+    overallGridHeightPx,
+    zipTileBounds,
+    zipMissingTileBounds,
+  };
+};
+
 const parseVectorFeatureCollection = (xml, fileSize = 0) => {
   const geometryType = detectVectorGeometryType(xml) || 'vector';
   const bounds = parseFeatureCollectionBounds(xml);
@@ -334,7 +496,11 @@ const combineParsedGridSources = (sources, fileSize = 0) => {
     throw new Error('Unsupported GML ZIP: no supported GML coverage files found.');
   }
 
-  const gridTiles = sources.flatMap((source) => source.gridTiles || []);
+  const gridTiles = sources.flatMap((source) => (source.gridTiles || []).map((tile) => ({
+    ...tile,
+    sourceName: source.sourceName || null,
+    bounds: source.bounds || null,
+  })));
   if (!gridTiles.length) {
     throw new Error('Unsupported GML ZIP: no grid tiles were parsed.');
   }
@@ -351,6 +517,7 @@ const combineParsedGridSources = (sources, fileSize = 0) => {
   const summary = summarizeCoverageBounds(bounds);
   const epsgCodes = [...new Set(sources.map((source) => source.epsgCode).filter((code) => Number.isFinite(code)))];
   const verticalUnits = [...new Set(sources.map((source) => source.verticalUnitDetected).filter((unit) => unit && unit !== UNIT_UNKNOWN))];
+  const tileStats = estimateZipTileLayout(gridTiles);
 
   return {
     sourceType: 'grid',
@@ -374,6 +541,14 @@ const combineParsedGridSources = (sources, fileSize = 0) => {
     verticalUnitDetectionSource: verticalUnits.length === 1 ? 'GML ZIP metadata' : null,
     gridTiles,
     sourceFileCount: sources.length,
+    tileGridColumns: tileStats.tileGridColumns,
+    tileGridRows: tileStats.tileGridRows,
+    expectedTileCount: tileStats.expectedTileCount,
+    missingTileCount: tileStats.missingTileCount,
+    zipOverallGridWidthPx: tileStats.overallGridWidthPx,
+    zipOverallGridHeightPx: tileStats.overallGridHeightPx,
+    zipTileBounds: tileStats.zipTileBounds,
+    zipMissingTileBounds: tileStats.zipMissingTileBounds,
   };
 };
 
@@ -397,11 +572,17 @@ const fillRasterFromStartPoint = ({
 
   const startIndex = (startY - low[1]) * sourceWidth + (startX - low[0]);
   const writableCount = raster.length - startIndex;
+  const writeCount = Math.min(rangeValues.length, writableCount);
   if (rangeValues.length < writableCount) {
-    throw new Error(`Unsupported GML: expected ${writableCount} elevation values from startPoint, found ${rangeValues.length}.`);
+    // Some producer variants provide a partial trailing stream from startPoint.
+    // Keep remaining cells as no-data instead of failing the whole tile.
+    console.info(
+      `[gmlLoader] Partial tupleList from startPoint: expected ${writableCount}, got ${rangeValues.length}. `
+      + 'Remaining cells are kept as no-data.',
+    );
   }
 
-  for (let index = 0; index < writableCount; index++) {
+  for (let index = 0; index < writeCount; index++) {
     const value = rangeValues[index];
     raster[startIndex + index] = Number.isFinite(value) ? value : GML_NO_DATA;
   }
@@ -631,10 +812,12 @@ export const parseGmlZipFile = async (file) => {
     const text = await entry.async('text');
     if (!isLikelyGmlText(text)) continue;
     try {
-      parsedSources.push(await parseGmlCoverageText(text, entry._data?.uncompressedSize || 0));
+      const parsed = await parseGmlCoverageText(text, entry._data?.uncompressedSize || 0);
+      if (parsed?.sourceType !== 'grid') continue;
+      parsed.sourceName = entry.name;
+      parsedSources.push(parsed);
     } catch (error) {
       const message = error instanceof Error ? error.message : String(error);
-      if (message.includes('not an elevation grid coverage')) continue;
       throw new Error(`${entry.name}: ${message}`);
     }
   }

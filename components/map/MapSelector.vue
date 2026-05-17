@@ -60,6 +60,36 @@
       />
 
       <l-rectangle
+        v-for="tile in uploadedCoverageTiles"
+        v-if="showUploadedTileZones && !hasBatchGrid"
+        :key="`uploaded-zip-tile-${tile.index}`"
+        :bounds="[[tile.bounds.south, tile.bounds.west], [tile.bounds.north, tile.bounds.east]]"
+        color="#60A5FA"
+        :weight="1"
+        :fill-opacity="0.02"
+        :options="{ dashArray: '3, 4', lineCap: 'round' }"
+      >
+        <l-tooltip :permanent="false" direction="top" :offset="[0, -6]">
+          {{ tile.label }}
+        </l-tooltip>
+      </l-rectangle>
+
+      <l-rectangle
+        v-for="tile in uploadedMissingTiles"
+        v-if="showUploadedTileZones && !hasBatchGrid"
+        :key="`uploaded-zip-missing-${tile.row}-${tile.col}`"
+        :bounds="[[tile.bounds.south, tile.bounds.west], [tile.bounds.north, tile.bounds.east]]"
+        color="#EF4444"
+        :weight="1.5"
+        :fill-opacity="0.08"
+        :options="{ dashArray: '2, 6', lineCap: 'round' }"
+      >
+        <l-tooltip :permanent="false" direction="top" :offset="[0, -6]">
+          Missing {{ tile.label }}
+        </l-tooltip>
+      </l-rectangle>
+
+      <l-rectangle
         v-if="uploadedCropBounds && !hasBatchGrid"
         :bounds="[[uploadedCropBounds.south, uploadedCropBounds.west], [uploadedCropBounds.north, uploadedCropBounds.east]]"
         color="#FF6600"
@@ -294,6 +324,30 @@ const nativeCoverageBounds = computed(() => {
 });
 
 const showUploadedCoverageBounds = computed(() => !!nativeCoverageBounds.value);
+
+const uploadedCoverageTiles = computed(() => {
+  const tiles = props.uploadedElevationMeta?.zipTileBounds;
+  if (!Array.isArray(tiles)) return [];
+  return tiles.filter((tile) => {
+    const b = tile?.bounds;
+    return b && [b.north, b.south, b.east, b.west].every((value) => Number.isFinite(value));
+  });
+});
+
+const uploadedMissingTiles = computed(() => {
+  const tiles = props.uploadedElevationMeta?.zipMissingTileBounds;
+  if (!Array.isArray(tiles)) return [];
+  return tiles.filter((tile) => {
+    const b = tile?.bounds;
+    return b && [b.north, b.south, b.east, b.west].every((value) => Number.isFinite(value));
+  });
+});
+
+const showUploadedTileZones = computed(() => {
+  if (!showUploadedCoverageBounds.value) return false;
+  const format = String(props.uploadedElevationMeta?.sourceFormat || '').toLowerCase();
+  return format === 'gml-zip' && uploadedCoverageTiles.value.length > 1;
+});
 
 const uploadedCropBounds = computed(() => {
   if (!nativeCoverageBounds.value || props.uploadedAreaMode !== 'crop') return null;
