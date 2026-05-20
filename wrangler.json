@@ -2,6 +2,7 @@
   "name": "mapng",
   "main": "worker.js",
   "compatibility_date": "2024-11-19",
+  "preview_urls": true,
   "assets": {
     "directory": "./public",
     "binding": "ASSETS"
