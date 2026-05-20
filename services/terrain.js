@@ -5,6 +5,7 @@ export { parseRasterOrGridElevationFile };
 export { parseTifFile };
 import { parseLazFile } from "./lazLoader";
 export { parseLazFile };
+import { parseAscFiles } from './ascLoader.js';
 import { rasterizeLazOffThread } from "./lazClient";
 import { generateOSMTexture, generateHybridTexture } from "./osmTexture";
 import * as GeoTIFF from "geotiff";
@@ -385,7 +386,24 @@ const NO_DATA_VALUE = -99999;
  * - Point cloud: .laz, .las
  * - Raster/text: .tif, .tiff, .asc, .gml, .xml, .zip
  */
-export const parseElevationFile = async (file) => {
+export const parseElevationFile = async (fileOrFiles) => {
+  const files = Array.isArray(fileOrFiles)
+    ? fileOrFiles
+    : (fileOrFiles ? [fileOrFiles] : []);
+
+  if (files.length === 0) {
+    throw new Error('No elevation files selected.');
+  }
+
+  if (files.length > 1) {
+    const allAsc = files.every((file) => String(file?.name || '').toLowerCase().endsWith('.asc'));
+    if (!allAsc) {
+      throw new Error('Multiple-file upload currently supports ASC files only. For mixed formats, upload a ZIP archive instead.');
+    }
+    return parseAscFiles(files);
+  }
+
+  const file = files[0];
   const ext = String(file?.name || '').toLowerCase().split('.').pop();
   if (ext === 'laz' || ext === 'las') {
     return parseLazFile(file);

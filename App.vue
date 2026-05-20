@@ -313,7 +313,7 @@ const handleSingleExportSuccess = () => {
 };
 
 // BYOD upload state shared across upload, map overlay, and generation pipeline.
-const uploadedElevationFile = ref(null);   // File | null
+const uploadedElevationFile = ref(null);   // File | File[] | null
 const uploadedElevationMeta = ref(null);   // parseElevationFile() result | null
 const uploadedAreaMode = ref(localStorage.getItem('mapng_uploaded_area_mode') || 'native');
 const uploadedAscCoordinateSystem = ref(localStorage.getItem('mapng_uploaded_asc_crs') || 'auto');
@@ -340,7 +340,8 @@ const handleProcessingMetersPerPixelChange = (value) => {
 };
 
 const applyAscCoordinateSelection = async (meta) => {
-  if (!meta || meta.sourceFormat !== 'asc') return meta;
+  const sourceFormat = String(meta?.sourceFormat || '').toLowerCase();
+  if (!meta || (sourceFormat !== 'asc' && sourceFormat !== 'asc-multi')) return meta;
 
   const selected = String(uploadedAscCoordinateSystem.value || 'auto').toLowerCase();
   if (selected === 'auto') return meta;
@@ -469,6 +470,15 @@ const signatureForKey = (key) => {
 // Build a cache key from the parameters that affect terrain generation.
 // If this key matches the last generation, we can skip re-fetching.
 const buildGenerationKey = (c, res, osm, elevationSource, gpxzKey, uploadedElevationFile = null, elevationUnitOverride = 'auto', processingMpp = 1, enhanceRoads = false, levelRoads = false) => {
+  const uploadSignature = Array.isArray(uploadedElevationFile)
+    ? uploadedElevationFile
+        .map((file) => `${file.name}|${file.size}|${file.lastModified}`)
+        .sort()
+        .join('||')
+    : (uploadedElevationFile
+      ? `${uploadedElevationFile.name}|${uploadedElevationFile.size}|${uploadedElevationFile.lastModified}`
+      : null);
+
   return JSON.stringify({
     lat: c.lat,
     lng: c.lng,
@@ -483,15 +493,16 @@ const buildGenerationKey = (c, res, osm, elevationSource, gpxzKey, uploadedEleva
     uploadedAscCoordinateSystem: uploadedAscCoordinateSystem.value,
     uploadedAreaMode: uploadedAreaMode.value,
     // Include file identity so changing uploads always invalidates cached terrain.
-    uploadedElevation: uploadedElevationFile
-      ? `${uploadedElevationFile.name}|${uploadedElevationFile.size}|${uploadedElevationFile.lastModified}`
-      : null,
+    uploadedElevation: uploadSignature,
   });
 };
 
-const handleElevationFileSelected = async (file) => {
+const handleElevationFileSelected = async (fileOrFiles) => {
+  const files = Array.isArray(fileOrFiles) ? fileOrFiles : [fileOrFiles];
+  const selectedUpload = files.length > 1 ? files : files[0];
+
   // New upload always resets generation state because bounds/resolution may change.
-  uploadedElevationFile.value = file;
+  uploadedElevationFile.value = selectedUpload;
   uploadedElevationMeta.value = null;
   uploadedAreaMode.value = 'native';
   localStorage.setItem('mapng_uploaded_area_mode', 'native');
@@ -501,7 +512,7 @@ const handleElevationFileSelected = async (file) => {
   lastGenerationKey.value = null;
   try {
     // Parse every supported upload format via a format-neutral service API.
-    const meta = await parseElevationFile(file);
+    const meta = await parseElevationFile(selectedUpload);
     const resolvedMeta = await applyAscCoordinateSelection(meta);
     uploadedElevationMeta.value = resolvedMeta;
     // Auto-centre map if the file contains coordinate metadata
@@ -524,13 +535,15 @@ const handleUploadedAscCoordinateSystemChange = async (value) => {
   uploadedAscCoordinateSystem.value = value;
   localStorage.setItem('mapng_uploaded_asc_crs', value);
 
-  const file = uploadedElevationFile.value;
-  if (!file) return;
-  const ext = file.name.toLowerCase().split('.').pop();
-  if (ext !== 'asc') return;
+  const fileOrFiles = uploadedElevationFile.value;
+  if (!fileOrFiles) return;
+  const files = Array.isArray(fileOrFiles) ? fileOrFiles : [fileOrFiles];
+  const allAsc = files.length > 0
+    && files.every((file) => String(file?.name || '').toLowerCase().endsWith('.asc'));
+  if (!allAsc) return;
 
   try {
-    const baseMeta = await parseElevationFile(file);
+    const baseMeta = await parseElevationFile(fileOrFiles);
     const resolvedMeta = await applyAscCoordinateSelection(baseMeta);
     uploadedElevationMeta.value = resolvedMeta;
     if (isValidCenter(resolvedMeta.center)) {

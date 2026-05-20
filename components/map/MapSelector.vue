@@ -207,7 +207,7 @@ const props = defineProps({
   resolution: { type: [Number, String], required: true },
   processingMetersPerPixel: { type: [Number, String], default: 1 },
   isDarkMode: { type: Boolean, default: false },
-  uploadedElevationFile: { type: Object, default: null },
+  uploadedElevationFile: { type: [Object, Array], default: null },
   uploadedElevationMeta: { type: Object, default: null },
   uploadedAreaMode: { type: String, default: 'native' },
   surroundingTilePositions: { type: Array, default: () => [] },

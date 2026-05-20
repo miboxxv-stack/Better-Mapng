@@ -275,13 +275,185 @@ export const parseAscText = async (text, options = {}) => {
   };
 };
 
+export const parseAscFiles = async (files = []) => {
+  const list = Array.from(files || []).filter(Boolean);
+  if (list.length === 0) {
+    throw new Error('No ASC files selected.');
+  }
+
+  const parsedList = await Promise.all(list.map((file) => parseAscFile(file)));
+  const tileSources = parsedList.map((meta, index) => {
+    const width = Number(meta.sourceWidth || 0);
+    const height = Number(meta.sourceHeight || 0);
+    const sourceBoundsProjected = meta.sourceBoundsProjected;
+    const sourceName = meta.gridTiles?.[0]?.sourceName || list[index]?.name || `uploaded_${index + 1}.asc`;
+    return {
+      raster: meta.raster,
+      width,
+      height,
+      noData: meta.noData,
+      sourceBoundsProjected,
+      sourceName,
+      fileSize: Number(list[index]?.size || 0),
+    };
+  });
+
+  const hasProjectedTileData = tileSources.every((tile) => {
+    const b = tile.sourceBoundsProjected;
+    return b && [b.north, b.south, b.east, b.west].every((value) => Number.isFinite(value));
+  });
+
+  const allBounds = parsedList
+    .map((meta) => meta.bounds)
+    .filter((b) => b && [b.north, b.south, b.east, b.west].every((value) => Number.isFinite(value)));
+  const mergedBounds = allBounds.length > 0
+    ? {
+        north: Math.max(...allBounds.map((b) => b.north)),
+        south: Math.min(...allBounds.map((b) => b.south)),
+        east: Math.max(...allBounds.map((b) => b.east)),
+        west: Math.min(...allBounds.map((b) => b.west)),
+      }
+    : null;
+
+  const coverageSummary = summarizeCoverageBounds(mergedBounds);
+  const totalFileSize = tileSources.reduce((sum, tile) => sum + tile.fileSize, 0);
+  const resolvedGridTiles = mergedBounds
+    ? parsedList.flatMap((meta) => Array.isArray(meta.gridTiles) ? meta.gridTiles : [])
+    : [];
+
+  return {
+    sourceType: 'grid',
+    sourceFormat: 'asc-multi',
+    formatLabel: 'ASC Grid',
+    raster: null,
+    sourceWidth: null,
+    sourceHeight: null,
+    isGeoTiff: false,
+    isGeoReferenced: !!mergedBounds,
+    epsgCode: null,
+    sourceBoundsProjected: hasProjectedTileData ? null : null,
+    sourceCrsSelectable: true,
+    bounds: mergedBounds,
+    center: coverageSummary.center,
+    nativeWidth: coverageSummary.nativeWidth,
+    nativeHeight: coverageSummary.nativeHeight,
+    suggestedResolution: coverageSummary.suggestedResolution,
+    nativeMetersPerPixel: coverageSummary.nativeMetersPerPixel,
+    noData: null,
+    gridTiles: resolvedGridTiles,
+    ascTileSources: tileSources,
+    fileSize: totalFileSize,
+    verticalUnitDetected: parsedList.some((meta) => meta.verticalUnitDetected && meta.verticalUnitDetected !== UNIT_UNKNOWN)
+      ? parsedList.find((meta) => meta.verticalUnitDetected && meta.verticalUnitDetected !== UNIT_UNKNOWN)?.verticalUnitDetected
+      : UNIT_UNKNOWN,
+    verticalUnitDetectionSource: parsedList.find((meta) => meta.verticalUnitDetectionSource)?.verticalUnitDetectionSource || null,
+    uploadFileNames: list.map((file) => file.name),
+  };
+};
+
 export const applyAscCoordinateSystem = async (meta, epsgCode) => {
-  if (!meta || meta.sourceFormat !== 'asc') return meta;
+  if (!meta || (meta.sourceFormat !== 'asc' && meta.sourceFormat !== 'asc-multi')) return meta;
   const code = Number(epsgCode);
   if (!Number.isFinite(code) || code <= 0) {
+    const clearedMulti = Array.isArray(meta.ascTileSources)
+      ? {
+          ...meta,
+          epsgCode: null,
+          isGeoReferenced: false,
+          bounds: null,
+          center: null,
+          nativeWidth: null,
+          nativeHeight: null,
+          suggestedResolution: null,
+          nativeMetersPerPixel: null,
+          gridTiles: [],
+        }
+      : {
+          ...meta,
+          epsgCode: null,
+        };
+    return clearedMulti;
+  }
+
+  if (meta.sourceFormat === 'asc-multi') {
+    const tileSources = Array.isArray(meta.ascTileSources) ? meta.ascTileSources : [];
+    if (!tileSources.length) {
+      return {
+        ...meta,
+        epsgCode: code,
+        isGeoReferenced: true,
+        bounds: null,
+        center: null,
+        nativeWidth: null,
+        nativeHeight: null,
+        suggestedResolution: null,
+        nativeMetersPerPixel: null,
+        gridTiles: [],
+      };
+    }
+
+    const resolvedTiles = [];
+    const tileBounds = [];
+    for (const tile of tileSources) {
+      const b = tile?.sourceBoundsProjected;
+      const width = Number(tile?.width || 0);
+      const height = Number(tile?.height || 0);
+      if (!b || !Number.isFinite(width) || !Number.isFinite(height) || width <= 0 || height <= 0) {
+        continue;
+      }
+
+      const resX = (b.east - b.west) / width;
+      const resY = (b.south - b.north) / height;
+      const geoMeta = await computeGeoMetadata({
+        epsgCode: code,
+        sourceWidth: width,
+        sourceHeight: height,
+        originX: b.west,
+        originY: b.north,
+        resX,
+        resY,
+        useSampleSpacing: false,
+        logPrefix: 'ascLoader',
+      });
+      if (!geoMeta?.bounds) continue;
+
+      tileBounds.push(geoMeta.bounds);
+      resolvedTiles.push({
+        raster: tile.raster,
+        width,
+        height,
+        originX: b.west,
+        originY: b.north,
+        resX,
+        resY,
+        epsgCode: code,
+        bounds: geoMeta.bounds,
+        noData: tile.noData,
+        sourceName: tile.sourceName || 'uploaded.asc',
+      });
+    }
+
+    const mergedBounds = tileBounds.length > 0
+      ? {
+          north: Math.max(...tileBounds.map((b) => b.north)),
+          south: Math.min(...tileBounds.map((b) => b.south)),
+          east: Math.max(...tileBounds.map((b) => b.east)),
+          west: Math.min(...tileBounds.map((b) => b.west)),
+        }
+      : null;
+    const coverageSummary = summarizeCoverageBounds(mergedBounds);
+
     return {
       ...meta,
-      epsgCode: null,
+      epsgCode: code,
+      isGeoReferenced: true,
+      bounds: mergedBounds,
+      center: coverageSummary.center,
+      nativeWidth: coverageSummary.nativeWidth,
+      nativeHeight: coverageSummary.nativeHeight,
+      suggestedResolution: coverageSummary.suggestedResolution,
+      nativeMetersPerPixel: coverageSummary.nativeMetersPerPixel,
+      gridTiles: resolvedTiles,
     };
   }
 

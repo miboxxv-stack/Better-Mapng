@@ -3,7 +3,7 @@
   <div v-if="uploadedElevationFile" class="flex items-center gap-2 px-3 py-2 rounded-lg bg-blue-50 dark:bg-blue-950 border border-blue-200 dark:border-blue-800 text-sm">
     <FileUp :size="14" class="shrink-0 text-blue-500 dark:text-blue-400" />
     <div class="flex-1 min-w-0">
-      <p class="font-medium text-blue-800 dark:text-blue-200 truncate">{{ uploadedElevationFile.name }}</p>
+      <p class="font-medium text-blue-800 dark:text-blue-200 truncate">{{ uploadedFileLabel }}</p>
 
       <!-- LAZ/LAS status -->
       <template v-if="isLazFile">
@@ -81,6 +81,7 @@
       <input
         ref="fileInput"
         type="file"
+        multiple
         accept=".tif,.tiff,.asc,.gml,.xml,.zip,.laz,.las"
         class="sr-only"
         @change="handleFileChange"
@@ -97,7 +98,7 @@ import { Upload, FileUp, X } from 'lucide-vue-next';
 const { t } = useI18n({ useScope: 'global' });
 
 const props = defineProps({
-  uploadedElevationFile: { type: Object, default: null },
+  uploadedElevationFile: { type: [Object, Array], default: null },
   uploadedElevationMeta: { type: Object, default: null },
   verticalUnitOverride: { type: String, default: 'auto' },
   ascCoordinateSystem: { type: String, default: 'auto' },
@@ -107,8 +108,22 @@ const emit = defineEmits(['file-selected', 'clear', 'update:verticalUnitOverride
 const fileInput = ref(null);
 
 const isLazFile = computed(() => {
-  const name = props.uploadedElevationFile?.name?.toLowerCase() ?? '';
+  const file = Array.isArray(props.uploadedElevationFile)
+    ? props.uploadedElevationFile[0]
+    : props.uploadedElevationFile;
+  const name = file?.name?.toLowerCase() ?? '';
   return name.endsWith('.laz') || name.endsWith('.las');
+});
+
+const uploadedFileLabel = computed(() => {
+  if (!props.uploadedElevationFile) return '';
+  if (Array.isArray(props.uploadedElevationFile)) {
+    const count = props.uploadedElevationFile.length;
+    if (count <= 0) return '';
+    if (count === 1) return props.uploadedElevationFile[0]?.name || '';
+    return `${count} files selected`;
+  }
+  return props.uploadedElevationFile.name || '';
 });
 
 const rasterFormatLabel = computed(() => props.uploadedElevationMeta?.formatLabel || 'Raster');
@@ -132,11 +147,15 @@ const detectedUnitLabel = computed(() => {
   return t('upload.unknownDefaultMeters');
 });
 
-const showAscCoordinateSelector = computed(() => props.uploadedElevationMeta?.sourceFormat === 'asc');
+const showAscCoordinateSelector = computed(() => {
+  const sourceFormat = String(props.uploadedElevationMeta?.sourceFormat || '').toLowerCase();
+  return sourceFormat === 'asc' || sourceFormat === 'asc-multi';
+});
 
 const handleFileChange = (e) => {
-  const file = e.target.files?.[0];
-  if (file) emit('file-selected', file);
+  const files = Array.from(e.target.files || []);
+  if (files.length === 1) emit('file-selected', files[0]);
+  else if (files.length > 1) emit('file-selected', files);
   if (fileInput.value) fileInput.value.value = '';
 };
 </script>

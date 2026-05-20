@@ -468,7 +468,10 @@ const metersPerPixel = computed(() => processingMetersPerPixelNumber.value);
 
 // Detect active file type for metadata card routing
 const isLazFileActive = computed(() => {
-  const name = props.uploadedElevationFile?.name?.toLowerCase() ?? '';
+  const file = Array.isArray(props.uploadedElevationFile)
+    ? props.uploadedElevationFile[0]
+    : props.uploadedElevationFile;
+  const name = file?.name?.toLowerCase() ?? '';
   return name.endsWith('.laz') || name.endsWith('.las');
 });
 
