@@ -22,11 +22,8 @@
 
 <script setup>
 import { computed } from 'vue';
-import { useI18n } from 'vue-i18n';
 
 import { VALID_SQUARE_EXPORT_RESOLUTIONS } from '../../services/uploadBounds';
-
-const { t } = useI18n({ useScope: 'global' });
 
 const props = defineProps({
   modelValue: { type: Number, required: true },
@@ -46,11 +43,6 @@ const options = computed(() => VALID_SQUARE_EXPORT_RESOLUTIONS.filter((value) =>
 }));
 
 const formatOption = (option) => {
-  if (option === 512) return `512 x 512 px (${t('map.resolutionFast')})`;
-  if (option === 1024) return `1024 x 1024 px (${t('map.resolutionStandard')})`;
-  if (option === 2048) return `2048 x 2048 px (${t('map.resolutionHighDetail')})`;
-  if (option === 4096) return `4096 x 4096 px (${t('map.resolutionVeryHigh')})`;
-  if (option === 8192) return `8192 x 8192 px (${t('map.resolutionUltra')})`;
-  return `${option} x ${option} px (Experimental)`;
+  return `${option} x ${option} px`;
 };
 </script>

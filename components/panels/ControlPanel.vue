@@ -117,7 +117,6 @@
         :label="t('controlPanel.resolutionOutputSize')"
         :allow-experimental16384="devMode"
       >
-        <p v-if="resolution >= 4096" class="text-amber-600 dark:text-amber-500 font-medium">{{ t('controlPanel.largeAreaRamWarning') }}</p>
       </ResolutionSelector>
 
       <div class="space-y-1">
