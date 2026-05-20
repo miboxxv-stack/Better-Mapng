@@ -436,25 +436,6 @@ onMounted(() => {
     document.documentElement.classList.remove('dark');
   }
 
-  if ("geolocation" in navigator) {
-    navigator.geolocation.getCurrentPosition(
-      (position) => {
-        setCenter({
-          lat: position.coords.latitude,
-          lng: position.coords.longitude
-        });
-      },
-      (err) => {
-        console.debug("Geolocation access denied or failed, using default location.", err);
-      },
-      {
-        enableHighAccuracy: false, // Use WiFi/Cell towers for speed
-        timeout: 5000, // Don't wait more than 5s
-        maximumAge: 600000 // Accept cached positions up to 10 minutes old
-      }
-    );
-  }
-
   window.addEventListener('keydown', handleGlobalDevToggleKey);
 
 });

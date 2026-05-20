@@ -50,6 +50,7 @@ const lngInput = ref(props.center.lng.toString());
 
 const presetLocations = [
   { name: t('map.selectLocation'), lat: 0, lng: 0, disabled: true },
+  { name: 'My Location', lat: 0, lng: 0, isMyLocation: true },
   { name: "Devils Tower, USA", lat: 44.59056, lng: -104.71511 },
   { name: "Eye of the Sahara, Mauritania", lat: 21.11460876603993, lng: -11.393508911132812 },
   { name: "Glacier View Car Launch, USA", lat: 61.79551798203474, lng: -147.86878824234012 },
@@ -101,9 +102,33 @@ const handleLocationSelect = (event) => {
   const index = event.target.value;
   const loc = presetLocations[index];
   if (loc && !loc.disabled) {
-    latInput.value = loc.lat.toString();
-    lngInput.value = loc.lng.toString();
-    emit('locationChange', { lat: loc.lat, lng: loc.lng });
+    if (loc.isMyLocation) {
+      if (!('geolocation' in navigator)) {
+        console.debug('[CoordinatesInput] Geolocation is not supported by this browser.');
+      } else {
+        navigator.geolocation.getCurrentPosition(
+          (position) => {
+            const lat = position.coords.latitude;
+            const lng = position.coords.longitude;
+            latInput.value = lat.toString();
+            lngInput.value = lng.toString();
+            emit('locationChange', { lat, lng });
+          },
+          (err) => {
+            console.debug('[CoordinatesInput] Geolocation access denied or failed.', err);
+          },
+          {
+            enableHighAccuracy: false,
+            timeout: 5000,
+            maximumAge: 600000,
+          },
+        );
+      }
+    } else {
+      latInput.value = loc.lat.toString();
+      lngInput.value = loc.lng.toString();
+      emit('locationChange', { lat: loc.lat, lng: loc.lng });
+    }
   }
   event.target.value = 0;
 };
