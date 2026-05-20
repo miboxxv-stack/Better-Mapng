@@ -131,6 +131,22 @@
           </div>
 
           <div class="flex items-center justify-between gap-2 px-0.5">
+            <span class="text-[10px] text-gray-500 dark:text-gray-400 shrink-0">{{ t('exportPanel.treesBushes') }}</span>
+            <label class="flex items-center gap-1.5 cursor-pointer">
+              <input type="checkbox" v-model="beamNGIncludeTrees" :disabled="!hasOsmData" class="rounded border-gray-300 dark:border-gray-600 accent-[#FF6600] cursor-pointer disabled:cursor-not-allowed disabled:opacity-60" />
+              <span class="text-[9px] text-gray-500 dark:text-gray-400">{{ t('exportPanel.nativeForest') }}</span>
+            </label>
+          </div>
+
+          <div class="flex items-center justify-between gap-2 px-0.5">
+            <span class="text-[10px] text-gray-500 dark:text-gray-400 shrink-0">{{ t('exportPanel.rocks') }}</span>
+            <label class="flex items-center gap-1.5 cursor-pointer">
+              <input type="checkbox" v-model="beamNGIncludeRocks" :disabled="!hasOsmData" class="rounded border-gray-300 dark:border-gray-600 accent-[#FF6600] cursor-pointer disabled:cursor-not-allowed disabled:opacity-60" />
+              <span class="text-[9px] text-gray-500 dark:text-gray-400">{{ t('exportPanel.quarryRock') }}</span>
+            </label>
+          </div>
+
+          <div class="flex items-center justify-between gap-2 px-0.5">
             <span class="text-[10px] text-gray-500 dark:text-gray-400 shrink-0">{{ t('exportPanel.water') }}</span>
             <label class="flex items-center gap-1.5 cursor-pointer">
               <input type="checkbox" v-model="beamNGIncludeWater" :disabled="!hasOsmData" class="rounded border-gray-300 dark:border-gray-600 accent-[#FF6600] cursor-pointer disabled:cursor-not-allowed disabled:opacity-60" />
@@ -151,22 +167,6 @@
               />
               <span class="text-[9px] text-gray-500 dark:text-gray-400">m</span>
             </div>
-          </div>
-
-          <div class="flex items-center justify-between gap-2 px-0.5">
-            <span class="text-[10px] text-gray-500 dark:text-gray-400 shrink-0">{{ t('exportPanel.treesBushes') }}</span>
-            <label class="flex items-center gap-1.5 cursor-pointer">
-              <input type="checkbox" v-model="beamNGIncludeTrees" :disabled="!hasOsmData" class="rounded border-gray-300 dark:border-gray-600 accent-[#FF6600] cursor-pointer disabled:cursor-not-allowed disabled:opacity-60" />
-              <span class="text-[9px] text-gray-500 dark:text-gray-400">{{ t('exportPanel.nativeForest') }}</span>
-            </label>
-          </div>
-
-          <div class="flex items-center justify-between gap-2 px-0.5">
-            <span class="text-[10px] text-gray-500 dark:text-gray-400 shrink-0">{{ t('exportPanel.rocks') }}</span>
-            <label class="flex items-center gap-1.5 cursor-pointer">
-              <input type="checkbox" v-model="beamNGIncludeRocks" :disabled="!hasOsmData" class="rounded border-gray-300 dark:border-gray-600 accent-[#FF6600] cursor-pointer disabled:cursor-not-allowed disabled:opacity-60" />
-              <span class="text-[9px] text-gray-500 dark:text-gray-400">{{ t('exportPanel.quarryRock') }}</span>
-            </label>
           </div>
 
           <div class="px-2 py-1.5 rounded border border-amber-200 dark:border-amber-800 bg-amber-50 dark:bg-amber-900/20">
