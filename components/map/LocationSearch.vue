@@ -14,18 +14,20 @@
       />
       
       <!-- Search Icon -->
-      <Search 
-        v-if="!isLoading" 
-        :size="14" 
-        class="absolute left-2.5 top-1/2 -translate-y-1/2 text-gray-400 dark:text-gray-500" 
-      />
+      <span
+        v-if="!isLoading"
+        class="absolute left-2.5 inset-y-0 flex items-center text-gray-400 dark:text-gray-500"
+      >
+        <Search :size="14" />
+      </span>
       
       <!-- Loading Spinner -->
-      <Loader2 
-        v-else 
-        :size="14" 
-        class="absolute left-2.5 top-1/2 -translate-y-1/2 text-[#FF6600] animate-spin" 
-      />
+      <span
+        v-else
+        class="absolute left-2.5 inset-y-0 flex items-center text-[#FF6600]"
+      >
+        <Loader2 :size="14" class="animate-spin" />
+      </span>
       
       <!-- Clear Button -->
       <button
