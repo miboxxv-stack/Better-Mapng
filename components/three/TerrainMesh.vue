@@ -29,9 +29,82 @@ const WATER_REFLECTION_UPDATE_EVERY_N_FRAMES = 2;
 const WATER_REFLECTION_FAR = 600;
 const WATER_CAMERA_MOVE_EPSILON = 0.01;
 const WATER_CAMERA_ROT_EPSILON = 0.0008;
+const WATER_NORMAL_TEXTURE_SIZE = 128;
+const WATER_NORMAL_SCROLL_X = 0.0003;
+const WATER_NORMAL_SCROLL_Y = 0.0002;
+const WATER_NORMAL_REPEAT = 12;
 let reflectionFrameCounter = 0;
 const lastReflectionCameraPosition = new THREE.Vector3(Number.NaN, Number.NaN, Number.NaN);
 const lastReflectionCameraQuaternion = new THREE.Quaternion(Number.NaN, Number.NaN, Number.NaN, Number.NaN);
+
+const waterNormalTexture = shallowRef(null);
+const waterNormalScale = markRaw(new THREE.Vector2(0.09, 0.07));
+
+// Build a small tileable normal map so the water catches directional light
+// and reflections even when the terrain beneath is dark/flat.
+const createWaterNormalTexture = (size = WATER_NORMAL_TEXTURE_SIZE) => {
+  const heights = new Float32Array(size * size);
+  const ampA = 0.32;
+  const ampB = 0.2;
+  const ampC = 0.12;
+  const twoPi = Math.PI * 2;
+
+  for (let y = 0; y < size; y++) {
+    for (let x = 0; x < size; x++) {
+      const u = x / size;
+      const v = y / size;
+      const h =
+        Math.sin((u * 1.45 + v * 0.55) * twoPi) * ampA +
+        Math.sin((u * 0.65 - v * 1.7) * twoPi) * ampB +
+        Math.sin((u * 2.2 + v * 1.95) * twoPi) * ampC;
+      heights[y * size + x] = h;
+    }
+  }
+
+  const data = new Uint8Array(size * size * 4);
+  const strength = 0.65;
+  for (let y = 0; y < size; y++) {
+    for (let x = 0; x < size; x++) {
+      const xPrev = (x - 1 + size) % size;
+      const xNext = (x + 1) % size;
+      const yPrev = (y - 1 + size) % size;
+      const yNext = (y + 1) % size;
+
+      const hL = heights[y * size + xPrev];
+      const hR = heights[y * size + xNext];
+      const hD = heights[yPrev * size + x];
+      const hU = heights[yNext * size + x];
+
+      const dx = (hR - hL) * strength;
+      const dy = (hU - hD) * strength;
+
+      const nx = -dx;
+      const ny = -dy;
+      const nz = 1.0;
+      const invLen = 1 / Math.hypot(nx, ny, nz);
+
+      const i = (y * size + x) * 4;
+      data[i] = Math.round((nx * invLen * 0.5 + 0.5) * 255);
+      data[i + 1] = Math.round((ny * invLen * 0.5 + 0.5) * 255);
+      data[i + 2] = Math.round((nz * invLen * 0.5 + 0.5) * 255);
+      data[i + 3] = 255;
+    }
+  }
+
+  const tex = new THREE.DataTexture(data, size, size, THREE.RGBAFormat);
+  tex.colorSpace = THREE.NoColorSpace;
+  tex.wrapS = THREE.RepeatWrapping;
+  tex.wrapT = THREE.RepeatWrapping;
+  tex.repeat.set(WATER_NORMAL_REPEAT, WATER_NORMAL_REPEAT);
+  tex.generateMipmaps = true;
+  tex.minFilter = THREE.LinearMipmapLinearFilter;
+  tex.magFilter = THREE.LinearFilter;
+  tex.anisotropy = 8;
+  tex.needsUpdate = true;
+  return markRaw(tex);
+};
+
+waterNormalTexture.value = createWaterNormalTexture();
 
 const unitsPerMeter = computed(() => {
   const data = toRaw(props.terrainData);
@@ -103,6 +176,14 @@ watch(() => props.quality, () => {
 });
 
 onBeforeRender(() => {
+  const normalTex = waterNormalTexture.value;
+  if (normalTex) {
+    // Keep subtle motion independent from reflection probe updates so water
+    // always animates even when the camera is stationary.
+    normalTex.offset.x = (normalTex.offset.x + WATER_NORMAL_SCROLL_X) % 1;
+    normalTex.offset.y = (normalTex.offset.y + WATER_NORMAL_SCROLL_Y) % 1;
+  }
+
   if (!props.showWater) return;
   const sceneObj = scene.value;
   const rendererObj = renderer.value;
@@ -329,6 +410,10 @@ onUnmounted(() => {
   Object.values(textureCache).forEach(tex => {
     if (tex) tex.dispose();
   });
+  if (waterNormalTexture.value) {
+    waterNormalTexture.value.dispose();
+    waterNormalTexture.value = null;
+  }
   disposeWaterReflection();
 });
 </script>
@@ -344,17 +429,19 @@ onUnmounted(() => {
     >
       <TresPlaneGeometry :args="[waterPlaneSize, waterPlaneSize, 1, 1]" />
       <TresMeshPhysicalMaterial
-        :color="0x4f9dc6"
+        :color="0x56a8cc"
         :transparent="true"
-        :opacity="0.6"
-        :roughness="0.14"
+        :opacity="0.48"
+        :roughness="0.22"
         :metalness="0.02"
-        :reflectivity="0.95"
+        :reflectivity="0.72"
         :ior="1.333"
         :transmission="0"
-        :clearcoat="0.7"
-        :clearcoat-roughness="0.12"
-        :env-map-intensity="0.95"
+        :clearcoat="0.55"
+        :clearcoat-roughness="0.2"
+        :env-map-intensity="0.62"
+        :normal-map="waterNormalTexture"
+        :normal-scale="waterNormalScale"
         :env-map="waterEnvMap"
         :side="2"
         :depth-write="false"
