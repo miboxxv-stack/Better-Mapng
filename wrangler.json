@@ -9,7 +9,7 @@
     }
   },
   "assets": {
-    "directory": "./public",
+    "directory": "./dist",
     "binding": "ASSETS"
   }
 }
