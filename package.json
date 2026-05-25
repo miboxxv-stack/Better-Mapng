@@ -7,7 +7,9 @@
     "dev": "vite",
     "build": "vite build",
     "preview": "vite preview",
-    "deploy": "npm run build && wrangler deploy",
+    "deploy": "npm run deploy:prod",
+    "deploy:prod": "npm run build && wrangler deploy",
+    "deploy:dev": "npm run build && wrangler deploy --env dev",
     "test:geotiff": "node --test tests/exportGeoTiff.test.mjs"
   },
   "dependencies": {
