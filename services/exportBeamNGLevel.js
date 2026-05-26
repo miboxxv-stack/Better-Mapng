@@ -8,7 +8,7 @@ import { createOSMGroup, createSurroundingMeshes, SCENE_SIZE } from './export3d.
 import { prepareCroppedTerrainData } from './cropTerrain.js';
 import { applyBuildingFoundations } from './buildingFoundations.js';
 import { ColladaExporter } from './ColladaExporter.js';
-import { buildRoadNetwork } from './roadNetwork.js';
+import { buildRoadNetwork, getEffectiveRoadLayer, mergeLinearRoadSegments } from './roadNetwork.js';
 import { createBeamNGLinkFileRegistry } from './beamngLinkFiles.js';
 import { getBiomeRuntimeMaterialDefs } from './beamngRuntimeMaterialCatalog.js';
 import {
@@ -890,6 +890,7 @@ function chunkPolyline(points, maxNodes = 50) {
 // spline creates visible facets between every pair of nodes.  Decimating to a
 // coarser spacing lets the spline interpolate a smooth curve instead.
 const MIN_NODE_SPACING_M = 4.0;
+const JUNCTION_MARKING_TRIM_M = 8.0;
 
 /**
  * Remove DecalRoad nodes that are closer than MIN_NODE_SPACING_M to the
@@ -909,6 +910,55 @@ function decimateNodes(nodes) {
   }
   out.push(nodes[nodes.length - 1]);
   return out;
+}
+
+function trimNodesByDistance(nodes, trimStartM = 0, trimEndM = 0) {
+  if (!Array.isArray(nodes) || nodes.length < 2) return [];
+  const totalTrim = Math.max(0, trimStartM) + Math.max(0, trimEndM);
+  if (totalTrim <= 0) return nodes;
+
+  const segLen = [];
+  const cumLen = [0];
+  let total = 0;
+  for (let i = 1; i < nodes.length; i++) {
+    const dx = nodes[i][0] - nodes[i - 1][0];
+    const dy = nodes[i][1] - nodes[i - 1][1];
+    const len = Math.hypot(dx, dy);
+    segLen.push(len);
+    total += len;
+    cumLen.push(total);
+  }
+
+  if (total <= totalTrim + 0.25) return [];
+
+  const startD = Math.max(0, trimStartM);
+  const endD = Math.max(startD, total - Math.max(0, trimEndM));
+
+  const sampleAtDistance = (dist) => {
+    if (dist <= 0) return [...nodes[0]];
+    if (dist >= total) return [...nodes[nodes.length - 1]];
+    for (let i = 1; i < nodes.length; i++) {
+      if (cumLen[i] < dist) continue;
+      const prevDist = cumLen[i - 1];
+      const local = segLen[i - 1] > 1e-6 ? (dist - prevDist) / segLen[i - 1] : 0;
+      return [
+        nodes[i - 1][0] + (nodes[i][0] - nodes[i - 1][0]) * local,
+        nodes[i - 1][1] + (nodes[i][1] - nodes[i - 1][1]) * local,
+        nodes[i - 1][2] + (nodes[i][2] - nodes[i - 1][2]) * local,
+        nodes[i - 1][3] + (nodes[i][3] - nodes[i - 1][3]) * local,
+      ];
+    }
+    return [...nodes[nodes.length - 1]];
+  };
+
+  const trimmed = [sampleAtDistance(startD)];
+  for (let i = 1; i < nodes.length - 1; i++) {
+    const d = cumLen[i];
+    if (d > startD && d < endD) trimmed.push(nodes[i]);
+  }
+  trimmed.push(sampleAtDistance(endD));
+
+  return decimateNodes(trimmed);
 }
 
 const GLOBAL_DECAL_MATERIALS = {
@@ -976,6 +1026,206 @@ const HIGHWAY_STYLE = {
 };
 
 const DEFAULT_ROAD_STYLE = { width: 3, edgeMaterial: GLOBAL_DECAL_MATERIALS.edgeAsphaltGrass };
+
+const STABLE_DECAL_WIDTH_HIGHWAYS = new Set([
+  'motorway',
+  'motorway_link',
+  'trunk',
+  'trunk_link',
+  'primary',
+  'primary_link',
+  'secondary',
+  'secondary_link',
+]);
+
+function getDecalMergeStyleKey(segment) {
+  const tags = segment?.tags || {};
+  return JSON.stringify([
+    segment?.highway || tags.highway || '',
+    segment?.layer ?? getEffectiveRoadLayer(tags),
+    tags.name || '',
+    tags.ref || '',
+    tags.oneway || '',
+    tags.surface || '',
+  ]);
+}
+
+function getDecalWidthCorridorKey(segment) {
+  const tags = segment?.tags || {};
+  return JSON.stringify([
+    segment?.highway || tags.highway || '',
+    segment?.layer ?? getEffectiveRoadLayer(tags),
+    tags.name || '',
+    tags.ref || '',
+    tags.oneway || '',
+  ]);
+}
+
+function buildStableDecalHalfWidthMap(roads = []) {
+  const widthGroups = new Map();
+
+  for (const road of roads) {
+    const tags = road?.tags || {};
+    const highway = tags.highway || road?.highway;
+    if (!STABLE_DECAL_WIDTH_HIGHWAYS.has(highway)) continue;
+
+    const members = Array.isArray(road.members) && road.members.length > 0 ? road.members : [road];
+    const key = getDecalWidthCorridorKey(road);
+    const widths = widthGroups.get(key) || [];
+    for (const member of members) {
+      const memberTags = member?.tags || {};
+      const isOneWay = isOneWayRoad(memberTags);
+      const style = HIGHWAY_STYLE[highway] ?? DEFAULT_ROAD_STYLE;
+      const halfWidth = estimateRoadHalfWidth(memberTags, highway, isOneWay, style.width);
+      if (Number.isFinite(halfWidth) && halfWidth > 0) widths.push(halfWidth);
+    }
+    widthGroups.set(key, widths);
+  }
+
+  const stableMap = new Map();
+  for (const [key, widths] of widthGroups.entries()) {
+    if (widths.length === 0) continue;
+    const [highway] = JSON.parse(key);
+    const laneWidth = getDefaultLaneWidthMeters(highway);
+    const minWidth = Math.min(...widths);
+    const maxWidth = Math.max(...widths);
+    // Keep a constant width only when variation is likely from OSM segmentation,
+    // not from an actual multi-lane transition.
+    if ((maxWidth - minWidth) <= laneWidth) {
+      stableMap.set(key, maxWidth);
+    }
+  }
+
+  return stableMap;
+}
+
+function getMergedRoadRenderTags(segmentFeature) {
+  const sourceTags = segmentFeature?.sourceFeature?.tags || {};
+  const members = Array.isArray(segmentFeature?.members) && segmentFeature.members.length > 0
+    ? segmentFeature.members
+    : [segmentFeature];
+  const memberTags = members.map((member) => member?.tags || {});
+  const highway = segmentFeature?.highway || sourceTags.highway;
+
+  const laneMarkingsWanted = memberTags.some((tags) => shouldUseLaneMarkings(highway, tags));
+  const grassEdgeWanted = memberTags.some((tags) => shouldUseGrassEdgeBlend(highway, tags));
+
+  const renderTags = { ...sourceTags };
+  if (laneMarkingsWanted) {
+    // Merged corridors should retain lane paint when any member segment called for it.
+    renderTags.lane_markings = 'yes';
+  }
+  if (grassEdgeWanted) {
+    const surface = String(renderTags.surface ?? '').trim().toLowerCase();
+    if (surface && UNPAVED_SURFACES.has(surface)) {
+      delete renderTags.surface;
+    }
+  }
+
+  return renderTags;
+}
+
+function normalizeGeoVector(from, to) {
+  if (!from || !to) return null;
+  const avgLatRad = (((from.lat || 0) + (to.lat || 0)) * 0.5 * Math.PI) / 180;
+  const vx = ((to.lng || 0) - (from.lng || 0)) * Math.cos(avgLatRad);
+  const vy = (to.lat || 0) - (from.lat || 0);
+  const len = Math.hypot(vx, vy);
+  if (len < 1e-12) return null;
+  return { x: vx / len, y: vy / len };
+}
+
+function getSegmentEndpointDirection(segmentFeature, isStart) {
+  const geometry = segmentFeature?.geometry;
+  if (!Array.isArray(geometry) || geometry.length < 2) return null;
+  if (isStart) {
+    return normalizeGeoVector(geometry[0], geometry[1]);
+  }
+  return normalizeGeoVector(geometry[geometry.length - 1], geometry[geometry.length - 2]);
+}
+
+function getEntryEndpointDirection(entry) {
+  const geometry = entry?.road?.geometry;
+  if (!Array.isArray(geometry) || geometry.length < 2) return null;
+  if (entry.isStart) {
+    return normalizeGeoVector(geometry[0], geometry[1]);
+  }
+  return normalizeGeoVector(geometry[geometry.length - 1], geometry[geometry.length - 2]);
+}
+
+function getEndpointTrimProfile(segmentFeature, nodeKey, isStart, intersections) {
+  const empty = { center: 0, pos: 0, neg: 0 };
+  if (!nodeKey || !intersections?.has(nodeKey)) return empty;
+
+  const entries = intersections.get(nodeKey) || [];
+  if (entries.length < 2) return empty;
+
+  const selfDir = getSegmentEndpointDirection(segmentFeature, isStart);
+  if (!selfDir) {
+    return {
+      center: JUNCTION_MARKING_TRIM_M,
+      pos: JUNCTION_MARKING_TRIM_M,
+      neg: JUNCTION_MARKING_TRIM_M,
+    };
+  }
+
+  const members = Array.isArray(segmentFeature?.members) && segmentFeature.members.length > 0
+    ? segmentFeature.members
+    : [segmentFeature];
+  const memberIds = new Set(members.map((member) => member?.id).filter(Boolean));
+  if (segmentFeature?.id) memberIds.add(segmentFeature.id);
+
+  const others = [];
+  for (const entry of entries) {
+    const otherId = entry?.road?.id;
+    if (otherId && memberIds.has(otherId)) continue;
+    const dir = getEntryEndpointDirection(entry);
+    if (!dir) continue;
+    const dotAgainstBack = (-selfDir.x * dir.x) + (-selfDir.y * dir.y);
+    others.push({ dir, dotAgainstBack });
+  }
+
+  if (others.length === 0) {
+    return {
+      center: JUNCTION_MARKING_TRIM_M,
+      pos: JUNCTION_MARKING_TRIM_M,
+      neg: JUNCTION_MARKING_TRIM_M,
+    };
+  }
+
+  let continuationIndex = -1;
+  let continuationDot = -Infinity;
+  for (let i = 0; i < others.length; i++) {
+    if (others[i].dotAgainstBack > continuationDot) {
+      continuationDot = others[i].dotAgainstBack;
+      continuationIndex = i;
+    }
+  }
+  const hasContinuation = continuationDot > 0.82;
+
+  let hasPosBranch = false;
+  let hasNegBranch = false;
+  const CROSS_EPS = 0.08;
+
+  for (let i = 0; i < others.length; i++) {
+    if (hasContinuation && i === continuationIndex) continue;
+    const dir = others[i].dir;
+    const cross = (selfDir.x * dir.y) - (selfDir.y * dir.x);
+    if (cross > CROSS_EPS) hasNegBranch = true;
+    else if (cross < -CROSS_EPS) hasPosBranch = true;
+    else {
+      hasPosBranch = true;
+      hasNegBranch = true;
+    }
+  }
+
+  const trimCenter = !hasContinuation || (hasPosBranch && hasNegBranch);
+  return {
+    center: trimCenter ? JUNCTION_MARKING_TRIM_M : 0,
+    pos: hasPosBranch ? JUNCTION_MARKING_TRIM_M : 0,
+    neg: hasNegBranch ? JUNCTION_MARKING_TRIM_M : 0,
+  };
+}
 
 const ROAD_MARKING_STYLE = {
   edgeBlend: {
@@ -1251,11 +1501,13 @@ function maybeReverseDecalNodes(nodes, layer) {
   return [...nodes].reverse();
 }
 
-function getLayeredRoadDecals(centerNodes, highway, tags, styleHalfWidth, parentName) {
+function getLayeredRoadDecals(centerNodes, highway, tags, styleHalfWidth, parentName, options = {}) {
   const isUnpaved = UNPAVED_SURFACES.has(tags.surface) || highway === 'track';
   const laneMarkingsEnabled = shouldUseLaneMarkings(highway, tags);
   const grassEdgeBlendEnabled = shouldUseGrassEdgeBlend(highway, tags);
   const majorRoad = MAJOR_ROAD_MARKINGS.has(highway);
+  const startTrim = options.startTrim || { center: 0, pos: 0, neg: 0 };
+  const endTrim = options.endTrim || { center: 0, pos: 0, neg: 0 };
 
   let templateKey = 'default';
   if (isUnpaved) templateKey = 'unpaved';
@@ -1282,7 +1534,35 @@ function getLayeredRoadDecals(centerNodes, highway, tags, styleHalfWidth, parent
       offset = layer.offset * (styleHalfWidth + (width / 2) - 0.15);
     }
 
-    const layeredNodes = maybeReverseDecalNodes(offsetNodes(centerNodes, offset, width), layer);
+    const baseNodes = offsetNodes(centerNodes, offset, width);
+    const shouldTrimAtJunction = layer.name.startsWith('line_') || layer.name.startsWith('edge_');
+    let trimStartM = 0;
+    let trimEndM = 0;
+    if (shouldTrimAtJunction) {
+      if (layer.name === 'line_center') {
+        trimStartM = Math.max(0, startTrim.center || 0);
+        trimEndM = Math.max(0, endTrim.center || 0);
+      } else if (offset > 0.01) {
+        trimStartM = Math.max(0, startTrim.pos || 0);
+        trimEndM = Math.max(0, endTrim.pos || 0);
+      } else if (offset < -0.01) {
+        trimStartM = Math.max(0, startTrim.neg || 0);
+        trimEndM = Math.max(0, endTrim.neg || 0);
+      } else {
+        trimStartM = Math.max(0, startTrim.center || 0);
+        trimEndM = Math.max(0, endTrim.center || 0);
+      }
+      // Mirrored layers reverse node order, so endpoint-specific trim must swap.
+      if (layer.mirrorByReversingNodes) {
+        const tmp = trimStartM;
+        trimStartM = trimEndM;
+        trimEndM = tmp;
+      }
+    }
+    const trimmedNodes = shouldTrimAtJunction
+      ? trimNodesByDistance(baseNodes, trimStartM, trimEndM)
+      : baseNodes;
+    const layeredNodes = maybeReverseDecalNodes(trimmedNodes, layer);
     if (layeredNodes.length < 2) continue;
 
     // Use names that the BeamNG Road Spline Tool recognizes.
@@ -1324,11 +1604,19 @@ function getLayeredRoadDecals(centerNodes, highway, tags, styleHalfWidth, parent
 function generateDecalRoads(terrainData, squareSize) {
   if (!terrainData.osmFeatures?.length) return [];
 
-  const roadNetwork = buildRoadNetwork(terrainData.osmFeatures.filter((feature) => {
+  const sourceRoadFeatures = terrainData.osmFeatures.filter((feature) => {
     if (feature?.type !== 'road' || !feature.geometry?.length) return false;
     const highway = feature.tags?.highway;
     return !!highway && !ROAD_SKIP.has(highway);
-  }));
+  });
+  const roadNetwork = buildRoadNetwork(sourceRoadFeatures);
+  const mergedRoadSegments = mergeLinearRoadSegments(
+    roadNetwork.segments,
+    roadNetwork.intersections,
+    { styleKeyResolver: getDecalMergeStyleKey },
+  );
+  const drivableRoads = mergedRoadSegments.length > 0 ? mergedRoadSegments : roadNetwork.segments;
+  const stableHalfWidthMap = buildStableDecalHalfWidthMap(drivableRoads);
 
   const roadSplinesByName = new Map();
   const segmentCounterByName = new Map();
@@ -1355,7 +1643,7 @@ function generateDecalRoads(terrainData, squareSize) {
     return group;
   };
 
-  for (const segmentFeature of roadNetwork.segments) {
+  for (const segmentFeature of drivableRoads) {
     const feature = segmentFeature.sourceFeature;
     const highway = segmentFeature.highway;
     if (!shouldGenerateDecalRoads(highway, feature.tags || {})) continue;
@@ -1367,7 +1655,25 @@ function generateDecalRoads(terrainData, squareSize) {
     
     const style = HIGHWAY_STYLE[highway] ?? DEFAULT_ROAD_STYLE;
     const isOneWay = isOneWayRoad(feature.tags || {});
-    const styleHalfWidth = estimateRoadHalfWidth(feature.tags || {}, highway, isOneWay, style.width);
+    const renderTags = getMergedRoadRenderTags(segmentFeature);
+    const corridorKey = getDecalWidthCorridorKey(segmentFeature);
+    const estimatedHalfWidth = estimateRoadHalfWidth(feature.tags || {}, highway, isOneWay, style.width);
+    const stableHalfWidth = stableHalfWidthMap.get(corridorKey);
+    const styleHalfWidth = Number.isFinite(stableHalfWidth) && stableHalfWidth > 0
+      ? stableHalfWidth
+      : estimatedHalfWidth;
+    const startTrimProfile = getEndpointTrimProfile(
+      segmentFeature,
+      segmentFeature.startKey,
+      true,
+      roadNetwork.intersections,
+    );
+    const endTrimProfile = getEndpointTrimProfile(
+      segmentFeature,
+      segmentFeature.endKey,
+      false,
+      roadNetwork.intersections,
+    );
 
     // Clip to the terrain's safe inner boundary, splitting at crossings.
     // Then further chunk each segment so no single DecalRoad is too long.
@@ -1397,9 +1703,13 @@ function generateDecalRoads(terrainData, squareSize) {
       const layeredDecals = getLayeredRoadDecals(
         centerNodes,
         highway,
-        feature.tags || {},
+        renderTags,
         styleHalfWidth,
-        cleanName
+        cleanName,
+        {
+          startTrim: i === 0 ? startTrimProfile : { center: 0, pos: 0, neg: 0 },
+          endTrim: i === clippedSegments.length - 1 ? endTrimProfile : { center: 0, pos: 0, neg: 0 },
+        },
       );
 
       if (layeredDecals.length > 0) {
