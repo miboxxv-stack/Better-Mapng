@@ -75,6 +75,19 @@ function installCanvasPolyfill() {
         arrayBuffer: async () => emptyZipEOCD.buffer.slice(0),
       };
     }
+    if (url === '/mapng_cubemap_static.zip') {
+      const cubemapZip = new JSZip();
+      const faces = cubemapZip.folder('cubemap');
+      for (let i = 0; i < 6; i++) {
+        faces.file(`skybox${i}.hdr.dds`, new Uint8Array([0x44, 0x44, 0x53, 0x20]));
+      }
+      const buffer = await cubemapZip.generateAsync({ type: 'arraybuffer' });
+      return {
+        ok: true,
+        status: 200,
+        arrayBuffer: async () => buffer,
+      };
+    }
     if (typeof originalFetch === 'function') {
       return originalFetch(input, init);
     }
@@ -210,6 +223,30 @@ test('exportBeamNGLevel rewrites barrier shape paths and emits .link files acros
       ));
 
       assert.ok(linkFiles.length > 0, `Expected .link files for roadType=${roadType}`);
+
+      // Universal reflection cubemap should be bundled and referenced.
+      const cubemapMatPath = `${base}/art/cubemaps/Universal_cubemap_reflection/main.materials.json`;
+      const cubemapMatFile = zip.file(cubemapMatPath);
+      assert.ok(cubemapMatFile, `Missing ${cubemapMatPath} for roadType=${roadType}`);
+      const cubemapDefs = JSON.parse(await cubemapMatFile.async('string'));
+      const cubemapData = cubemapDefs.cubemap_Universal_cubemap_reflection;
+      assert.equal(cubemapData?.class, 'CubemapData', `Expected CubemapData for roadType=${roadType}`);
+      assert.equal(cubemapData?.cubeFace?.length, 6, `Expected 6 cube faces for roadType=${roadType}`);
+      assert.match(cubemapData.cubeFace[0], new RegExp(`^/levels/mapng_demo/art/cubemaps/`));
+      assert.ok(
+        zip.file(`${base}/art/cubemaps/Universal_cubemap_reflection/cubemap/skybox0.hdr.dds`),
+        `Missing cube face for roadType=${roadType}`,
+      );
+
+      const skyItems = parseNDJSON(
+        await zip.file(`${base}/main/MissionGroup/sky_and_sun/items.level.json`).async('string'),
+      );
+      const levelInfo = skyItems.find((item) => item?.class === 'LevelInfo');
+      assert.equal(
+        levelInfo?.globalEnviromentMap,
+        'cubemap_Universal_cubemap_reflection',
+        `Expected universal cubemap reference for roadType=${roadType}`,
+      );
     }
   } finally {
     restorePolyfills();
@@ -252,6 +289,31 @@ test('exportBeamNGLevel rewrites managed forest shape paths across road modes', 
       const rewrittenShapePath = String(shapeEntry.shapeFile).replace(/^\//, '');
       const forestLinkPath = `${rewrittenShapePath}.link`;
       assert.ok(zip.file(forestLinkPath), `Missing forest link file ${forestLinkPath}`);
+
+      // Forest brush palette should expose every placed item type so the
+      // World Editor Forest tool can re-paint them.
+      const brushFile = zip.file('levels/mapng_demo/main.forestbrushes4.json');
+      assert.ok(brushFile, `Missing forestbrushes4 for roadType=${roadType}`);
+      const brushItems = parseNDJSON(await brushFile.async('string'));
+
+      const brushElements = brushItems.filter((item) => item?.class === 'ForestBrushElement');
+      assert.ok(brushElements.length > 0, `Expected ForestBrushElements for roadType=${roadType}`);
+      assert.ok(
+        brushItems.some((item) => item?.class === 'ForestBrush'),
+        `Expected ForestBrush containers for roadType=${roadType}`,
+      );
+      assert.ok(
+        brushItems.some((item) => item?.class === 'SimGroup' && item?.name === 'ForestBrushGroup'),
+        `Expected ForestBrushGroup for roadType=${roadType}`,
+      );
+
+      const managedKeys = new Set(Object.keys(managedItemData || {}));
+      for (const element of brushElements) {
+        assert.ok(
+          managedKeys.has(element.forestItemData),
+          `Brush element references unknown ForestItemData "${element.forestItemData}" for roadType=${roadType}`,
+        );
+      }
     }
   } finally {
     restorePolyfills();

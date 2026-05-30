@@ -24,8 +24,9 @@ This document maps MapNG BeamNG export artifacts to the official docs in refs/of
 | terrain.terrain.json | Terrain-Files.md | Implemented | Metadata file emitted at level root and linked to art/terrains terrain binaries. |
 | TerrainBlock object | Terrain-Files.md, Level-Object-Files.md | Implemented | squareSize, maxHeight, terrainFile emitted. |
 | Terrain materials file | Terrain-Files.md | Implemented | art/terrains/main.materials.json generated. |
+| art/cubemaps universal reflection cubemap | Datablocks.md, refs/MapNG_template | Implemented | Bundles a universal reflection cubemap (6 HDR DDS faces + CubemapData/Material in main.materials.json) and points LevelInfo.globalEnviromentMap at it; falls back to the biome's official cubemap name if the bundled asset can't be loaded. |
 | main.decals.json + managedDecalData.json scaffold | Decal-Data.md | Implemented | Scaffolding only; no rich DecalData library generation yet. |
-| main.forestbrushes4.json scaffold | Forest-Brushes.md | Implemented | ForestBrushGroup scaffold emitted. |
+| main.forestbrushes4.json | Forest-Brushes.md | Implemented | Emits a ForestBrush + ForestBrushElement per placed forest item type (referencing managedItemData keys) plus the ForestBrushGroup, matching refs/MapNG_template. Falls back to an empty ForestBrushGroup when no vegetation is placed. |
 | art/forest/managedItemData.json + forest/*.forest4.json | Forest-Data-and.md | Implemented | Emitted when vegetation placement exists. |
 | .link files for official assets | Introducing-assets-folder.md | Partial | Link files are emitted and exporter object payloads run through rewrite hooks before ZIP write (MissionGroup scene folders plus managed forest data). Exporter ZIP integration assertions now cover decal/architect/mesh road modes; broader asset-type coverage can still be expanded further. |
 | signalControllerDefinitions.json | Traffic-Signals.md | Partial | Exported conditionally when generated signals use custom controller definitions (currently for give_way/yield mapping). |

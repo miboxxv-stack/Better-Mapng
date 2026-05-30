@@ -2946,6 +2946,56 @@ async function loadMapngFlagAsset() {
 }
 
 /**
+ * Load the bundled universal reflection cubemap faces (6 HDR DDS files).
+ * Returns [{ path: 'cubemap/skyboxN.hdr.dds', data: Uint8Array }, ...].
+ */
+async function loadMapngCubemapAsset() {
+  const response = await fetch('/mapng_cubemap_static.zip');
+  if (!response.ok) throw new Error(`Failed to load mapng cubemap asset: ${response.status}`);
+  const archive = await JSZip.loadAsync(await response.arrayBuffer());
+  const files = [];
+  for (const entry of Object.values(archive.files)) {
+    if (entry.dir) continue;
+    files.push({
+      path: entry.name,
+      data: await entry.async('uint8array'),
+    });
+  }
+  return files;
+}
+
+/**
+ * Build the CubemapData + Material defs for the bundled universal cubemap,
+ * with cubeFace paths scoped to the export level. Fresh persistentIds avoid
+ * collisions with other datablocks (see Datablocks.md).
+ *
+ * @param {string} levelName sanitized export level id
+ */
+function buildCubemapMaterialDefs(levelName) {
+  const facePath = (i) =>
+    `/levels/${levelName}/art/cubemaps/Universal_cubemap_reflection/cubemap/skybox${i}.hdr.dds`;
+  return {
+    cubemap_Universal_cubemap_reflection: {
+      name: 'cubemap_Universal_cubemap_reflection',
+      class: 'CubemapData',
+      persistentId: generatePersistentId(),
+      cubeFace: [facePath(0), facePath(1), facePath(2), facePath(3), facePath(4), facePath(5)],
+    },
+    Universal_cubemap_reflection: {
+      name: 'Universal_cubemap_reflection',
+      mapTo: 'unmapped_mat',
+      class: 'Material',
+      persistentId: generatePersistentId(),
+      Stages: [{}, {}, {}, {}],
+      cubemap: 'cubemap_Universal_cubemap_reflection',
+      materialTag0: 'beamng',
+      materialTag1: 'Natural',
+      materialTag2: 'BNG_sky',
+    },
+  };
+}
+
+/**
  * Find the highest sampled terrain point and return world-space [x,y,z].
  */
 function findHighestTerrainPoint(terrainData, squareSize) {
@@ -3987,6 +4037,52 @@ function serializeForestFiles(placementsByType) {
 }
 
 /**
+ * Build the line-delimited object list for main.forestbrushes4.json.
+ *
+ * For each placed forest item type, emit a ForestBrush container plus one
+ * ForestBrushElement that references the matching ForestItemData. This makes
+ * the World Editor Forest tool palette usable (the editor can re-paint the
+ * same item types the export placed) instead of shipping an empty group.
+ *
+ * The trailing ForestBrushGroup SimGroup mirrors the official template
+ * (refs/MapNG_template/levels/mapng_template/main.forestbrushes4.json).
+ *
+ * @param {string[]} itemNames managed ForestItemData keys actually placed
+ * @returns {object[]} objects to serialize with toNDJSON
+ */
+function buildForestBrushItems(itemNames) {
+  const items = [];
+  for (const name of itemNames) {
+    const brushName = `ForestBrush_${name}`;
+    items.push({
+      name: brushName,
+      internalName: name,
+      class: 'ForestBrush',
+      persistentId: generatePersistentId(),
+      __parent: 'ForestBrushGroup',
+    });
+    items.push({
+      name,
+      internalName: name,
+      class: 'ForestBrushElement',
+      persistentId: generatePersistentId(),
+      __parent: brushName,
+      forestItemData: name,
+      scaleMin: 0.85,
+      scaleMax: 1.25,
+    });
+  }
+  // The engine auto-creates ForestBrushGroup, but the official template ships
+  // the SimGroup explicitly; keep parity for predictable editor behavior.
+  items.push({
+    name: 'ForestBrushGroup',
+    class: 'SimGroup',
+    persistentId: generatePersistentId(),
+  });
+  return items;
+}
+
+/**
  * Build GroundCover objects used to render broad grass coverage in BeamNG.
  */
 function buildGroundCoverObjects(terrainData, squareSize, includeTrees, biome) {
@@ -4647,6 +4743,17 @@ export async function exportBeamNGLevel(terrainData, center, options = {}) {
   }
   const mapngFlagPosition = findHighestTerrainPoint(exportTerrainData, squareSize);
 
+  // Universal reflection cubemap. Bundled so reflections work without relying
+  // on another level's cubemap datablock being globally registered. Falls back
+  // to the biome's official cubemap name if the asset can't be loaded.
+  let cubemapFiles = [];
+  try {
+    cubemapFiles = await loadMapngCubemapAsset();
+  } catch (error) {
+    console.warn('Failed to load universal cubemap asset, falling back to biome cubemap:', error);
+  }
+  const useUniversalCubemap = cubemapFiles.length > 0;
+
   beginStep(`Assembling ZIP archive (${levelName})…`, 88);
   await yield_();
 
@@ -4752,13 +4859,21 @@ export async function exportBeamNGLevel(terrainData, center, options = {}) {
     instances: {},
   }, null, 2));
 
-  zip.file(`${base}/main.forestbrushes4.json`, toNDJSON([
-    {
-      class: 'SimGroup',
-      name: 'ForestBrushGroup',
-      persistentId: generatePersistentId(),
-    },
-  ]));
+  // Forest brush palette: emit one ForestBrush/ForestBrushElement per placed
+  // forest item type so the World Editor Forest tool can re-paint them. Falls
+  // back to an empty ForestBrushGroup when the export has no vegetation.
+  const forestBrushItemNames = Object.keys(managedForestItemData);
+  zip.file(`${base}/main.forestbrushes4.json`,
+    forestBrushItemNames.length > 0
+      ? toNDJSON(buildForestBrushItems(forestBrushItemNames))
+      : toNDJSON([
+          {
+            class: 'SimGroup',
+            name: 'ForestBrushGroup',
+            persistentId: generatePersistentId(),
+          },
+        ])
+  );
 
   // ── mainLevel.lua ──────────────────────────────────────────────────────────
   // Lua initialization script executed on level load. Expected by BeamNG's
@@ -5055,6 +5170,20 @@ export async function exportBeamNGLevel(terrainData, center, options = {}) {
   // because they override official names without having specific meshes.
   zip.file(`${base}/map_assets/official_assets/biome_materials/main.materials.json`, JSON.stringify(getBiomeRuntimeMaterialDefs(biome), null, 2));
 
+  // ── art/cubemaps/Universal_cubemap_reflection ─────────────────────────────
+  // Bundled universal reflection cubemap + CubemapData/Material definition.
+  if (useUniversalCubemap) {
+    zip.folder(`${base}/art/cubemaps/Universal_cubemap_reflection`);
+    zip.folder(`${base}/art/cubemaps/Universal_cubemap_reflection/cubemap`);
+    for (const face of cubemapFiles) {
+      zip.file(`${base}/art/cubemaps/Universal_cubemap_reflection/${face.path}`, face.data);
+    }
+    zip.file(
+      `${base}/art/cubemaps/Universal_cubemap_reflection/main.materials.json`,
+      JSON.stringify(buildCubemapMaterialDefs(levelName), null, 2),
+    );
+  }
+
   // ── art/terrains/terrain.png ───────────────────────────────────────────────
   zip.file(`${base}/art/terrains/terrain.png`, terrainTextureData);
   texBlob = null;
@@ -5204,7 +5333,9 @@ export async function exportBeamNGLevel(terrainData, center, options = {}) {
         fogAtmosphereHeight: 1000,
         fogDensity: 0.0001,
         fogDensityOffset: 0,
-        globalEnviromentMap: getGlobalEnvironmentMap(biome),
+        globalEnviromentMap: useUniversalCubemap
+          ? 'cubemap_Universal_cubemap_reflection'
+          : getGlobalEnvironmentMap(biome),
         gravity: -9.81,
         nearClip: 0.1,
         visibleDistance: 4000,
