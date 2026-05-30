@@ -1,19 +1,19 @@
-import { fetchOSMData, getLastOSMRequestInfo, getOSMQueryParameters } from "./osm";
-import { parseRasterOrGridElevationFile, parseTifFile } from "./tifLoader";
+import { fetchOSMData, getLastOSMRequestInfo, getOSMQueryParameters } from "./osm.js";
+import { parseRasterOrGridElevationFile, parseTifFile } from "./tifLoader.js";
 export { parseRasterOrGridElevationFile };
 // Backward-compatible export; prefer parseElevationFile() in new call sites.
 export { parseTifFile };
-import { parseLazFile } from "./lazLoader";
+import { parseLazFile } from "./lazLoader.js";
 export { parseLazFile };
 import { parseAscFiles } from './ascLoader.js';
-import { rasterizeLazOffThread } from "./lazClient";
-import { generateOSMTexture, generateHybridTexture } from "./osmTexture";
+import { rasterizeLazOffThread } from "./lazClient.js";
+import { generateOSMTexture, generateHybridTexture } from "./osmTexture.js";
 import * as GeoTIFF from "geotiff";
 import {
   resampleHeightAndImageOffThread,
   resampleImageOffThread,
-} from "./resamplerClient";
-import { createLocalToWGS84 } from "./geoUtils";
+} from "./resamplerClient.js";
+import { createLocalToWGS84 } from "./geoUtils.js";
 import { fetchKron86GridForBounds, isWithinKron86Coverage } from "./kron86.js";
 import { smoothRoadsInHeightmap } from "./roadSmoother.js";
 

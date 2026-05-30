@@ -162,6 +162,9 @@ const buildQuery = (bounds) => {
   node["natural"="tree_row"](${bbox});
   way["natural"="tree_row"](${bbox});
   node["natural"="shrub"](${bbox});
+  node["highway"="traffic_signals"](${bbox});
+  node["highway"="stop"](${bbox});
+  node["highway"="give_way"](${bbox});
   node["highway"="street_lamp"](${bbox});
   node["barrier"="bollard"](${bbox});
   node["amenity"="bench"](${bbox});
@@ -317,6 +320,8 @@ const parseOverpassResponse = (data, bounds) => {
             geometry: [{ lat: el.lat, lng: el.lon }], tags,
           });
         } else if (
+          el.tags.highway === "traffic_signals" ||
+          el.tags.highway === "stop" ||
           el.tags.highway === "street_lamp" ||
           el.tags.barrier === "bollard" ||
           el.tags.amenity === "bench" ||

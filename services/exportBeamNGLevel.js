@@ -11,6 +11,9 @@ import { ColladaExporter } from './ColladaExporter.js';
 import { buildRoadNetwork, getEffectiveRoadLayer, mergeLinearRoadSegments } from './roadNetwork.js';
 import { createBeamNGLinkFileRegistry } from './beamngLinkFiles.js';
 import { getBiomeRuntimeMaterialDefs } from './beamngRuntimeMaterialCatalog.js';
+import { validateBeamNGZipStructure } from './beamngExportConformance.js';
+import { buildManualMapNavigationData } from './beamngMapNavigation.js';
+import { buildBeamNGSignalExportBundle } from './beamngSignals.js';
 import {
   getBeamNGBiomeById,
   getGlobalEnvironmentMap,
@@ -42,31 +45,6 @@ function sanitizeLevelId(name) {
   if (sanitized.length > 64) sanitized = sanitized.slice(0, 64).replace(/_+$/g, '');
 
   return sanitized || 'mapng_level';
-}
-
-function validateGeneratedBeamNGStructure(zip, base) {
-  const requiredFiles = [
-    `${base}/info.json`,
-    `${base}/city.sites.json`,
-    `${base}/map.json`,
-    `${base}/theTerrain.ter`,
-    `${base}/theTerrain.terrain.json`,
-    `${base}/main.decals.json`,
-    `${base}/main.forestbrushes4.json`,
-    `${base}/art/decals/managedDecalData.json`,
-    `${base}/main.level.json`,
-    `${base}/main/items.level.json`,
-    `${base}/main/MissionGroup/items.level.json`,
-    `${base}/main/MissionGroup/PlayerDropPoints/items.level.json`,
-    `${base}/main/MissionGroup/sky_and_sun/items.level.json`,
-    `${base}/main/MissionGroup/level_objects/items.level.json`,
-  ];
-
-  for (const filePath of requiredFiles) {
-    if (!zip.file(filePath)) {
-      throw new Error(`BeamNG export validation failed: missing required file ${filePath}`);
-    }
-  }
 }
 
 /**
@@ -4303,14 +4281,15 @@ function buildGroundCoverObjects(terrainData, squareSize, includeTrees, biome) {
  *   └── levels/{levelName}/
  *       ├── info.json
  *       ├── map.json
+ *       ├── signals.json
  *       ├── main.decals.json
  *       ├── main.forestbrushes4.json
  *       ├── mainLevel.lua
  *       ├── preview.png
- *       ├── theTerrain.ter
- *       ├── theTerrain.terrain.json
- *       ├── theTerrain.terrainheightmap.png
+ *       ├── terrain.terrain.json
  *       ├── art/terrains/
+ *       │   ├── terrain.ter
+ *       │   ├── terrain.terrainheightmap.png
  *       │   ├── terrain.png
  *       │   └── main.materials.json        (TerrainMaterial + TerrainMaterialTextureSet)
  *       ├── art/shapes/                    (present when OSM features or backdrop exist)
@@ -4539,6 +4518,15 @@ export async function exportBeamNGLevel(terrainData, center, options = {}) {
     ? generateDecalRoads(exportTerrainData, squareSize)
     : [];
 
+  const manualMapNavigation = buildManualMapNavigationData(exportTerrainData, squareSize, roadType);
+  const manualMapSegmentCount = Object.keys(manualMapNavigation.segments).length;
+  const { signalData, controllerDefinitions: signalControllerDefinitions } =
+    buildBeamNGSignalExportBundle(exportTerrainData, squareSize);
+
+  // Traffic support should reflect whether the export contains any road graph
+  // source, either native DecalRoads or manual map.json segments.
+  const supportsTraffic = decalRoads.length > 0 || manualMapSegmentCount > 0;
+
   const roadArchitectHeightmapBlob = roadArchitectSession
     ? generateRoadArchitectHeightmapPng(exportTerrainData, maxHeight)
     : null;
@@ -4718,7 +4706,7 @@ export async function exportBeamNGLevel(terrainData, center, options = {}) {
       translationId: 'Default Spawnpoint',
     }],
     title: levelDisplayName,
-    supportsTraffic: roadType !== 'none',
+    supportsTraffic,
     supportsTimeOfDay: true,
     country: resolvedCountry,
     roadRules: {
@@ -4740,7 +4728,14 @@ export async function exportBeamNGLevel(terrainData, center, options = {}) {
   }, null, 2));
 
   // ── map.json ───────────────────────────────────────────────────────────────
-  zip.file(`${base}/map.json`, JSON.stringify({ segments: {} }, null, 2));
+  zip.file(`${base}/map.json`, JSON.stringify({ segments: manualMapNavigation.segments }, null, 2));
+
+  // ── signals.json ───────────────────────────────────────────────────────────
+  // Generate OSM-driven signals when available; fall back to a valid empty schema.
+  zip.file(`${base}/signals.json`, JSON.stringify(signalData, null, 2));
+  if (signalControllerDefinitions) {
+    zip.file(`${base}/signalControllerDefinitions.json`, JSON.stringify(signalControllerDefinitions, null, 2));
+  }
 
   // ── art/decals/managedDecalData.json ─────────────────────────────────────
   // Keep a canonical location for decal definitions even when no custom decals
@@ -4887,8 +4882,25 @@ export async function exportBeamNGLevel(terrainData, center, options = {}) {
     'return M',
   ].join('\n') + '\n');
 
+  const toZipBinary = async (value) => {
+    if (!value) return value;
+    if (value instanceof Uint8Array || value instanceof ArrayBuffer) return value;
+    if (typeof value.arrayBuffer === 'function') {
+      return new Uint8Array(await value.arrayBuffer());
+    }
+    return value;
+  };
+
+  const previewData = await toZipBinary(previewBlob);
+  const roadArchitectHeightmapData = await toZipBinary(roadArchitectHeightmapBlob);
+  const terrainBinaryData = await toZipBinary(terBlob);
+  const terrainHeightmapData = await toZipBinary(heightmapBlob);
+  const osmDaeData = await toZipBinary(osmDaeBlob);
+  const backdropDaeData = await toZipBinary(backdropDaeBlob);
+  const terrainTextureData = await toZipBinary(texBlob);
+
   // ── preview.png ────────────────────────────────────────────────────────────
-  zip.file(`${base}/preview.png`, previewBlob);
+  zip.file(`${base}/preview.png`, previewData);
   previewBlob = null;
 
   const reportGeneratedAt = new Date();
@@ -4951,25 +4963,30 @@ export async function exportBeamNGLevel(terrainData, center, options = {}) {
 
   if (roadArchitectSession) {
     zip.file(`${base}/bat/roadatchitectsession.json`, JSON.stringify(roadArchitectSession, null, 2));
-    if (roadArchitectHeightmapBlob) {
-      zip.file(`${base}/bat/roadatchitectsession.png`, roadArchitectHeightmapBlob);
+    if (roadArchitectHeightmapData) {
+      zip.file(`${base}/bat/roadatchitectsession.png`, roadArchitectHeightmapData);
     }
   }
 
-  // ── theTerrain.ter ─────────────────────────────────────────────────────────
-  zip.file(`${base}/theTerrain.ter`, terBlob);
+  const terrainBinaryPath = `${base}/art/terrains/terrain.ter`;
+  const terrainHeightmapPath = `${base}/art/terrains/terrain.terrainheightmap.png`;
+  const terrainBinaryVirtualPath = `/levels/${levelName}/art/terrains/terrain.ter`;
+  const terrainHeightmapVirtualPath = `/levels/${levelName}/art/terrains/terrain.terrainheightmap.png`;
 
-  // ── theTerrain.terrainheightmap.png ────────────────────────────────────────
+  // ── art/terrains/terrain.ter ───────────────────────────────────────────────
+  zip.file(terrainBinaryPath, terrainBinaryData);
+
+  // ── art/terrains/terrain.terrainheightmap.png ─────────────────────────────
   // Grayscale heightmap used by BeamNG's terrain system and World Editor.
   // Export at full terrain resolution so packaged heightmap dimensions match .ter.
-  zip.file(`${base}/theTerrain.terrainheightmap.png`, heightmapBlob);
+  zip.file(terrainHeightmapPath, terrainHeightmapData);
   heightmapBlob = null;
 
   // ── map_assets/custom_assets/ (OSM 3D objects and/or terrain backdrop) ──────────────────
-  if (osmDaeBlob || backdropDaeBlob || mapngFlagFiles.length > 0) {
-    if (osmDaeBlob) {
+  if (osmDaeData || backdropDaeData || mapngFlagFiles.length > 0) {
+    if (osmDaeData) {
       zip.folder(`${base}/map_assets/custom_assets/osm_objects`);
-      zip.file(`${base}/map_assets/custom_assets/osm_objects/osm_objects.dae`, osmDaeBlob);
+      zip.file(`${base}/map_assets/custom_assets/osm_objects/osm_objects.dae`, osmDaeData);
       zip.file(`${base}/map_assets/custom_assets/osm_objects/main.materials.json`, JSON.stringify({
         osm_object: {
           class: 'Material',
@@ -4981,14 +4998,17 @@ export async function exportBeamNGLevel(terrainData, center, options = {}) {
         }
       }, null, 2));
     }
-    if (backdropDaeBlob) {
+    if (backdropDaeData) {
       zip.folder(`${base}/map_assets/custom_assets/terrain_backdrop`);
-      zip.file(`${base}/map_assets/custom_assets/terrain_backdrop/terrain_backdrop.dae`, backdropDaeBlob);
+      zip.file(`${base}/map_assets/custom_assets/terrain_backdrop/terrain_backdrop.dae`, backdropDaeData);
       const shapeMaterials = {};
       if (backdropTextureFiles.length > 0) {
         zip.folder(`${base}/map_assets/custom_assets/terrain_backdrop/Textures`);
         for (const tex of backdropTextureFiles) {
-          zip.file(`${base}/map_assets/custom_assets/terrain_backdrop/Textures/${tex.name}.${tex.ext}`, tex.data);
+          zip.file(
+            `${base}/map_assets/custom_assets/terrain_backdrop/Textures/${tex.name}.${tex.ext}`,
+            await toZipBinary(tex.data),
+          );
           shapeMaterials[tex.name] = {
             class: 'Material',
             name: tex.name,
@@ -5036,13 +5056,13 @@ export async function exportBeamNGLevel(terrainData, center, options = {}) {
   zip.file(`${base}/map_assets/official_assets/biome_materials/main.materials.json`, JSON.stringify(getBiomeRuntimeMaterialDefs(biome), null, 2));
 
   // ── art/terrains/terrain.png ───────────────────────────────────────────────
-  zip.file(`${base}/art/terrains/terrain.png`, texBlob);
+  zip.file(`${base}/art/terrains/terrain.png`, terrainTextureData);
   texBlob = null;
 
   // ── art/terrains/ PBR textures (when OSM material painting is enabled) ─────
   if (pbrResult?.textureFiles?.length) {
     for (const { path, blob } of pbrResult.textureFiles) {
-      zip.file(`${base}/art/terrains/${path}`, blob);
+      zip.file(`${base}/art/terrains/${path}`, await toZipBinary(blob));
     }
   }
 
@@ -5061,15 +5081,15 @@ export async function exportBeamNGLevel(terrainData, center, options = {}) {
   };
   zip.file(`${base}/art/terrains/main.materials.json`, JSON.stringify(terrainMaterialDefs, null, 2));
 
-  // ── theTerrain.terrain.json — update materials list to match .ter contents ─
+  // ── terrain.terrain.json — update materials list to match .ter contents ────
   const terrainMaterialNames = pbrResult?.materialNames ?? ['DefaultMaterial'];
   const heightMapSize = size * size;
-  zip.file(`${base}/theTerrain.terrain.json`, JSON.stringify({
+  zip.file(`${base}/terrain.terrain.json`, JSON.stringify({
     binaryFormat: 'version(char), size(unsigned int), heightMap(heightMapSize * heightMapItemSize), layerMap(layerMapSize * layerMapItemSize), layerTextureMap(layerMapSize * layerMapItemSize), materialNames',
-    datafile: `/levels/${levelName}/theTerrain.ter`,
+    datafile: terrainBinaryVirtualPath,
     heightMapItemSize: 2,
     heightMapSize,
-    heightmapImage: `/levels/${levelName}/theTerrain.terrainheightmap.png`,
+    heightmapImage: terrainHeightmapVirtualPath,
     layerMapItemSize: 1,
     layerMapSize: heightMapSize,
     materials: terrainMaterialNames,
@@ -5124,13 +5144,17 @@ export async function exportBeamNGLevel(terrainData, center, options = {}) {
   zip.file(`${base}/main/MissionGroup/items.level.json`, toNDJSON(missionGroupItems));
 
   // ── main/MissionGroup/Mesh_roads/items.level.json ─────────────────────────
+  const rewriteForLinks = (value) => linkRegistry.rewriteObjectPathsDeep(value);
+  const rewrittenMeshRoads = rewriteForLinks(meshRoads);
+  const rewrittenBarrierFolderItems = rewriteForLinks(barrierFolderItems);
+
   if (meshRoads.length > 0) {
-    zip.file(`${base}/main/MissionGroup/Mesh_roads/items.level.json`, toNDJSON(meshRoads));
+    zip.file(`${base}/main/MissionGroup/Mesh_roads/items.level.json`, toNDJSON(rewrittenMeshRoads));
   }
 
   // ── main/MissionGroup/barriers/items.level.json ─────────────────────────
   if (barrierFolderItems.length > 0) {
-    zip.file(`${base}/main/MissionGroup/barriers/items.level.json`, toNDJSON(barrierFolderItems));
+    zip.file(`${base}/main/MissionGroup/barriers/items.level.json`, toNDJSON(rewrittenBarrierFolderItems));
   }
 
   // ── main/MissionGroup/roads/items.level.json ──────────────────────────────
@@ -5158,8 +5182,16 @@ export async function exportBeamNGLevel(terrainData, center, options = {}) {
     writeSimGroupTree(zip, `${base}/main/MissionGroup/Decal_Roads`, decalRoads);
   }
 
+  const aiWaypointItems = manualMapNavigation.waypoints.map((waypoint) => ({
+    ...waypoint,
+    persistentId: generatePersistentId(),
+  }));
+
   // Base maps include these groups even when empty.
-  zip.file(`${base}/main/MissionGroup/AIWaypointsGroup/items.level.json`, '');
+  zip.file(
+    `${base}/main/MissionGroup/AIWaypointsGroup/items.level.json`,
+    aiWaypointItems.length > 0 ? toNDJSON(aiWaypointItems) : ''
+  );
   zip.file(`${base}/main/MissionGroup/AIDecalWaypointsGroup/items.level.json`, '');
 
   const skyAndSunItems = [
@@ -5200,9 +5232,10 @@ export async function exportBeamNGLevel(terrainData, center, options = {}) {
       },
       ...cloudObjects,
   ];
+  const rewrittenSkyAndSunItems = rewriteForLinks(skyAndSunItems);
 
   // ── main/MissionGroup/sky_and_sun/items.level.json ───────────────────────
-  zip.file(`${base}/main/MissionGroup/sky_and_sun/items.level.json`, toNDJSON(skyAndSunItems));
+  zip.file(`${base}/main/MissionGroup/sky_and_sun/items.level.json`, toNDJSON(rewrittenSkyAndSunItems));
 
   // ── main/MissionGroup/level_objects/items.level.json ──────────────────────
   // TerrainBlock referencing the .ter file and the PBR material texture set.
@@ -5225,7 +5258,7 @@ export async function exportBeamNGLevel(terrainData, center, options = {}) {
     squareSize,
     maxHeight,
     baseTexSize: size,
-    terrainFile: `/levels/${levelName}/theTerrain.ter`,
+    terrainFile: terrainBinaryVirtualPath,
     materialTextureSet: pbrResult?.textureSetName ?? '',
     minimapImage: '',
   }];
@@ -5271,12 +5304,15 @@ export async function exportBeamNGLevel(terrainData, center, options = {}) {
     });
   }
 
+  const rewrittenLevelObjectItems = rewriteForLinks(levelObjectItems);
+  const rewrittenWaterObjects = rewriteForLinks(waterObjects);
+
   zip.file(`${base}/main/MissionGroup/level_objects/items.level.json`,
-    toNDJSON(levelObjectItems)
+    toNDJSON(rewrittenLevelObjectItems)
   );
 
   zip.file(`${base}/main/MissionGroup/Water/items.level.json`,
-    toNDJSON(waterObjects)
+    toNDJSON(rewrittenWaterObjects)
   );
 
   const vegetationItems = [
@@ -5289,11 +5325,13 @@ export async function exportBeamNGLevel(terrainData, center, options = {}) {
     }] : []),
     ...groundCoverObjects,
   ];
+  const rewrittenVegetationItems = rewriteForLinks(vegetationItems);
+  const rewrittenManagedForestItemData = rewriteForLinks(managedForestItemData);
 
   if (vegetationItems.length > 0) {
-    zip.file(`${base}/main/MissionGroup/vegetation/items.level.json`, toNDJSON(vegetationItems));
+    zip.file(`${base}/main/MissionGroup/vegetation/items.level.json`, toNDJSON(rewrittenVegetationItems));
     if (forestFiles.length > 0) {
-      zip.file(`${base}/art/forest/managedItemData.json`, JSON.stringify(managedForestItemData, null, 2));
+      zip.file(`${base}/art/forest/managedItemData.json`, JSON.stringify(rewrittenManagedForestItemData, null, 2));
       for (const forestFile of forestFiles) {
         zip.file(`${base}/${forestFile.path}`, forestFile.contents);
       }
@@ -5334,12 +5372,12 @@ export async function exportBeamNGLevel(terrainData, center, options = {}) {
     {
       class: 'SimGroup',
       name: 'sky_and_sun',
-      childs: skyAndSunItems.map(toMainLevelObject),
+      childs: rewrittenSkyAndSunItems.map(toMainLevelObject),
     },
     {
       class: 'SimGroup',
       name: 'level_objects',
-      childs: levelObjectItems.map(toMainLevelObject),
+      childs: rewrittenLevelObjectItems.map(toMainLevelObject),
     },
     {
       class: 'SimGroup',
@@ -5349,13 +5387,13 @@ export async function exportBeamNGLevel(terrainData, center, options = {}) {
     {
       class: 'SimGroup',
       name: 'Water',
-      childs: waterObjects.map(toMainLevelObject),
+      childs: rewrittenWaterObjects.map(toMainLevelObject),
     },
     ...(vegetationItems.length > 0
       ? [{
           class: 'SimGroup',
           name: 'vegetation',
-          childs: vegetationItems.map(toMainLevelObject),
+          childs: rewrittenVegetationItems.map(toMainLevelObject),
         }]
       : []),
     ...(meshRoads.length > 0
@@ -5381,7 +5419,13 @@ export async function exportBeamNGLevel(terrainData, center, options = {}) {
     childs: mainLevelChilds,
   }, null, 2));
 
-  validateGeneratedBeamNGStructure(zip, base);
+  validateBeamNGZipStructure(zip, base, {
+    requiresVegetation: vegetationItems.length > 0,
+    requiresRoadGroups: roadFolderGroups.length > 0,
+    requiresMeshRoads: meshRoads.length > 0,
+    requiresBarriers: barrierFolderItems.length > 0,
+    requiresDecalRoads: decalRoads.length > 0,
+  });
 
   beginStep('Compressing ZIP archive (DEFLATE)…', 94);
   await yield_();

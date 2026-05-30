@@ -67,3 +67,53 @@ test('does not rewrite texture-like level paths', () => {
   );
   assert.equal(links.getLinkCount(), 0);
 });
+
+test('rewrites exporter-like TSStatic shape fields and registers all link targets', () => {
+  const links = createBeamNGLinkFileRegistry('mapng_demo');
+
+  const rewritten = links.rewriteObjectPathsDeep({
+    class: 'TSStatic',
+    shapeName: '/levels/west_coast_usa/art/shapes/objects/guardrail1.dae',
+    postShapeName: '/levels/west_coast_usa/art/shapes/objects/guardrailpost.dae',
+    endShapeName: '/levels/west_coast_usa/art/shapes/objects/guardrail_end.dae',
+  });
+
+  assert.match(
+    rewritten.shapeName,
+    /^\/levels\/mapng_demo\/map_assets\/official_assets\/west_coast_usa_assets\/levels\/west_coast_usa\//,
+  );
+  assert.match(
+    rewritten.postShapeName,
+    /^\/levels\/mapng_demo\/map_assets\/official_assets\/west_coast_usa_assets\/levels\/west_coast_usa\//,
+  );
+  assert.match(
+    rewritten.endShapeName,
+    /^\/levels\/mapng_demo\/map_assets\/official_assets\/west_coast_usa_assets\/levels\/west_coast_usa\//,
+  );
+  assert.equal(links.getLinkCount(), 3);
+});
+
+test('rewrites nested managed item shape paths for forest-like payloads', () => {
+  const links = createBeamNGLinkFileRegistry('mapng_demo');
+
+  const rewritten = links.rewriteObjectPathsDeep({
+    items: {
+      OakTree: {
+        shapeFile: '/levels/italy/art/shapes/trees/tree_oak.dae',
+      },
+      PineTree: {
+        shapeFile: '/levels/italy/art/shapes/trees/tree_pine.cdae',
+      },
+    },
+  });
+
+  assert.match(
+    rewritten.items.OakTree.shapeFile,
+    /^\/levels\/mapng_demo\/map_assets\/official_assets\/italy_assets\/levels\/italy\//,
+  );
+  assert.match(
+    rewritten.items.PineTree.shapeFile,
+    /^\/levels\/mapng_demo\/map_assets\/official_assets\/italy_assets\/levels\/italy\//,
+  );
+  assert.equal(links.getLinkCount(), 2);
+});

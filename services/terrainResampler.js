@@ -1,6 +1,6 @@
 import proj4 from 'proj4';
 import * as GeoTIFF from 'geotiff';
-import { createLocalToWGS84 } from './geoUtils';
+import { createLocalToWGS84 } from './geoUtils.js';
 import { getBuiltInProj4 } from './uploadGeoMetadata.js';
 
 const normalizeLng = (lng) => ((((lng + 180) % 360) + 360) % 360) - 180;
