@@ -2948,17 +2948,20 @@ async function loadMapngFlagAsset() {
 /**
  * Load the bundled universal reflection cubemap faces (6 HDR DDS files).
  * Returns [{ path: 'cubemap/skyboxN.hdr.dds', data: Uint8Array }, ...].
+ *
+ * Faces are served as individual static files rather than one archive because
+ * Cloudflare Workers caps a single static asset at 25 MiB; a combined zip
+ * (~33 MiB) exceeds that and fails to deploy.
  */
 async function loadMapngCubemapAsset() {
-  const response = await fetch('/mapng_cubemap_static.zip');
-  if (!response.ok) throw new Error(`Failed to load mapng cubemap asset: ${response.status}`);
-  const archive = await JSZip.loadAsync(await response.arrayBuffer());
   const files = [];
-  for (const entry of Object.values(archive.files)) {
-    if (entry.dir) continue;
+  for (let i = 0; i < 6; i++) {
+    const name = `skybox${i}.hdr.dds`;
+    const response = await fetch(`/cubemap/${name}`);
+    if (!response.ok) throw new Error(`Failed to load cubemap face ${name}: ${response.status}`);
     files.push({
-      path: entry.name,
-      data: await entry.async('uint8array'),
+      path: `cubemap/${name}`,
+      data: new Uint8Array(await response.arrayBuffer()),
     });
   }
   return files;

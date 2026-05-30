@@ -75,17 +75,12 @@ function installCanvasPolyfill() {
         arrayBuffer: async () => emptyZipEOCD.buffer.slice(0),
       };
     }
-    if (url === '/mapng_cubemap_static.zip') {
-      const cubemapZip = new JSZip();
-      const faces = cubemapZip.folder('cubemap');
-      for (let i = 0; i < 6; i++) {
-        faces.file(`skybox${i}.hdr.dds`, new Uint8Array([0x44, 0x44, 0x53, 0x20]));
-      }
-      const buffer = await cubemapZip.generateAsync({ type: 'arraybuffer' });
+    if (/^\/cubemap\/skybox[0-5]\.hdr\.dds$/.test(url)) {
+      // 'DDS ' magic bytes; content is irrelevant to the export wiring.
       return {
         ok: true,
         status: 200,
-        arrayBuffer: async () => buffer,
+        arrayBuffer: async () => new Uint8Array([0x44, 0x44, 0x53, 0x20]).buffer,
       };
     }
     if (typeof originalFetch === 'function') {
