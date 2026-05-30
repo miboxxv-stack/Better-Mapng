@@ -1,9 +1,22 @@
 {
+  "$schema": "./node_modules/wrangler/config-schema.json",
   "name": "mapng",
   "main": "worker.js",
-  "compatibility_date": "2024-11-19",
+  "compatibility_date": "2026-05-28",
+  "preview_urls": true,
   "assets": {
     "directory": "./dist",
     "binding": "ASSETS"
+  },
+  "routes": [
+    { "pattern": "mapng.com", "custom_domain": true }
+  ],
+  "env": {
+    "dev": {
+      "name": "dev-mapng",
+      "routes": [
+        { "pattern": "dev.mapng.com", "custom_domain": true }
+      ]
+    }
   }
 }
