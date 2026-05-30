@@ -157,6 +157,16 @@ function makeTerrainData() {
           { lat: 0.6, lng: 0.4 },
         ],
       },
+      {
+        id: 'sign_1',
+        type: 'street_furniture',
+        tags: {
+          highway: 'stop',
+        },
+        geometry: [
+          { lat: 0.45, lng: 0.55 },
+        ],
+      },
     ],
   };
 }
@@ -242,6 +252,22 @@ test('exportBeamNGLevel rewrites barrier shape paths and emits .link files acros
         'cubemap_Universal_cubemap_reflection',
         `Expected universal cubemap reference for roadType=${roadType}`,
       );
+
+      // Native road signs: OSM stop node → TSStatic referencing a native sign
+      // mesh via the link registry (no procedural sign box baked into the DAE).
+      const signsPath = `${base}/main/MissionGroup/signs/items.level.json`;
+      const signsFile = zip.file(signsPath);
+      assert.ok(signsFile, `Missing ${signsPath} for roadType=${roadType}`);
+      const signItems = parseNDJSON(await signsFile.async('string'));
+      const signStatic = signItems.find((item) => item?.class === 'TSStatic');
+      assert.ok(signStatic, `Expected a TSStatic sign for roadType=${roadType}`);
+      assert.match(
+        signStatic.shapeName,
+        /^\/levels\/mapng_demo\/map_assets\/official_assets\/.*sign_stop\.dae$/,
+        `Sign should reference a rewritten native mesh for roadType=${roadType}`,
+      );
+      const signLink = `${String(signStatic.shapeName).replace(/^\//, '')}.link`;
+      assert.ok(zip.file(signLink), `Missing sign link file ${signLink}`);
     }
   } finally {
     restorePolyfills();

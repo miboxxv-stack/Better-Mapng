@@ -460,6 +460,9 @@ async function generateOSMObjectsDAE(terrainData, worldSize) {
   const osmGroup = createOSMGroup(terrainData, {
     includeVegetation: false,
     includeBarriers: false,
+    // Signs are placed as native BeamNG sign assets (see buildNativeSignObjects),
+    // so don't bake the procedural sign boxes into the generic OSM mesh.
+    includeSigns: false,
     // Keep exact building footprints in exported levels.
     simplifyBuildingFootprints: false,
   });
@@ -3422,6 +3425,66 @@ function buildBarrierFolderItems(barrierObjects) {
   }));
 }
 
+// Native BeamNG sign meshes, referenced from official level art via .link files
+// (no mesh bundled). The east_coast_usa signs_usa set is a clean, generic
+// traffic-sign library suitable for any biome.
+const NATIVE_SIGN_ASSETS = {
+  stop: { shapeName: '/levels/east_coast_usa/art/shapes/signs_usa/sign_stop.dae' },
+  give_way: { shapeName: '/levels/east_coast_usa/art/shapes/signs_usa/sign_yield.dae' },
+};
+
+const MAX_NATIVE_SIGN_OBJECTS = 4000;
+
+/**
+ * Resolve an OSM point feature's tags to a native BeamNG sign asset.
+ *
+ * Only well-defined sign types map to a mesh; ambiguous `traffic_sign` nodes
+ * return null (a wrong-meaning sign is worse than none). `traffic_signals`
+ * nodes are handled by the signals system, not here.
+ */
+function resolveNativeSignAsset(tags = {}) {
+  const highway = String(tags.highway ?? '').trim().toLowerCase();
+  if (highway === 'stop') return NATIVE_SIGN_ASSETS.stop;
+  if (highway === 'give_way') return NATIVE_SIGN_ASSETS.give_way;
+  return null;
+}
+
+/**
+ * Convert OSM stop/give_way point nodes into native BeamNG sign TSStatic
+ * objects, replacing the procedural sign boxes that used to be baked into the
+ * OSM objects DAE. Returned objects use `__parent: 'signs'` and are run through
+ * the link registry by the caller.
+ */
+function buildNativeSignObjects(terrainData, squareSize) {
+  const features = terrainData.osmFeatures?.filter((feature) => (
+    feature.type === 'street_furniture'
+    && Array.isArray(feature.geometry)
+    && feature.geometry.length === 1
+  )) ?? [];
+
+  const objects = [];
+  for (let i = 0; i < features.length; i++) {
+    if (objects.length >= MAX_NATIVE_SIGN_OBJECTS) break;
+    const feature = features[i];
+    const asset = resolveNativeSignAsset(feature.tags || {});
+    if (!asset) continue;
+    const pt = feature.geometry[0];
+    if (!Number.isFinite(pt?.lat) || !Number.isFinite(pt?.lng)) continue;
+    const world = geoToWorldPoint(pt.lat, pt.lng, terrainData, squareSize, 0);
+    objects.push({
+      __parent: 'signs',
+      class: 'TSStatic',
+      name: `sign_${i}`,
+      persistentId: generatePersistentId(),
+      position: [roundTo(world[0], 3), roundTo(world[1], 3), roundTo(world[2], 3)],
+      rotationMatrix: rotationMatrixFromYaw(0),
+      shapeName: asset.shapeName,
+      useInstanceRenderData: true,
+    });
+  }
+  return objects;
+}
+
 /**
  * Sanitize user-facing road folder names for BeamNG file-safe usage.
  */
@@ -4707,6 +4770,7 @@ export async function exportBeamNGLevel(terrainData, center, options = {}) {
     ? buildNativeBarrierObjects(exportTerrainData, squareSize, biome)
     : [];
   const barrierFolderItems = buildBarrierFolderItems(barrierObjects);
+  const signObjects = buildNativeSignObjects(exportTerrainData, squareSize);
   const roadFolderGroups = buildRoadFolderGroups(roadArchitectSession);
   const usesEastCoastFenceMaterials = barrierFolderItems.some((obj) => (
     String(obj?.shapeName || '').toLowerCase().includes('eca_bld_wood_fence_a.dae')
@@ -4782,6 +4846,9 @@ export async function exportBeamNGLevel(terrainData, center, options = {}) {
   zip.folder(`${base}/main/MissionGroup/Water`);
   if (barrierFolderItems.length > 0) {
     zip.folder(`${base}/main/MissionGroup/barriers`);
+  }
+  if (signObjects.length > 0) {
+    zip.folder(`${base}/main/MissionGroup/signs`);
   }
   if (roadFolderGroups.length > 0) {
     zip.folder(`${base}/main/MissionGroup/roads`);
@@ -5260,6 +5327,12 @@ export async function exportBeamNGLevel(terrainData, center, options = {}) {
       name: 'barriers',
       persistentId: generatePersistentId(),
     }] : []),
+    ...(signObjects.length > 0 ? [{
+      __parent: 'MissionGroup',
+      class: 'SimGroup',
+      name: 'signs',
+      persistentId: generatePersistentId(),
+    }] : []),
     ...(roadFolderGroups.length > 0 ? [{
       __parent: 'MissionGroup',
       class: 'SimGroup',
@@ -5279,6 +5352,7 @@ export async function exportBeamNGLevel(terrainData, center, options = {}) {
   const rewriteForLinks = (value) => linkRegistry.rewriteObjectPathsDeep(value);
   const rewrittenMeshRoads = rewriteForLinks(meshRoads);
   const rewrittenBarrierFolderItems = rewriteForLinks(barrierFolderItems);
+  const rewrittenSignObjects = rewriteForLinks(signObjects);
 
   if (meshRoads.length > 0) {
     zip.file(`${base}/main/MissionGroup/Mesh_roads/items.level.json`, toNDJSON(rewrittenMeshRoads));
@@ -5287,6 +5361,12 @@ export async function exportBeamNGLevel(terrainData, center, options = {}) {
   // ── main/MissionGroup/barriers/items.level.json ─────────────────────────
   if (barrierFolderItems.length > 0) {
     zip.file(`${base}/main/MissionGroup/barriers/items.level.json`, toNDJSON(rewrittenBarrierFolderItems));
+  }
+
+  // ── main/MissionGroup/signs/items.level.json ────────────────────────────
+  // Native BeamNG sign meshes (TSStatic + .link) for OSM stop/give_way nodes.
+  if (signObjects.length > 0) {
+    zip.file(`${base}/main/MissionGroup/signs/items.level.json`, toNDJSON(rewrittenSignObjects));
   }
 
   // ── main/MissionGroup/roads/items.level.json ──────────────────────────────
@@ -5544,6 +5624,13 @@ export async function exportBeamNGLevel(terrainData, center, options = {}) {
           childs: barrierFolderItems.map(toMainLevelObject),
         }]
       : []),
+    ...(signObjects.length > 0
+      ? [{
+          class: 'SimGroup',
+          name: 'signs',
+          childs: rewrittenSignObjects.map(toMainLevelObject),
+        }]
+      : []),
   ];
 
   zip.file(`${base}/main.level.json`, JSON.stringify({
@@ -5558,6 +5645,7 @@ export async function exportBeamNGLevel(terrainData, center, options = {}) {
     requiresRoadGroups: roadFolderGroups.length > 0,
     requiresMeshRoads: meshRoads.length > 0,
     requiresBarriers: barrierFolderItems.length > 0,
+    requiresSigns: signObjects.length > 0,
     requiresDecalRoads: decalRoads.length > 0,
   });
 

@@ -14,6 +14,7 @@
  * @param {boolean} [options.requiresRoadGroups=false]
  * @param {boolean} [options.requiresMeshRoads=false]
  * @param {boolean} [options.requiresBarriers=false]
+ * @param {boolean} [options.requiresSigns=false]
  * @param {boolean} [options.requiresDecalRoads=false]
  * @returns {string[]}
  */
@@ -23,6 +24,7 @@ export function getRequiredLevelFiles(options = {}) {
     requiresRoadGroups = false,
     requiresMeshRoads = false,
     requiresBarriers = false,
+    requiresSigns = false,
     requiresDecalRoads = false,
   } = options;
 
@@ -63,6 +65,9 @@ export function getRequiredLevelFiles(options = {}) {
   }
   if (requiresBarriers) {
     required.push('main/MissionGroup/barriers/items.level.json');
+  }
+  if (requiresSigns) {
+    required.push('main/MissionGroup/signs/items.level.json');
   }
   if (requiresDecalRoads) {
     required.push('main/MissionGroup/Decal_Roads/items.level.json');

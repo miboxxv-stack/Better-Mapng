@@ -680,6 +680,9 @@ export const createOSMGroup = (data, options = {}) => {
     includeVegetation = true,
     includeBarriers = true,
     includeStreetFurniture = true,
+    // Road signs (give_way / generic traffic signs) baked as procedural meshes.
+    // BeamNG export disables this and places native sign assets instead.
+    includeSigns = true,
     maxBuildings = Number.POSITIVE_INFINITY,
     maxBarriers = Number.POSITIVE_INFINITY,
     maxTrees = 5000,
@@ -960,6 +963,9 @@ export const createOSMGroup = (data, options = {}) => {
       else if (f.tags.amenity === "bench") subtype = "bench";
       else if (f.tags.highway === "give_way") subtype = "give_way";
       else if (f.tags.traffic_sign) subtype = "generic";
+      // Signs (give_way / generic) are placed as native assets in the BeamNG
+      // export; skip the procedural mesh versions when signs are disabled.
+      if (!includeSigns && (subtype === "give_way" || subtype === "generic")) return;
       streetFurnitureList.push({ pos: v, subtype, tags: f.tags });
     } else if (includeVegetation && f.type === "vegetation") {
       const isTree =
