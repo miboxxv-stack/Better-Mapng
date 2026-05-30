@@ -302,6 +302,8 @@
     "suggestedSquareExport": "Suggested square export: {size} x {size} px.",
     "switchToSquareCrop": "Switch to Square Crop to choose a power-of-two export area inside the uploaded coverage.",
     "dragMapToPositionCrop": "Drag the map to position the crop box inside the uploaded coverage.",
+    "previewOutOfDate": "Preview is out of date — re-run Preview 3D to apply your changes.",
+    "previewOutOfDatePanel": "3D preview is out of date. Re-run Preview 3D to apply.",
     "downloadsMatch": "- Downloads match selected size exactly.",
     "fetchesMaxDetail": "- Fetches max detail (Terrain Z15, Sat Z17).",
     "largeAreaRamWarning": "Warning: Large area. May require high RAM.",

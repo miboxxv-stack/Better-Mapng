@@ -1,5 +1,28 @@
 export const VALID_SQUARE_EXPORT_RESOLUTIONS = [512, 1024, 2048, 4096, 8192, 16384];
 
+// Upper bound on a native-coverage output edge (px) once the processing
+// resolution is applied, so a fine pixel size (e.g. 0.25 m/px) over a large
+// upload can't blow up the grid. Matches the experimental square-export max.
+export const MAX_NATIVE_OUTPUT_EDGE = 16384;
+
+/**
+ * Scale a native coverage grid (given in metres at 1 m/px, e.g. meta.nativeWidth)
+ * to the requested processing resolution, clamped so the longer edge stays within
+ * MAX_NATIVE_OUTPUT_EDGE while preserving aspect ratio.
+ */
+export const scaleNativeDimsToProcessingMpp = (nativeWidthMeters, nativeHeightMeters, metersPerPixel) => {
+  const mpp = Number.isFinite(Number(metersPerPixel)) && Number(metersPerPixel) > 0 ? Number(metersPerPixel) : 1;
+  let width = Math.max(1, Math.round(Number(nativeWidthMeters || 0) / mpp));
+  let height = Math.max(1, Math.round(Number(nativeHeightMeters || 0) / mpp));
+  const maxEdge = Math.max(width, height);
+  if (maxEdge > MAX_NATIVE_OUTPUT_EDGE) {
+    const clamp = MAX_NATIVE_OUTPUT_EDGE / maxEdge;
+    width = Math.max(1, Math.round(width * clamp));
+    height = Math.max(1, Math.round(height * clamp));
+  }
+  return { width, height };
+};
+
 export const getBoundsCenter = (bounds) => {
   if (!bounds) return null;
   return {
@@ -79,23 +102,31 @@ export const computeUploadedCropBounds = (center, resolution, coverageBounds) =>
   return clampSelectionToCoverage(rawBounds, coverageBounds);
 };
 
-export const getMaxSquareCropResolution = (meta, allowExperimental16384 = false) => {
-  const maxEdge = Math.min(
+export const getMaxSquareCropResolution = (meta, processingMpp = 1, allowExperimental16384 = false) => {
+  // nativeWidth/Height are the coverage edges in metres (1 m/px). The exported
+  // heightmap edge in pixels is coverageMetres / processingMpp, so a finer pixel
+  // size (e.g. 0.75 m/px) unlocks a higher power-of-2 within the same area.
+  const maxEdgeMeters = Math.min(
     Number(meta?.nativeWidth || 0),
     Number(meta?.nativeHeight || 0),
   );
-  if (!Number.isFinite(maxEdge) || maxEdge <= 0) return null;
+  if (!Number.isFinite(maxEdgeMeters) || maxEdgeMeters <= 0) return null;
+
+  const mpp = Number.isFinite(Number(processingMpp)) && Number(processingMpp) > 0
+    ? Number(processingMpp)
+    : 1;
+  const maxEdgePixels = maxEdgeMeters / mpp;
 
   const allowed = VALID_SQUARE_EXPORT_RESOLUTIONS.filter((value) => {
     if (!allowExperimental16384 && value === 16384) return false;
-    return value <= maxEdge;
+    return value <= maxEdgePixels;
   });
 
   return allowed.length ? allowed[allowed.length - 1] : null;
 };
 
-export const getSquareCropResolutionOptions = (meta, allowExperimental16384 = false) => {
-  const maxResolution = getMaxSquareCropResolution(meta, allowExperimental16384);
+export const getSquareCropResolutionOptions = (meta, processingMpp = 1, allowExperimental16384 = false) => {
+  const maxResolution = getMaxSquareCropResolution(meta, processingMpp, allowExperimental16384);
   if (!maxResolution) return [];
 
   return VALID_SQUARE_EXPORT_RESOLUTIONS.filter((value) => {

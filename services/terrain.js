@@ -1,9 +1,9 @@
 import { fetchOSMData, getLastOSMRequestInfo, getOSMQueryParameters } from "./osm.js";
-import { parseRasterOrGridElevationFile, parseTifFile } from "./tifLoader.js";
+import { parseRasterOrGridElevationFile, parseTifFile, parseTifFiles, parseGridFiles } from "./tifLoader.js";
 export { parseRasterOrGridElevationFile };
 // Backward-compatible export; prefer parseElevationFile() in new call sites.
 export { parseTifFile };
-import { parseLazFile } from "./lazLoader.js";
+import { parseLazFile, parseLazFiles } from "./lazLoader.js";
 export { parseLazFile };
 import { parseAscFiles } from './ascLoader.js';
 import { rasterizeLazOffThread } from "./lazClient.js";
@@ -16,6 +16,7 @@ import {
 import { createLocalToWGS84 } from "./geoUtils.js";
 import { fetchKron86GridForBounds, isWithinKron86Coverage } from "./kron86.js";
 import { smoothRoadsInHeightmap } from "./roadSmoother.js";
+import { scaleNativeDimsToProcessingMpp } from "./uploadBounds.js";
 
 // Constants
 const TILE_SIZE = 256;
@@ -237,20 +238,49 @@ const fillLazNoDataWithGlobalTerrain = async (
   const latSpan = bounds.north - bounds.south;
   const lngSpan = bounds.east - bounds.west;
 
-  for (let m = 0; m < missingIndices.length; m++) {
-    const idx = missingIndices[m];
+  const cellLatLng = (idx) => {
     const row = Math.floor(idx / width);
     const col = idx - row * width;
-
     const u = width > 1 ? (col / (width - 1)) : 0;
     const v = height > 1 ? (row / (height - 1)) : 0;
+    return { lat: bounds.north - v * latSpan, lng: bounds.west + u * lngSpan };
+  };
 
-    const lat = bounds.north - v * latSpan;
-    const lng = bounds.west + u * lngSpan;
+  // The high-res LAZ surface and the coarse global DEM usually sit on different
+  // vertical datums (e.g. NAVD88 vs EGM96), so naively pasting global heights
+  // leaves a visible step at the footprint edge. Estimate the median offset
+  // between the two at the boundary (LAZ cells adjacent to a gap) and shift the
+  // global fill by it so the surfaces line up.
+  let datumOffset = 0;
+  const offsetSamples = [];
+  for (let i = 0; i < heightMap.length; i++) {
+    const h = heightMap[i];
+    if (h === NO_DATA_VALUE || !Number.isFinite(h)) continue;
+    const row = Math.floor(i / width);
+    const col = i - row * width;
+    const neighborIsGap = (
+      (col > 0 && heightMap[i - 1] === NO_DATA_VALUE)
+      || (col < width - 1 && heightMap[i + 1] === NO_DATA_VALUE)
+      || (row > 0 && heightMap[i - width] === NO_DATA_VALUE)
+      || (row < height - 1 && heightMap[i + width] === NO_DATA_VALUE)
+    );
+    if (!neighborIsGap) continue;
+    const { lat, lng } = cellLatLng(i);
+    const g = sampleHeight(lat, lng);
+    if (g !== NO_DATA_VALUE && Number.isFinite(g)) offsetSamples.push(h - g);
+  }
+  if (offsetSamples.length > 0) {
+    offsetSamples.sort((a, b) => a - b);
+    datumOffset = offsetSamples[Math.floor(offsetSamples.length / 2)];
+  }
+
+  for (let m = 0; m < missingIndices.length; m++) {
+    const idx = missingIndices[m];
+    const { lat, lng } = cellLatLng(idx);
     const sampled = sampleHeight(lat, lng);
 
     if (sampled !== NO_DATA_VALUE && Number.isFinite(sampled)) {
-      heightMap[idx] = sampled;
+      heightMap[idx] = sampled + datumOffset;
       filledMask[idx] = 1;
     }
   }
@@ -395,16 +425,30 @@ export const parseElevationFile = async (fileOrFiles) => {
     throw new Error('No elevation files selected.');
   }
 
+  const extOf = (file) => String(file?.name || '').toLowerCase().split('.').pop();
+
   if (files.length > 1) {
-    const allAsc = files.every((file) => String(file?.name || '').toLowerCase().endsWith('.asc'));
-    if (!allAsc) {
-      throw new Error('Multiple-file upload currently supports ASC files only. For mixed formats, upload a ZIP archive instead.');
+    // Group by extension family. Each family has its own tile-merge path.
+    const families = {
+      asc: (f) => f === 'asc',
+      tif: (f) => f === 'tif' || f === 'tiff',
+      gml: (f) => f === 'gml' || f === 'xml',
+      laz: (f) => f === 'laz' || f === 'las',
+    };
+    const family = Object.entries(families).find(([, test]) => files.every((file) => test(extOf(file))));
+    if (!family) {
+      throw new Error('Multiple-file upload requires all files to be the same type (all TIF, all ASC, all GML/XML, or all LAZ/LAS). For mixed formats, upload a ZIP archive instead.');
     }
-    return parseAscFiles(files);
+    switch (family[0]) {
+      case 'asc': return parseAscFiles(files);
+      case 'tif': return parseTifFiles(files);
+      case 'gml': return parseGridFiles(files);
+      case 'laz': return parseLazFiles(files);
+    }
   }
 
   const file = files[0];
-  const ext = String(file?.name || '').toLowerCase().split('.').pop();
+  const ext = extOf(file);
   if (ext === 'laz' || ext === 'las') {
     return parseLazFile(file);
   }
@@ -1532,8 +1576,7 @@ export const loadTerrainFromTif = async (
       west: normalizeLng(Number(targetBounds.west)),
     };
   } else if (preferNativeCoverage && uploadedRasterData.bounds && uploadedRasterData.nativeWidth && uploadedRasterData.nativeHeight) {
-    width = uploadedRasterData.nativeWidth;
-    height = uploadedRasterData.nativeHeight;
+    ({ width, height } = scaleNativeDimsToProcessingMpp(uploadedRasterData.nativeWidth, uploadedRasterData.nativeHeight, effectiveMetersPerPixel));
     fetchBounds = {
       north: uploadedRasterData.bounds.north,
       south: uploadedRasterData.bounds.south,
@@ -1629,7 +1672,8 @@ export const loadTerrainFromTif = async (
     };
     const source = uploadedRasterData.sourceType === 'grid'
       ? { type: 'grid', data: { tiles: uploadedRasterData.gridTiles || [] } }
-      : { type: 'geotiff', data: [{ image: uploadedRasterData.image, raster: uploadedRasterData.raster }] };
+      : { type: 'geotiff', data: uploadedRasterData.images
+          || [{ image: uploadedRasterData.image, raster: uploadedRasterData.raster }] };
     const skipGapExpansion = String(uploadedRasterData.sourceFormat || '').toLowerCase() === 'gml-zip';
     const result = await resampleHeightAndImageOffThread(
       source,
@@ -1843,8 +1887,7 @@ export const loadTerrainFromLaz = async (
       west: normalizeLng(Number(targetBounds.west)),
     };
   } else if (preferNativeCoverage && lazData.bounds && lazData.nativeWidth && lazData.nativeHeight) {
-    width       = lazData.nativeWidth;
-    height      = lazData.nativeHeight;
+    ({ width, height } = scaleNativeDimsToProcessingMpp(lazData.nativeWidth, lazData.nativeHeight, effectiveMetersPerPixel));
     fetchBounds = {
       north: lazData.bounds.north,
       south: lazData.bounds.south,
@@ -1921,6 +1964,8 @@ export const loadTerrainFromLaz = async (
       }
     : normalizedCenter;
 
+  // Multiple tiles (lazData.tiles) are accumulated into a single output grid
+  // inside the worker, so overlapping point clouds merge seamlessly.
   const { heightMap } = await rasterizeLazOffThread(
     lazData,
     rasterCenter,

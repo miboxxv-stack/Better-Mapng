@@ -91,30 +91,29 @@ const buildGridMapper = ({ epsgCode, center, width, height, minX, maxX, minY, ma
 
       // Prefer explicit WGS84 bounds from the pipeline so point rasterization
       // shares the exact same geographic envelope as satellite/OSM sampling.
+      //
+      // Inverse-project each point to lon/lat and bin it linearly within that
+      // envelope. This is correct for ANY projection — including conic CRS like
+      // Albers (EPSG:6350), where a lon/lat rectangle is a rotated/curved quad
+      // in projected space. The previous approach stretched the projected
+      // bounding box, which tilted the data and broke alignment with the
+      // linear-in-lon/lat OSM/satellite grid.
       if (targetBounds && ['north', 'south', 'east', 'west'].every((key) => Number.isFinite(Number(targetBounds[key])))) {
-        const corners = [
-          toFileCRS.forward([Number(targetBounds.west), Number(targetBounds.north)]),
-          toFileCRS.forward([Number(targetBounds.east), Number(targetBounds.north)]),
-          toFileCRS.forward([Number(targetBounds.west), Number(targetBounds.south)]),
-          toFileCRS.forward([Number(targetBounds.east), Number(targetBounds.south)]),
-        ];
-        const xs = corners.map(([x]) => x).filter(Number.isFinite);
-        const ys = corners.map(([, y]) => y).filter(Number.isFinite);
-        if (xs.length === 4 && ys.length === 4) {
-          const bx0 = Math.min(...xs);
-          const bx1 = Math.max(...xs);
-          const by0 = Math.min(...ys);
-          const by1 = Math.max(...ys);
-          const spanX = bx1 - bx0;
-          const spanY = by1 - by0;
-          if (spanX > 0 && spanY > 0) {
-            return (px, py) => {
-              if (px < bx0 || px > bx1 || py < by0 || py > by1) return -1;
-              const col = Math.min(width - 1, Math.max(0, Math.floor((px - bx0) / spanX * width)));
-              const row = Math.min(height - 1, Math.max(0, Math.floor((by1 - py) / spanY * height)));
-              return row * width + col;
-            };
-          }
+        const west = Number(targetBounds.west);
+        const east = Number(targetBounds.east);
+        const south = Number(targetBounds.south);
+        const north = Number(targetBounds.north);
+        const lngSpan = east - west;
+        const latSpan = north - south;
+        if (lngSpan > 0 && latSpan > 0) {
+          const toWGS84 = proj4(epsg, 'EPSG:4326');
+          return (px, py) => {
+            const [lng, lat] = toWGS84.forward([px, py]);
+            if (lng < west || lng > east || lat < south || lat > north) return -1;
+            const col = Math.min(width - 1, Math.max(0, Math.floor((lng - west) / lngSpan * width)));
+            const row = Math.min(height - 1, Math.max(0, Math.floor((north - lat) / latSpan * height)));
+            return row * width + col;
+          };
         }
       }
 
@@ -318,28 +317,18 @@ const getLazPerf = async () => {
   return lazPerfInstance;
 };
 
-// ─── Main rasterization ───────────────────────────────────────────────────────
-const rasterize = async (params, id) => {
+// ─── Accumulate one tile's ground/water points into shared cell sums ──────────
+// Decodes a single LAZ/LAS buffer and adds each ground (class 2) / water (9)
+// return to groundSum/groundCnt via the tile's own gridMapper. Multiple
+// overlapping tiles share these accumulators, so overlap regions simply average
+// every contributing tile's points — seamless, with no per-tile edge artifacts.
+const accumulateTilePoints = async (tile, gridMapper, groundSum, groundCnt, onPoint) => {
   const {
     buffer, isLaz,
     pointFormat, pointDataRecordLength, pointDataOffset, pointCount,
     scaleX, scaleY, scaleZ, offsetX, offsetY, offsetZ,
-    minX, maxX, minY, maxY,
-    epsgCode, center, width, height, targetBounds, epsgDefs,
-  } = params;
-
-  const gridMapper = buildGridMapper({ epsgCode, center, width, height, minX, maxX, minY, maxY, targetBounds, epsgDefs });
-  const clsOff     = classificationOffset(pointFormat);
-  const totalCells = width * height;
-
-  // Only accumulate classified ground (class 2) and water (class 9) returns.
-  // All unclassified / vegetation / noise falls through to NO_DATA and gets
-  // smoothly interpolated by the pyramid hole-filler below.
-  const groundSum = new Float64Array(totalCells);
-  const groundCnt = new Uint32Array(totalCells);
-
-  const PROGRESS_EVERY = 250_000;
-  let processed = 0;
+  } = tile;
+  const clsOff = classificationOffset(pointFormat);
 
   if (isLaz) {
     // ── LAZ: decompress via laz-perf WASM ──────────────────────────────────
@@ -373,7 +362,7 @@ const rasterize = async (params, id) => {
       const rawZ = heap32[(pointPtr >> 2) + 2];
       const cls = heap8[pointPtr + clsOff] & 0x1F;
       // Only ground (2) and water (9) — everything else is vegetation/noise
-      if (cls !== 2 && cls !== 9) continue;
+      if (cls !== 2 && cls !== 9) { onPoint(); continue; }
 
       const px = rawX * scaleX + offsetX;
       const py = rawY * scaleY + offsetY;
@@ -381,10 +370,7 @@ const rasterize = async (params, id) => {
 
       const idx = gridMapper(px, py);
       if (idx >= 0) { groundSum[idx] += pz; groundCnt[idx]++; }
-
-      if (++processed % PROGRESS_EVERY === 0) {
-        self.postMessage({ id, type: 'progress', current: processed, total: actualCount });
-      }
+      onPoint();
     }
 
     decoder.delete();
@@ -404,7 +390,7 @@ const rasterize = async (params, id) => {
       const rawY = dataView.getInt32(base + 4, true);
       const rawZ = dataView.getInt32(base + 8, true);
       const cls = bytes[base + clsOff] & 0x1F;
-      if (cls !== 2 && cls !== 9) continue;
+      if (cls !== 2 && cls !== 9) { onPoint(); continue; }
 
       const px = rawX * scaleX + offsetX;
       const py = rawY * scaleY + offsetY;
@@ -412,11 +398,45 @@ const rasterize = async (params, id) => {
 
       const idx = gridMapper(px, py);
       if (idx >= 0) { groundSum[idx] += pz; groundCnt[idx]++; }
-
-      if (++processed % PROGRESS_EVERY === 0) {
-        self.postMessage({ id, type: 'progress', current: processed, total: pointCount });
-      }
+      onPoint();
     }
+  }
+};
+
+// ─── Main rasterization ───────────────────────────────────────────────────────
+// Accepts a single tile (legacy top-level fields) or `params.tiles` — an array
+// of per-tile param objects that are accumulated into one shared output grid.
+const rasterize = async (params, id) => {
+  const { center, width, height, targetBounds, epsgDefs } = params;
+  const tiles = Array.isArray(params.tiles) && params.tiles.length > 0
+    ? params.tiles
+    : [params];
+
+  const totalCells = width * height;
+
+  // Only accumulate classified ground (class 2) and water (class 9) returns.
+  // All unclassified / vegetation / noise falls through to NO_DATA and gets
+  // smoothly interpolated by the pyramid hole-filler below.
+  const groundSum = new Float64Array(totalCells);
+  const groundCnt = new Uint32Array(totalCells);
+
+  const PROGRESS_EVERY = 250_000;
+  const totalPoints = tiles.reduce((sum, t) => sum + Number(t.pointCount || 0), 0) || 1;
+  let processed = 0;
+  const onPoint = () => {
+    if (++processed % PROGRESS_EVERY === 0) {
+      self.postMessage({ id, type: 'progress', current: processed, total: totalPoints });
+    }
+  };
+
+  for (const tile of tiles) {
+    const gridMapper = buildGridMapper({
+      epsgCode: tile.epsgCode,
+      center, width, height,
+      minX: tile.minX, maxX: tile.maxX, minY: tile.minY, maxY: tile.maxY,
+      targetBounds, epsgDefs,
+    });
+    await accumulateTilePoints(tile, gridMapper, groundSum, groundCnt, onPoint);
   }
 
   // ── Build final heightmap ─────────────────────────────────────────────────

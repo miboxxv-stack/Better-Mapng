@@ -220,3 +220,58 @@ export const parseLazFile = async (file) => {
     verticalUnitDetectionSource: detectedVertical.source,
   };
 };
+
+/**
+ * Parse multiple LAZ/LAS tiles into a single merged metadata object. Each tile
+ * is rasterized independently onto the shared output grid in loadTerrainFromLaz,
+ * then the per-tile height maps are combined. All tiles must be geo-referenced
+ * so their union bounds are meaningful.
+ */
+export const parseLazFiles = async (files = []) => {
+  const list = Array.from(files || []).filter(Boolean);
+  if (list.length === 0) {
+    throw new Error('No LAZ/LAS files selected.');
+  }
+  if (list.length === 1) {
+    return parseLazFile(list[0]);
+  }
+
+  const parsedList = await Promise.all(list.map((file) => parseLazFile(file)));
+
+  const ungeoreferenced = parsedList.filter((meta) => !meta?.bounds);
+  if (ungeoreferenced.length > 0) {
+    throw new Error('Multiple-file LAZ/LAS upload requires every tile to have an embedded CRS so the tiles can be aligned. Upload a single file for point clouds without geo-referencing.');
+  }
+
+  const mergedBounds = {
+    north: Math.max(...parsedList.map((m) => m.bounds.north)),
+    south: Math.min(...parsedList.map((m) => m.bounds.south)),
+    east: Math.max(...parsedList.map((m) => m.bounds.east)),
+    west: Math.min(...parsedList.map((m) => m.bounds.west)),
+  };
+  const coverageSummary = summarizeCoverageBounds(mergedBounds);
+  const totalPointCount = parsedList.reduce((sum, m) => sum + Number(m.pointCount || 0), 0);
+  const totalFileSize = parsedList.reduce((sum, m) => sum + Number(m.fileSize || 0), 0);
+  const unitMeta = parsedList.find((m) => m.verticalUnitDetected && m.verticalUnitDetected !== UNIT_UNKNOWN);
+  const isLaz = parsedList.some((m) => m.isLaz);
+
+  return {
+    // Keep first-tile shape for back-compat with code that reads top-level fields.
+    ...parsedList[0],
+    sourceType: 'laz',
+    sourceFormat: isLaz ? 'laz-multi' : 'las-multi',
+    formatLabel: `${isLaz ? 'LAZ' : 'LAS'} (${list.length} tiles)`,
+    tiles: parsedList,
+    bounds: mergedBounds,
+    center: coverageSummary.center,
+    nativeWidth: coverageSummary.nativeWidth,
+    nativeHeight: coverageSummary.nativeHeight,
+    nativeMetersPerPixel: coverageSummary.nativeMetersPerPixel,
+    suggestedResolution: coverageSummary.suggestedResolution,
+    pointCount: totalPointCount,
+    fileSize: totalFileSize,
+    verticalUnitDetected: unitMeta?.verticalUnitDetected ?? UNIT_UNKNOWN,
+    verticalUnitDetectionSource: unitMeta?.verticalUnitDetectionSource ?? null,
+    uploadFileNames: list.map((file) => file.name),
+  };
+};

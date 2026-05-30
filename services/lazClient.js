@@ -93,16 +93,41 @@ export const rasterizeLazOffThread = async (lazMeta, center, width, height, targ
   const w = getWorker();
   if (!w) return Promise.reject(new Error('LAZ worker unavailable'));
 
-  // Pass any pre-loaded EPSG definition so the worker avoids a network fetch
+  // One or many point-cloud tiles; multiple overlapping tiles are accumulated
+  // into a single output grid by the worker for seamless merging.
+  const tileMetas = Array.isArray(lazMeta.tiles) && lazMeta.tiles.length > 0
+    ? lazMeta.tiles
+    : [lazMeta];
+
+  // Pass any pre-loaded EPSG definitions so the worker avoids a network fetch
   const epsgDefs = {};
-  if (lazMeta.epsgCode) {
-    const key = `EPSG:${lazMeta.epsgCode}`;
-    const def = await resolveProj4Def(lazMeta.epsgCode);
+  for (const tile of tileMetas) {
+    if (!tile.epsgCode) continue;
+    const key = `EPSG:${tile.epsgCode}`;
+    if (epsgDefs[key]) continue;
+    const def = await resolveProj4Def(tile.epsgCode);
     if (def) epsgDefs[key] = def;
   }
 
-  // Copy buffer — preserves original for potential re-generation without re-uploading
-  const bufferCopy = lazMeta.buffer.slice(0);
+  // Copy buffers — preserves originals for re-generation without re-uploading
+  const transferables = [];
+  const tiles = tileMetas.map((tile) => {
+    const bufferCopy = tile.buffer.slice(0);
+    transferables.push(bufferCopy);
+    return {
+      buffer:                bufferCopy,
+      isLaz:                 tile.isLaz,
+      pointFormat:           tile.pointFormat,
+      pointDataRecordLength: tile.pointDataRecordLength,
+      pointDataOffset:       tile.pointDataOffset,
+      pointCount:            tile.pointCount,
+      scaleX:  tile.scaleX,  scaleY: tile.scaleY,  scaleZ: tile.scaleZ,
+      offsetX: tile.offsetX, offsetY: tile.offsetY, offsetZ: tile.offsetZ,
+      minX: tile.minX, maxX: tile.maxX,
+      minY: tile.minY, maxY: tile.maxY,
+      epsgCode: tile.epsgCode,
+    };
+  });
 
   const id = ++messageId;
   return new Promise((resolve, reject) => {
@@ -110,22 +135,12 @@ export const rasterizeLazOffThread = async (lazMeta, center, width, height, targ
     w.postMessage({
       id,
       type: 'rasterize',
-      buffer:                bufferCopy,
-      isLaz:                 lazMeta.isLaz,
-      pointFormat:           lazMeta.pointFormat,
-      pointDataRecordLength: lazMeta.pointDataRecordLength,
-      pointDataOffset:       lazMeta.pointDataOffset,
-      pointCount:            lazMeta.pointCount,
-      scaleX:  lazMeta.scaleX,  scaleY: lazMeta.scaleY,  scaleZ: lazMeta.scaleZ,
-      offsetX: lazMeta.offsetX, offsetY: lazMeta.offsetY, offsetZ: lazMeta.offsetZ,
-      minX: lazMeta.minX, maxX: lazMeta.maxX,
-      minY: lazMeta.minY, maxY: lazMeta.maxY,
-      epsgCode: lazMeta.epsgCode,
+      tiles,
       center,
       width,
       height,
       targetBounds,
       epsgDefs,
-    }, [bufferCopy]);
+    }, transferables);
   });
 };

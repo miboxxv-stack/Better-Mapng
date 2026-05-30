@@ -107,6 +107,10 @@
           <p v-if="supportsUploadAreaMode && uploadedAreaMode !== 'crop'">{{ t('controlPanel.switchToSquareCrop') }}</p>
           <p v-else-if="supportsUploadAreaMode">{{ t('controlPanel.dragMapToPositionCrop') }}</p>
           <p v-else>{{ t('controlPanel.removeUploadedForCustomResolution') }}</p>
+          <p v-if="previewStale" class="flex items-center gap-1 text-amber-600 dark:text-amber-400 font-medium">
+            <AlertTriangle :size="11" class="shrink-0" />
+            {{ t('controlPanel.previewOutOfDatePanel') }}
+          </p>
         </div>
       </div>
 
@@ -278,7 +282,7 @@
 <script setup>
 import { ref, computed, onMounted, watch } from 'vue';
 import { useI18n } from 'vue-i18n';
-import { MapPin, Box, Trees, ChevronDown, Settings, Route } from 'lucide-vue-next';
+import { MapPin, Box, Trees, ChevronDown, Settings, Route, AlertTriangle } from 'lucide-vue-next';
 import BaseToggle from '../base/BaseToggle.vue';
 import CoordinatesInput from '../map/CoordinatesInput.vue';
 import ElevationSourceSelector from '../map/ElevationSourceSelector.vue';
@@ -296,13 +300,13 @@ import { checkUSGSStatus, probeGPXZLimits } from '../../services/terrain';
 import { downloadJsonFile } from '../../services/traceability';
 import { exportJobData, importJobData } from '../../services/jobData';
 import { buildRunConfiguration as buildRunConfigurationBase } from '../../services/runConfiguration';
-import { getMaxSquareCropResolution } from '../../services/uploadBounds';
+import { getMaxSquareCropResolution, scaleNativeDimsToProcessingMpp } from '../../services/uploadBounds';
 
 const { t } = useI18n({ useScope: 'global' });
 
 const props = defineProps(['center', 'zoom', 'resolution', 'devMode', 'isGenerating', 'terrainData', 'generationCacheKey', 'uploadedElevationFile', 'uploadedElevationMeta', 'uploadedAscCoordinateSystem', 'uploadedAreaMode', 'processingMetersPerPixel']);
 
-const emit = defineEmits(['locationChange', 'resolutionChange', 'zoomChange', 'generate', 'fetchOsm', 'surroundingTilesChange', 'importData', 'elevationFileSelected', 'elevationFileClear', 'showSupport', 'exportSuccess', 'update:uploadedAscCoordinateSystem', 'update:uploadedAreaMode', 'update:processingMetersPerPixel']);
+const emit = defineEmits(['locationChange', 'resolutionChange', 'zoomChange', 'generate', 'fetchOsm', 'surroundingTilesChange', 'importData', 'elevationFileSelected', 'elevationFileClear', 'showSupport', 'exportSuccess', 'update:uploadedAscCoordinateSystem', 'update:uploadedAreaMode', 'update:processingMetersPerPixel', 'update:previewStale']);
 
 const handleLocationChange = (newLocation) => {
   emit('locationChange', { ...props.center, ...newLocation });
@@ -485,9 +489,10 @@ const lazNativeDims = computed(() => {
   if (!isLazFileActive.value) return null;
   const meta = props.uploadedElevationMeta;
   if (!meta?.nativeWidth || !meta?.nativeHeight) return null;
+  const { width, height } = scaleNativeDimsToProcessingMpp(meta.nativeWidth, meta.nativeHeight, metersPerPixel.value);
   return {
-    width: meta.nativeWidth,
-    height: meta.nativeHeight,
+    width,
+    height,
     cropSize: null,
     sourceLabel: 'LAZ',
     note: null,
@@ -499,9 +504,10 @@ const georeferencedRasterNativeDims = computed(() => {
   if (!isGeoReferencedRasterActive.value) return null;
   const meta = props.uploadedElevationMeta;
   if (!meta?.nativeWidth || !meta?.nativeHeight || !meta?.bounds) return null;
+  const { width, height } = scaleNativeDimsToProcessingMpp(meta.nativeWidth, meta.nativeHeight, metersPerPixel.value);
   return {
-    width: meta.nativeWidth,
-    height: meta.nativeHeight,
+    width,
+    height,
     cropSize: null,
     sourceLabel: meta?.formatLabel || 'Raster',
     note: null,
@@ -509,8 +515,11 @@ const georeferencedRasterNativeDims = computed(() => {
 });
 
 const nativeDims = computed(() => lazNativeDims.value || georeferencedRasterNativeDims.value);
-const supportsUploadAreaMode = computed(() => isGeoReferencedRasterActive.value);
-const maxSquareCropResolution = computed(() => getMaxSquareCropResolution(props.uploadedElevationMeta, !!props.devMode));
+// Any georeferenced upload (LAZ/LAS or raster) with WGS84 bounds can offer the
+// native-vs-square-crop choice; uploads lacking a CRS stay native-only since a
+// geographic crop can't be positioned without bounds.
+const supportsUploadAreaMode = computed(() => !!props.uploadedElevationMeta?.bounds);
+const maxSquareCropResolution = computed(() => getMaxSquareCropResolution(props.uploadedElevationMeta, metersPerPixel.value, !!props.devMode));
 
 watch([() => props.uploadedAreaMode, maxSquareCropResolution], ([mode, maxResolution]) => {
   if (mode !== 'crop' || !Number.isFinite(maxResolution) || maxResolution <= 0) return;
@@ -518,6 +527,34 @@ watch([() => props.uploadedAreaMode, maxSquareCropResolution], ([mode, maxResolu
     emit('resolutionChange', props.uploadedElevationMeta?.suggestedResolution || maxResolution);
   }
 }, { immediate: true });
+
+// ── Stale-preview tracking for uploads ──────────────────────────────────────
+// The 3D preview only reflects the last generation; changing the crop (mode or
+// box position) or any other generation input leaves it out of date. Track that
+// so the UI can prompt a re-run instead of silently showing the old terrain.
+const previewStale = ref(false);
+watch(
+  () => [
+    props.resolution,
+    metersPerPixel.value,
+    props.uploadedAreaMode,
+    props.uploadedAscCoordinateSystem,
+    elevationUnitOverride.value,
+    fetchOSM.value,
+    enhanceRoads.value,
+    levelRoads.value,
+    // Crop position only changes the output in square-crop mode.
+    props.uploadedAreaMode === 'crop' ? props.center.lat : 0,
+    props.uploadedAreaMode === 'crop' ? props.center.lng : 0,
+  ],
+  () => {
+    if (props.uploadedElevationFile && props.terrainData) previewStale.value = true;
+  },
+);
+// A completed generation refreshes the cache key; a new/cleared upload resets too.
+watch(() => props.generationCacheKey, () => { previewStale.value = false; });
+watch(() => props.uploadedElevationFile, () => { previewStale.value = false; });
+watch(previewStale, (v) => emit('update:previewStale', v), { immediate: true });
 
 // Area calculations (resolution is in metres because metersPerPixel = 1)
 const totalWidthMeters = computed(() => props.resolution * metersPerPixel.value);

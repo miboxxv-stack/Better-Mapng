@@ -42,6 +42,7 @@
         @update:uploaded-asc-coordinate-system="handleUploadedAscCoordinateSystemChange"
         @update:uploaded-area-mode="handleUploadedAreaModeChange"
         @update:processingMetersPerPixel="handleProcessingMetersPerPixelChange"
+        @update:preview-stale="(v) => previewStale = v"
         @zoom-change="store.setZoom"
         @generate="(preview, fetchOSM, elevationSource, gpxzApiKey, elevationUnitOverride, metersPerPixel, enhanceRoads, levelRoads) => handleGenerate(preview, fetchOSM, elevationSource, gpxzApiKey, elevationUnitOverride, metersPerPixel, enhanceRoads, levelRoads)"
         @fetch-osm="handleFetchOSM"
@@ -113,6 +114,13 @@
         
         <!-- 3D Preview View -->
         <div :class="['absolute inset-0 transition-all duration-500 bg-black', previewMode ? 'opacity-100 visible' : 'opacity-0 invisible pointer-events-none']">
+          <div
+            v-if="previewStale && previewMode && terrainData"
+            class="absolute top-4 left-1/2 -translate-x-1/2 z-10 flex items-center gap-2 px-4 py-2 rounded-lg bg-amber-500/95 text-white text-sm font-medium shadow-lg pointer-events-none"
+          >
+            <AlertTriangle :size="15" class="shrink-0" />
+            {{ t('controlPanel.previewOutOfDate') }}
+          </div>
           <Suspense>
             <template #default>
               <Preview3D 
@@ -194,7 +202,7 @@ import { ref, computed, onMounted, onUnmounted } from 'vue';
 import { storeToRefs } from 'pinia';
 import { useI18n } from 'vue-i18n';
 import { useMainStore } from './stores/mainStore';
-import { Loader2 } from 'lucide-vue-next';
+import { Loader2, AlertTriangle } from 'lucide-vue-next';
 import MobileRestrictionOverlay from './components/modals/MobileRestrictionOverlay.vue';
 import MemoryWidget from './components/ui/MemoryWidget.vue';
 import AboutModal from './components/modals/AboutModal.vue';
@@ -316,6 +324,7 @@ const handleSingleExportSuccess = () => {
 const uploadedElevationFile = ref(null);   // File | File[] | null
 const uploadedElevationMeta = ref(null);   // parseElevationFile() result | null
 const uploadedAreaMode = ref(localStorage.getItem('mapng_uploaded_area_mode') || 'native');
+const previewStale = ref(false);   // 3D preview no longer matches current upload settings
 const uploadedAscCoordinateSystem = ref(localStorage.getItem('mapng_uploaded_asc_crs') || 'auto');
 const normalizeProcessingMpp = (value) => {
   const parsed = Number(value);
