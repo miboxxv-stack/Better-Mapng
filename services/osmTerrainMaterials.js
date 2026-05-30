@@ -13,6 +13,7 @@ import {
   getTerrainLevelFallbacks,
   getTerrainSemanticCandidates,
 } from './beamngBiomeCatalog.js';
+import { createWGS84ToLocal } from './geoUtils.js';
 
 // ── Material names ─────────────────────────────────────────────────────────
 // Index 0 = DefaultMaterial (satellite base), 1–7 = BeamNG-referenced materials.
@@ -472,12 +473,26 @@ const CONCRETE_LANDUSES = new Set(['commercial', 'industrial', 'retail']);
  * Terrain space: (0,0) = SW corner, px increases eastward, py increases northward.
  * Layer map index = py * size + px  (row-major, bottom-left origin).
  */
-function geoToTerrainPx(lat, lng, bounds, size) {
-  const px = (lng - bounds.west)  / (bounds.east  - bounds.west)  * (size - 1);
-  const py = (lat - bounds.south) / (bounds.north - bounds.south) * (size - 1);
+function geoToTerrainPx(lat, lng, bounds, size, toMetric = null, mpp = 0) {
+  // Match the OSM base texture's projection (osmTexture.js) so the material
+  // layerMap lines up with what the texture draws. The texture uses a local
+  // metric projection (createWGS84ToLocal) and normalizes by mpp * gridSize;
+  // a naive linear lat/lng box-stretch drifts from it by ~cos(lat) in X,
+  // which made grass land over textured sidewalks. SW origin (py northward).
+  let normX;
+  let normY;
+  if (toMetric && Number.isFinite(mpp) && mpp > 0) {
+    const [lx, ly] = toMetric.forward([lng, lat]);
+    const span = mpp * size;
+    normX = 0.5 + lx / span;
+    normY = 0.5 + ly / span;
+  } else {
+    normX = (lng - bounds.west)  / (bounds.east  - bounds.west);
+    normY = (lat - bounds.south) / (bounds.north - bounds.south);
+  }
   return {
-    px: Math.max(0, Math.min(size - 1, Math.round(px))),
-    py: Math.max(0, Math.min(size - 1, Math.round(py))),
+    px: Math.max(0, Math.min(size - 1, Math.round(normX * (size - 1)))),
+    py: Math.max(0, Math.min(size - 1, Math.round(normY * (size - 1)))),
   };
 }
 
@@ -602,12 +617,23 @@ function buildOSMLayerMap(terrainData, worldSize) {
   const metersPerPixel = worldSize / size;
   const layerMap = new Uint8Array(size * size);
 
+  // Project lat/lng with the SAME local metric projection and meters-per-pixel
+  // as the OSM base texture, so material carves align with the drawn texture.
+  const centerLat = (bounds.north + bounds.south) / 2;
+  const centerLng = (bounds.east + bounds.west) / 2;
+  const toMetric = createWGS84ToLocal(centerLat, centerLng);
+  const mpp = Number.isFinite(Number(terrainData?.processingMetersPerPixel))
+    && Number(terrainData.processingMetersPerPixel) > 0
+    ? Number(terrainData.processingMetersPerPixel)
+    : 1;
+  const toPx = (lat, lng) => geoToTerrainPx(lat, lng, bounds, size, toMetric, mpp);
+
   // 1. Paint area polygons (painted first; roads override on top).
   for (const feature of osmFeatures) {
     if (feature.type === 'road') continue;
     const matIdx = areaMatIndex(feature);
     if (matIdx < 0 || !feature.geometry?.length) continue;
-    const ring = feature.geometry.map(pt => geoToTerrainPx(pt.lat, pt.lng, bounds, size));
+    const ring = feature.geometry.map(pt => toPx(pt.lat, pt.lng));
     rasterizePolygon(layerMap, size, ring, matIdx);
   }
 
@@ -622,7 +648,7 @@ function buildOSMLayerMap(terrainData, worldSize) {
       t.leisure === 'swimming_pool' ||
       ['riverbank', 'dock', 'boatyard', 'dam'].includes(t.waterway);
     if (!isWaterArea) continue;
-    const ring = feature.geometry.map(pt => geoToTerrainPx(pt.lat, pt.lng, bounds, size));
+    const ring = feature.geometry.map(pt => toPx(pt.lat, pt.lng));
     rasterizePolygon(layerMap, size, ring, 0);
   }
 
@@ -633,7 +659,7 @@ function buildOSMLayerMap(terrainData, worldSize) {
     const wStyle = WATERWAY_STYLE[t.waterway];
     if (!wStyle) continue;
     const halfPx = Math.max(1, wStyle.halfWidthM / metersPerPixel);
-    const pts = feature.geometry.map(pt => geoToTerrainPx(pt.lat, pt.lng, bounds, size));
+    const pts = feature.geometry.map(pt => toPx(pt.lat, pt.lng));
     for (let i = 0; i < pts.length - 1; i++) {
       rasterizeSegment(layerMap, size, pts[i].px, pts[i].py, pts[i + 1].px, pts[i + 1].py, halfPx, 0);
     }
@@ -646,7 +672,7 @@ function buildOSMLayerMap(terrainData, worldSize) {
     const style = ROAD_STYLE[highway];
     if (!style) continue;
     const halfPx = Math.max(1, style.halfWidthM / metersPerPixel);
-    const pts = feature.geometry.map(pt => geoToTerrainPx(pt.lat, pt.lng, bounds, size));
+    const pts = feature.geometry.map(pt => toPx(pt.lat, pt.lng));
     for (let i = 0; i < pts.length - 1; i++) {
       rasterizeSegment(layerMap, size, pts[i].px, pts[i].py, pts[i + 1].px, pts[i + 1].py, halfPx, style.mat);
     }
