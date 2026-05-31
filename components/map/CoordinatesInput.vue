@@ -20,7 +20,7 @@
     </div>
 
     <select @change="handleLocationSelect"
-      class="w-full bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded px-2 py-1.5 text-xs text-gray-900 dark:text-white focus:ring-1 focus:ring-[#FF6600] outline-none">
+      :class="SELECT_SM">
       <option v-for="(loc, index) in presetLocations" :key="index" :value="index" :disabled="loc.disabled"
         :selected="index === 0">
         {{ loc.name }}
@@ -33,6 +33,7 @@
 import { ref, watch, nextTick } from 'vue';
 import { useI18n } from 'vue-i18n';
 import LocationSearch from './LocationSearch.vue';
+import { SELECT_SM } from '../base/controlStyles.js';
 
 const { t } = useI18n({ useScope: 'global' });
 

@@ -158,7 +158,7 @@
             </label>
             <div class="h-px bg-gray-100 dark:bg-gray-600 my-1"></div>
             <label class="flex items-center gap-2 p-1 hover:bg-gray-50 dark:hover:bg-gray-700 rounded cursor-pointer">
-                <input type="checkbox" v-model="showLabels" class="accent-[#FF6600]" />
+                <input type="checkbox" v-model="showLabels" :class="CHECKBOX" />
             <span>{{ t('mapSelector.showLabels') }}</span>
             </label>
         </div>
@@ -186,6 +186,7 @@ import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import { getAdjacentBounds, POSITION_LABELS } from '../../services/surroundingTiles';
 import { computeMetricSelectionBounds, computeUploadedCropBounds } from '../../services/uploadBounds';
+import { CHECKBOX } from '../base/controlStyles.js';
 
 // Fix Leaflet icon assets
 // @ts-ignore

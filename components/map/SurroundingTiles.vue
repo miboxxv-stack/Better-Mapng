@@ -62,7 +62,7 @@
           <input 
               type="checkbox" 
               v-model="showOnMap"
-              class="accent-[#FF6600] w-3.5 h-3.5 cursor-pointer"
+              :class="CHECKBOX"
           />
       </div>
 
@@ -71,7 +71,7 @@
         <span class="text-[10px] text-gray-500 dark:text-gray-400 font-medium">{{ t('map.surrounding.satelliteQuality') }}</span>
         <select 
           v-model.number="satZoom"
-          class="w-full bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded px-2 py-1.5 text-xs text-gray-900 dark:text-white focus:ring-1 focus:ring-[#FF6600] outline-none"
+          :class="SELECT_SM"
         >
           <option v-for="q in qualities" :key="q.value" :value="q.value">
             {{ q.label }} — {{ q.desc }}
@@ -130,6 +130,7 @@
 import { ref, computed, watch } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { LayoutGrid, ChevronDown, Download, Loader2 } from 'lucide-vue-next';
+import { CHECKBOX, SELECT_SM } from '../base/controlStyles.js';
 import {
   GRID_ORDER,
   POSITIONS,

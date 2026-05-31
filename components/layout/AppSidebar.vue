@@ -37,7 +37,7 @@
         <label class="text-[10px] text-gray-400 dark:text-gray-500 uppercase tracking-wider">{{ t('language.label') }}</label>
         <select
           :value="locale"
-          class="h-7 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded px-2 text-[11px] text-gray-700 dark:text-gray-200"
+          :class="[SELECT_XS, 'h-7 px-2']"
           @change="handleLocaleChange"
         >
           <option v-for="code in locales" :key="code" :value="code">
@@ -82,6 +82,7 @@ import { useI18n } from 'vue-i18n';
 import BaseButton from '../base/BaseButton.vue';
 import ModeToggle from '../ui/ModeToggle.vue';
 import { getSupportedLocales, setI18nLanguage } from '../../i18n';
+import { SELECT_XS } from '../base/controlStyles.js';
 import { CircleHelp, Sun, Moon, Code } from 'lucide-vue-next';
 
 const { t, locale } = useI18n({ useScope: 'global' });

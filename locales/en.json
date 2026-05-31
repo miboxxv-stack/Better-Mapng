@@ -291,6 +291,9 @@
     "mayTakeWhile": "This may take a while for large maps"
   },
   "controlPanel": {
+    "sessionData": "Session Data",
+    "importJob": "Import Job",
+    "exportJob": "Export Job",
     "outputSettings": "Output Settings",
     "resolutionOutputSize": "Resolution (Output Size)",
     "nativeCoverage": "{source} native coverage",
@@ -392,8 +395,10 @@
     "elevationTitle": "Elevation Sources",
     "elevationItems": [
       "Standard 30m Global (AWS Terrarium/SRTM)",
+      "NMT EVRF2007 (Poland, high-resolution GUGiK tiles)",
       "USGS 1m DEM (USA - CONUS, Alaska, Hawaii)",
-      "GPXZ Premium High-Res (Global, concurrent requests for paid plans)"
+      "GPXZ Premium High-Res (Global, concurrent requests for paid plans)",
+      "Custom upload - LAZ/LAS point clouds, GeoTIFF, ASC, GML/XML (single or multi-tile, auto-reprojected)"
     ],
     "previewTitle": "3D Preview",
     "previewItems": [
@@ -532,7 +537,7 @@
         },
         {
           "name": "proj4 and GeoTIFF",
-          "desc": "CRS reprojection, DEM parsing and GeoTIFF export"
+          "desc": "CRS reprojection (incl. conic/UTM uploads), DEM parsing and GeoTIFF export"
         },
         {
           "name": "Local Transverse Mercator",
@@ -573,6 +578,10 @@
         {
           "name": "GPXZ API",
           "desc": "Premium global hi-res elevation with auto-chunking, rate-limit probing and concurrent requests for paid plans"
+        },
+        {
+          "name": "Custom Elevation Upload",
+          "desc": "Bring-your-own DEM: LAZ/LAS point clouds (laz-perf WASM), GeoTIFF (geotiff), ASC grids, and GML/XML (fast-xml-parser) - single or multi-tile, reprojected to the output grid"
         },
         {
           "name": "Esri World Imagery",

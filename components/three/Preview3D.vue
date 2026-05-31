@@ -112,7 +112,7 @@
         </label>
         <select
           v-model="preset"
-          class="w-full appearance-none bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-gray-900 dark:text-white text-xs rounded py-2 px-3 focus:ring-1 focus:ring-[#FF6600] outline-none capitalize cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-700"
+          :class="[SELECT_SM, 'appearance-none capitalize hover:bg-gray-50 dark:hover:bg-gray-700']"
         >
           <option v-for="p in presets" :key="p" :value="p">{{ p }}</option>
         </select>
@@ -124,7 +124,7 @@
         </label>
         <select
           v-model="sunPosition"
-          class="w-full appearance-none bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-gray-900 dark:text-white text-xs rounded py-2 px-3 focus:ring-1 focus:ring-[#FF6600] outline-none cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-700"
+          :class="[SELECT_SM, 'appearance-none hover:bg-gray-50 dark:hover:bg-gray-700']"
         >
           <option v-for="s in sunPositionOptions" :key="s" :value="s">{{ s }}</option>
         </select>
@@ -207,7 +207,7 @@
             <label class="text-[10px] text-gray-400 dark:text-gray-500 block mb-1">{{ t('preview.surroundingsTexture') }}</label>
             <select
               v-model="surroundingTextureType"
-              class="w-full max-w-[140px] appearance-none bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-gray-900 dark:text-white text-[10px] rounded py-1 px-2 focus:ring-1 focus:ring-[#FF6600] outline-none cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-700"
+              :class="[SELECT_XS, 'w-full max-w-[140px] appearance-none hover:bg-gray-50 dark:hover:bg-gray-700']"
             >
               <option value="satellite">{{ t('preview.satellite') }}</option>
               <option value="none">{{ t('preview.none') }}</option>
@@ -342,6 +342,7 @@ import MapngFlag3D from "./MapngFlag3D.vue";
 import OSMFeatures3D from "./OSMFeatures3D.vue";
 import CSMLight from "./CSMLight.vue";
 import SurroundingTerrain3D from "./SurroundingTerrain3D.vue";
+import { SELECT_SM, SELECT_XS } from "../base/controlStyles.js";
 
 const props = defineProps(["terrainData"]);
 

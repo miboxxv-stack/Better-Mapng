@@ -9,23 +9,23 @@
       <h4 class="text-[10px] font-semibold uppercase tracking-wider text-gray-400 dark:text-gray-500">{{ t('batchExport.assets2d') }}</h4>
       <BaseCard padded class="space-y-1 bg-gray-50 dark:bg-gray-700 border-gray-200 dark:border-gray-600">
         <label class="flex items-center gap-2 cursor-pointer text-xs text-gray-700 dark:text-gray-300">
-          <input type="checkbox" class="accent-[#FF6600] w-3.5 h-3.5" :checked="exports.heightmap" @change="updateExport('heightmap', $event.target.checked)" />
+          <input type="checkbox" :class="CHECKBOX" :checked="exports.heightmap" @change="updateExport('heightmap', $event.target.checked)" />
           {{ t('batchExport.heightmap') }}
         </label>
         <label class="flex items-center gap-2 cursor-pointer text-xs text-gray-700 dark:text-gray-300">
-          <input type="checkbox" class="accent-[#FF6600] w-3.5 h-3.5" :checked="exports.satellite" @change="updateExport('satellite', $event.target.checked)" />
+          <input type="checkbox" :class="CHECKBOX" :checked="exports.satellite" @change="updateExport('satellite', $event.target.checked)" />
           {{ t('batchExport.satelliteTexture') }}
         </label>
         <label class="flex items-center gap-2 cursor-pointer text-xs text-gray-700 dark:text-gray-300" :class="{ 'opacity-50': !includeOSM }">
-          <input type="checkbox" class="accent-[#FF6600] w-3.5 h-3.5" :checked="exports.osmTexture" :disabled="!includeOSM" @change="updateExport('osmTexture', $event.target.checked)" />
+          <input type="checkbox" :class="CHECKBOX" :checked="exports.osmTexture" :disabled="!includeOSM" @change="updateExport('osmTexture', $event.target.checked)" />
           {{ t('batchExport.osmTexture') }}
         </label>
         <label class="flex items-center gap-2 cursor-pointer text-xs text-gray-700 dark:text-gray-300" :class="{ 'opacity-50': !includeOSM }">
-          <input type="checkbox" class="accent-[#FF6600] w-3.5 h-3.5" :checked="exports.hybridTexture" :disabled="!includeOSM" @change="updateExport('hybridTexture', $event.target.checked)" />
+          <input type="checkbox" :class="CHECKBOX" :checked="exports.hybridTexture" :disabled="!includeOSM" @change="updateExport('hybridTexture', $event.target.checked)" />
           {{ t('batchExport.hybridTexture') }}
         </label>
         <label class="flex items-center gap-2 cursor-pointer text-xs text-gray-700 dark:text-gray-300" :class="{ 'opacity-50': !includeOSM }">
-          <input type="checkbox" class="accent-[#FF6600] w-3.5 h-3.5" :checked="exports.roadMask" :disabled="!includeOSM" @change="updateExport('roadMask', $event.target.checked)" />
+          <input type="checkbox" :class="CHECKBOX" :checked="exports.roadMask" :disabled="!includeOSM" @change="updateExport('roadMask', $event.target.checked)" />
           {{ t('batchExport.roadMask') }}
         </label>
       </BaseCard>
@@ -35,21 +35,21 @@
       <h4 class="text-[10px] font-semibold uppercase tracking-wider text-gray-400 dark:text-gray-500">{{ t('batchExport.models3d') }}</h4>
       <BaseCard padded class="space-y-1 bg-gray-50 dark:bg-gray-700 border-gray-200 dark:border-gray-600">
         <label class="flex items-center gap-2 cursor-pointer text-xs text-gray-700 dark:text-gray-300">
-          <input type="checkbox" class="accent-[#FF6600] w-3.5 h-3.5" :checked="exports.glb" @change="updateExport('glb', $event.target.checked)" />
+          <input type="checkbox" :class="CHECKBOX" :checked="exports.glb" @change="updateExport('glb', $event.target.checked)" />
           {{ t('batchExport.glbModel') }}
         </label>
         <label class="flex items-center gap-2 cursor-pointer text-xs text-gray-700 dark:text-gray-300">
-          <input type="checkbox" class="accent-[#FF6600] w-3.5 h-3.5" :checked="exports.dae" @change="updateExport('dae', $event.target.checked)" />
+          <input type="checkbox" :class="CHECKBOX" :checked="exports.dae" @change="updateExport('dae', $event.target.checked)" />
           {{ t('batchExport.colladaDae') }}
         </label>
         <label class="flex items-center gap-2 cursor-pointer text-xs text-gray-700 dark:text-gray-300">
-          <input type="checkbox" class="accent-[#FF6600] w-3.5 h-3.5" :checked="exports.ter" @change="updateExport('ter', $event.target.checked)" />
+          <input type="checkbox" :class="CHECKBOX" :checked="exports.ter" @change="updateExport('ter', $event.target.checked)" />
           {{ t('batchExport.beamngTerrain') }}
         </label>
         <div v-if="exports.glb || exports.dae" class="flex items-center gap-2 pt-1 mt-1 border-t border-gray-200 dark:border-gray-600">
           <span class="text-[10px] text-gray-500 dark:text-gray-400">{{ t('batchExport.meshQuality') }}</span>
           <select
-            class="text-[10px] bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded px-1.5 py-0.5 text-gray-600 dark:text-gray-300 cursor-pointer"
+            :class="SELECT_XS"
             :value="meshResolution"
             @change="$emit('update:meshResolution', Number($event.target.value))"
           >
@@ -69,11 +69,11 @@
       <h4 class="text-[10px] font-semibold uppercase tracking-wider text-gray-400 dark:text-gray-500">{{ t('batchExport.geoData') }}</h4>
       <BaseCard padded class="space-y-1 bg-gray-50 dark:bg-gray-700 border-gray-200 dark:border-gray-600">
         <label class="flex items-center gap-2 cursor-pointer text-xs text-gray-700 dark:text-gray-300">
-          <input type="checkbox" class="accent-[#FF6600] w-3.5 h-3.5" :checked="exports.geotiff" @change="updateExport('geotiff', $event.target.checked)" />
+          <input type="checkbox" :class="CHECKBOX" :checked="exports.geotiff" @change="updateExport('geotiff', $event.target.checked)" />
           {{ t('batchExport.geoTiff') }}
         </label>
         <label class="flex items-center gap-2 cursor-pointer text-xs text-gray-700 dark:text-gray-300" :class="{ 'opacity-50': !includeOSM }">
-          <input type="checkbox" class="accent-[#FF6600] w-3.5 h-3.5" :checked="exports.geojson" :disabled="!includeOSM" @change="updateExport('geojson', $event.target.checked)" />
+          <input type="checkbox" :class="CHECKBOX" :checked="exports.geojson" :disabled="!includeOSM" @change="updateExport('geojson', $event.target.checked)" />
           {{ t('batchExport.geoJson') }}
         </label>
       </BaseCard>
@@ -84,6 +84,7 @@
 <script setup>
 import { useI18n } from 'vue-i18n';
 import BaseCard from '../base/BaseCard.vue';
+import { CHECKBOX, SELECT_XS } from '../base/controlStyles.js';
 import { Download } from 'lucide-vue-next';
 
 const { t } = useI18n({ useScope: 'global' });

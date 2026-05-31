@@ -5,12 +5,7 @@
       :value="modelValue"
       :disabled="disabled"
       @change="$emit('update:modelValue', parseInt($event.target.value))"
-      :class="[
-        'w-full border rounded px-2 py-2 text-sm outline-none',
-        disabled
-          ? 'bg-gray-100 dark:bg-gray-700 border-gray-200 dark:border-gray-600 text-gray-400 dark:text-gray-500 cursor-not-allowed'
-          : 'bg-white dark:bg-gray-800 border-gray-300 dark:border-gray-600 text-gray-900 dark:text-white focus:ring-2 focus:ring-[#FF6600] focus:border-[#FF6600]',
-      ]"
+      :class="SELECT_MD"
     >
       <option v-for="option in options" :key="option" :value="option">{{ formatOption(option) }}</option>
     </select>
@@ -24,6 +19,7 @@
 import { computed } from 'vue';
 
 import { VALID_SQUARE_EXPORT_RESOLUTIONS } from '../../services/uploadBounds';
+import { SELECT_MD } from '../base/controlStyles.js';
 
 const props = defineProps({
   modelValue: { type: Number, required: true },

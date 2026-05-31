@@ -22,6 +22,7 @@ It is built for modding workflows, not survey-grade terrain reconstruction. The 
 - Configurable processing resolution from `0.25` to `2.0` meters per pixel (sub-meter supported)
 - Output grids from `512` to `8192` with consistent world coverage based on selected processing scale
 - Multiple elevation sources: global standard DEM, NMT EVRF2007 in Poland, USGS 1 m in the US, and GPXZ
+- Custom elevation uploads: LAZ/LAS point clouds, GeoTIFF, ASC, and GML/XML — single or multi-tile, auto-reprojected (incl. conic/UTM) to the output grid
 - Satellite, OSM, hybrid, segmented, and road mask texture exports with sub-meter aware overlay scaling
 - 3D preview with buildings, vegetation, barriers, and surrounding terrain
 - GLB, DAE, GeoTIFF, GeoJSON, BeamNG `.ter`, and `.mapng` session exports
@@ -85,6 +86,7 @@ This helps keep community resource hubs focused on curated, polished releases wh
 | GUGiK NMT EVRF2007 (Poland) | High-resolution Poland elevation tiles |
 | USGS TNM Access API | 1 m US elevation where available |
 | GPXZ | Optional premium higher-resolution elevation |
+| Custom upload | User-supplied DEM: LAZ/LAS, GeoTIFF, ASC, GML/XML (single or multi-tile) |
 | Esri World Imagery | Satellite textures |
 | OpenStreetMap / Overpass | Roads, land-use, buildings, water, vegetation |
 | Nominatim | Location search and reverse naming |

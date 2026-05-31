@@ -55,7 +55,7 @@
           <!-- Base texture selector -->
           <div class="flex items-center justify-between gap-2 px-0.5">
             <span class="text-[10px] text-gray-500 dark:text-gray-400 shrink-0">{{ t('exportPanel.baseTexture') }}</span>
-            <select v-model="beamNGBaseTexture" class="text-[9px] bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded px-1.5 py-0.5 text-gray-600 dark:text-gray-300 cursor-pointer">
+            <select v-model="beamNGBaseTexture" :class="SELECT_XS">
               <option value="none">{{ t('exportPanel.none') }}</option>
               <option value="hybrid" :disabled="!terrainData?.hybridTextureUrl && !terrainData?.hybridTextureCanvas">{{ t('exportPanel.satelliteHybrid') }}</option>
               <option value="satellite" :disabled="!terrainData?.satelliteTextureUrl">{{ t('exportPanel.satellite') }}</option>
@@ -66,7 +66,7 @@
           <!-- PBR terrain materials source selector -->
           <div class="flex items-center justify-between gap-2 px-0.5">
             <span class="text-[10px] text-gray-500 dark:text-gray-400 shrink-0">{{ t('exportPanel.pbrMaterials') }}</span>
-            <select v-model="beamNGPbrSource" :disabled="!hasOsmData" class="text-[9px] bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded px-1.5 py-0.5 text-gray-600 dark:text-gray-300 cursor-pointer disabled:cursor-not-allowed disabled:opacity-60">
+            <select v-model="beamNGPbrSource" :disabled="!hasOsmData" :class="SELECT_XS">
               <option value="none">{{ t('exportPanel.off') }}</option>
               <option v-if="hasOsmData" value="osm">{{ t('exportPanel.osmData') }}</option>
             </select>
@@ -75,7 +75,7 @@
           <!-- Road export mode selector -->
           <div class="flex items-center justify-between gap-2 px-0.5">
             <span class="text-[10px] text-gray-500 dark:text-gray-400 shrink-0">{{ t('exportPanel.roads') }}</span>
-            <select v-model="beamNGRoadType" :disabled="!hasOsmData" class="text-[9px] bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded px-1.5 py-0.5 text-gray-600 dark:text-gray-300 cursor-pointer disabled:cursor-not-allowed disabled:opacity-60">
+            <select v-model="beamNGRoadType" :disabled="!hasOsmData" :class="SELECT_XS">
               <option v-if="hasOsmData" value="architect">{{ t('exportPanel.roadTypeArchitect') }}</option>
               <option v-if="hasOsmData" value="mesh">{{ t('exportPanel.roadTypeMesh') }}</option>
               <option v-if="hasOsmData" value="decal">{{ t('exportPanel.roadTypeSpline') }}</option>
@@ -85,7 +85,7 @@
 
           <div class="flex items-center justify-between gap-2 px-0.5">
             <span class="text-[10px] text-gray-500 dark:text-gray-400 shrink-0">{{ t('exportPanel.biome') }}</span>
-            <select v-model="beamNGBiomeId" class="min-w-0 text-[9px] bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded px-1.5 py-0.5 text-gray-600 dark:text-gray-300 cursor-pointer">
+            <select v-model="beamNGBiomeId" :class="[SELECT_XS, 'min-w-0']">
               <option value="">{{ t('exportPanel.selectLevel') }}</option>
               <option v-for="biome in beamNGBiomeOptions" :key="biome.id" :value="biome.id">
                 {{ biome.label }}
@@ -99,7 +99,7 @@
             <select
               v-model="beamNGBackdropSource"
               :disabled="isCustomUploadTerrain"
-              class="text-[9px] bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded px-1.5 py-0.5 text-gray-600 dark:text-gray-300 cursor-pointer disabled:cursor-not-allowed disabled:opacity-60"
+              :class="SELECT_XS"
             >
               <option value="off">Off</option>
               <option value="global30m">30m Global</option>
@@ -117,7 +117,7 @@
           <div class="flex items-center justify-between gap-2 px-0.5">
             <span class="text-[10px] text-gray-500 dark:text-gray-400 shrink-0">{{ t('exportPanel.includeBuildings') }}</span>
             <label class="flex items-center gap-1.5 cursor-pointer">
-              <input type="checkbox" v-model="beamNGIncludeBuildings" :disabled="!hasOsmData" class="rounded border-gray-300 dark:border-gray-600 accent-[#FF6600] cursor-pointer disabled:cursor-not-allowed disabled:opacity-60" />
+              <input type="checkbox" v-model="beamNGIncludeBuildings" :disabled="!hasOsmData" :class="CHECKBOX" />
               <span class="text-[9px] text-gray-500 dark:text-gray-400">{{ t('exportPanel.exportBuildings') }}</span>
             </label>
           </div>
@@ -125,7 +125,7 @@
           <div class="flex items-center justify-between gap-2 px-0.5">
             <span class="text-[10px] text-gray-500 dark:text-gray-400 shrink-0">{{ t('exportPanel.applyFoundations') }}</span>
             <label class="flex items-center gap-1.5 cursor-pointer">
-              <input type="checkbox" v-model="beamNGApplyFoundations" :disabled="!hasOsmData" class="rounded border-gray-300 dark:border-gray-600 accent-[#FF6600] cursor-pointer disabled:cursor-not-allowed disabled:opacity-60" />
+              <input type="checkbox" v-model="beamNGApplyFoundations" :disabled="!hasOsmData" :class="CHECKBOX" />
               <span class="text-[9px] text-gray-500 dark:text-gray-400">{{ t('exportPanel.raiseUnderBuildings') }}</span>
             </label>
           </div>
@@ -133,7 +133,7 @@
           <div class="flex items-center justify-between gap-2 px-0.5">
             <span class="text-[10px] text-gray-500 dark:text-gray-400 shrink-0">{{ t('exportPanel.treesBushes') }}</span>
             <label class="flex items-center gap-1.5 cursor-pointer">
-              <input type="checkbox" v-model="beamNGIncludeTrees" :disabled="!hasOsmData" class="rounded border-gray-300 dark:border-gray-600 accent-[#FF6600] cursor-pointer disabled:cursor-not-allowed disabled:opacity-60" />
+              <input type="checkbox" v-model="beamNGIncludeTrees" :disabled="!hasOsmData" :class="CHECKBOX" />
               <span class="text-[9px] text-gray-500 dark:text-gray-400">{{ t('exportPanel.nativeForest') }}</span>
             </label>
           </div>
@@ -141,7 +141,7 @@
           <div class="flex items-center justify-between gap-2 px-0.5">
             <span class="text-[10px] text-gray-500 dark:text-gray-400 shrink-0">{{ t('exportPanel.rocks') }}</span>
             <label class="flex items-center gap-1.5 cursor-pointer">
-              <input type="checkbox" v-model="beamNGIncludeRocks" :disabled="!hasOsmData" class="rounded border-gray-300 dark:border-gray-600 accent-[#FF6600] cursor-pointer disabled:cursor-not-allowed disabled:opacity-60" />
+              <input type="checkbox" v-model="beamNGIncludeRocks" :disabled="!hasOsmData" :class="CHECKBOX" />
               <span class="text-[9px] text-gray-500 dark:text-gray-400">{{ t('exportPanel.quarryRock') }}</span>
             </label>
           </div>
@@ -149,7 +149,7 @@
           <div class="flex items-center justify-between gap-2 px-0.5">
             <span class="text-[10px] text-gray-500 dark:text-gray-400 shrink-0">{{ t('exportPanel.water') }}</span>
             <label class="flex items-center gap-1.5 cursor-pointer">
-              <input type="checkbox" v-model="beamNGIncludeWater" :disabled="!hasOsmData" class="rounded border-gray-300 dark:border-gray-600 accent-[#FF6600] cursor-pointer disabled:cursor-not-allowed disabled:opacity-60" />
+              <input type="checkbox" v-model="beamNGIncludeWater" :disabled="!hasOsmData" :class="CHECKBOX" />
               <span class="text-[9px] text-gray-500 dark:text-gray-400">{{ t('exportPanel.lakesRivers') }}</span>
             </label>
           </div>
@@ -316,7 +316,7 @@
           <div class="space-y-2 px-2 py-2 bg-gray-50 dark:bg-gray-700/50 rounded border border-gray-200 dark:border-gray-600">
             <div class="flex items-center gap-1.5">
               <span class="text-[9px] text-gray-500 dark:text-gray-400">{{ t('exportPanel.centerTexture') }}</span>
-              <select v-model="modelCenterTextureType" class="text-[9px] bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded px-1.5 py-0.5 text-gray-600 dark:text-gray-300 cursor-pointer">
+              <select v-model="modelCenterTextureType" :class="SELECT_XS">
                 <option value="satellite">{{ t('exportPanel.satellite') }}</option>
                 <option value="osm" :disabled="!terrainData?.osmTextureUrl">{{ t('exportPanel.osm') }}</option>
                 <option value="hybrid" :disabled="!terrainData?.hybridTextureUrl">{{ t('exportPanel.hybrid') }}</option>
@@ -510,6 +510,7 @@ import { exportGeoTiff } from '../../services/exportGeoTiff';
 import { buildCommonTraceMetadata, downloadJsonFile } from '../../services/traceability';
 import { createWGS84ToLocal } from '../../services/geoUtils';
 import { exportBeamNGLevel } from '../../services/exportBeamNGLevel';
+import { CHECKBOX, SELECT_XS } from '../base/controlStyles.js';
 import { prepareCroppedTerrainData } from '../../services/cropTerrain';
 import { getBeamNGBiomeOptions } from '../../services/beamngBiomeCatalog.js';
 import { reverseLocationName } from '../../services/nominatim';

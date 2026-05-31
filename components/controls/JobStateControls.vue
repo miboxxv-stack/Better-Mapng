@@ -2,13 +2,13 @@
   <div class="space-y-3">
     <label class="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider flex items-center gap-2">
       <Database :size="14" />
-      Session Data
+      {{ t('controlPanel.sessionData') }}
     </label>
     <div class="grid grid-cols-2 gap-2">
       <BaseButton size="sm" variant="secondary" :disabled="isImporting || isGenerating" @click="triggerImport">
         <Import v-if="!isImporting" :size="14" />
         <Loader2 v-else :size="14" class="animate-spin" />
-        Import Job
+        {{ t('controlPanel.importJob') }}
       </BaseButton>
       <BaseButton
         v-if="hasTerrainData"
@@ -19,7 +19,7 @@
       >
         <Package v-if="!isExporting" :size="14" />
         <Loader2 v-else :size="14" class="animate-spin" />
-        Export Job
+        {{ t('controlPanel.exportJob') }}
       </BaseButton>
       <input ref="fileInput" type="file" accept=".mapng" class="hidden" @change="handleFile" />
     </div>
@@ -29,8 +29,11 @@
 
 <script setup>
 import { ref } from 'vue';
+import { useI18n } from 'vue-i18n';
 import BaseButton from '../base/BaseButton.vue';
 import { Database, Import, Loader2, Package } from 'lucide-vue-next';
+
+const { t } = useI18n({ useScope: 'global' });
 
 defineProps({
   hasTerrainData: { type: Boolean, default: false },

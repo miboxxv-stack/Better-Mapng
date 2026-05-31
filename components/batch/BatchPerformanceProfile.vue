@@ -2,7 +2,7 @@
   <div class="space-y-2">
     <label class="text-sm font-medium text-gray-700 dark:text-gray-300">{{ t('batch.performanceProfile') }}</label>
     <select
-      class="w-full bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded px-2 py-2 text-sm text-gray-900 dark:text-white focus:ring-2 focus:ring-[#FF6600] focus:border-[#FF6600] outline-none"
+      :class="SELECT_MD"
       :value="modelValue"
       @change="$emit('update:modelValue', $event.target.value)"
     >
@@ -18,6 +18,7 @@
 
 <script setup>
 import { useI18n } from 'vue-i18n';
+import { SELECT_MD } from '../base/controlStyles.js';
 
 const { t } = useI18n({ useScope: 'global' });
 
