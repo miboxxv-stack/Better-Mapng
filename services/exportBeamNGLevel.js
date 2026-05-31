@@ -871,7 +871,14 @@ function chunkPolyline(points, maxNodes = 50) {
 // spline creates visible facets between every pair of nodes.  Decimating to a
 // coarser spacing lets the spline interpolate a smooth curve instead.
 const MIN_NODE_SPACING_M = 4.0;
-const JUNCTION_MARKING_TRIM_M = 8.0;
+const JUNCTION_MARKING_TRIM_M = 4.0;
+
+// Crossing roads of these classes should NOT cause lane markings to be trimmed
+// back — a driveway or footpath meeting a road doesn't interrupt its paint.
+const MINOR_CROSSING_HIGHWAYS = new Set([
+  'service', 'track', 'footway', 'path', 'cycleway', 'bridleway',
+  'steps', 'pedestrian', 'corridor', 'living_street',
+]);
 
 /**
  * Remove DecalRoad nodes that are closer than MIN_NODE_SPACING_M to the
@@ -942,43 +949,90 @@ function trimNodesByDistance(nodes, trimStartM = 0, trimEndM = 0) {
   return decimateNodes(trimmed);
 }
 
+// All names below are BeamNG's GLOBAL ("m_") road material library, shipped with
+// the base game (verified against base levels: they are referenced by DecalRoads
+// but never defined inside any level zip, i.e. they live in core /art/road).
+// Using them keeps exported levels self-contained without redistributing the
+// per-level road textures (t_asphalt_variation_*, etc.).
+// IMPORTANT: only materials that exist in BeamNG's CORE install resolve in an
+// exported level — most named asphalt/dirt surfaces (m_road_variation_01,
+// m_asphalt_cracks, m_dirt_road, …) are actually defined per-level and ship
+// their own textures, so referencing them yields "NO MATERIAL" at runtime.
+//
+// Confirmed-core (resolve with no extra assets):
+//   - DefaultDecalRoadMaterial : the engine's built-in road surface (asphalt).
+//   - road_invisible           : invisible placeholder surface.
+//   - m_line_white / m_line_yellow_double / m_line_white_discontinue : lane paint.
+//   - m_road_asphalt_edge_grass : asphalt→grass edge blend.
+// The road surface uses DefaultDecalRoadMaterial so roads have a real, crisp,
+// tiling asphalt independent of the baked base-texture resolution.
 const GLOBAL_DECAL_MATERIALS = {
   invisible: 'road_invisible',
+  asphalt: 'DefaultDecalRoadMaterial',   // core built-in asphalt road surface
   lineWhite: 'm_line_white',
   lineYellowDouble: 'm_line_yellow_double',
   lineYellowSingle: 'm_line_yellow',
   lineWhiteDashed: 'm_line_white_discontinue',
   edgeAsphaltGrass: 'm_road_asphalt_edge_grass',
-  edgeAsphaltDirt: 'm_road_edge_dirt_grass',
-  edgeDirt: 'm_road_edge_dirt',
-  asphaltItaly: 'road_asphalt_2lane', // Using generic asphalt matching the screenshots
-  asphaltECA: 'road_asphalt_2lane',
+  dirtRoad: 'DefaultDecalRoadMaterial',  // no core dirt surface exists; use default road
 };
 
-// Decal Road Layer Templates
-// Logic derived from BeamNG.drive's internal roadSpline tool (Italy/ECA).
+// Decal Road Layer Templates.
+//
+// Each road is built from several overlapping DecalRoads, matching how base-game
+// levels (Italy/ECA) compose roads. Field conventions, derived from real ECA roads:
+//   - renderPriority: LOWER renders ON TOP. Lines (1-2) sit above the asphalt
+//     surface (14); the optional damage overlay (12) sits just above asphalt.
+//   - textureLength: metres the material tiles along the road. Asphalt ~100 to
+//     avoid obvious repetition; painted lines 6.4 (dash pattern); edge blends ~8.
+//   - breakAngle: spline subdivision threshold (asphalt 2°, thin layers 1°).
+//   - startEndFadeMag: fade length applied ONLY at a road's true termini (not at
+//     internal chunk joins — see getLayeredRoadDecals), so chunking stays seamless.
+//   - distanceFade: [start, end] LOD fade in metres for the big asphalt surface.
+//   - drivability: 1 marks the surface as an AI/navigation road (DecalRoad nav).
+//
+// Geometry: 'widthScale' makes a layer span the full corridor (2 × halfWidth);
+// literal 'width' is a full metric width (lines/edge strips). Offsets are in
+// halfWidth multiples for edge-relative layers, metres otherwise.
+const ASPHALT_BASE = {
+  name: 'asphalt', material: GLOBAL_DECAL_MATERIALS.asphalt,
+  widthScale: 2.0, offset: 0,
+  // DefaultDecalRoadMaterial's texture tiles best around the engine default
+  // (~10 m); long lengths (ECA used 100 for its bespoke texture) would stretch it.
+  renderPriority: 14, textureLength: 10, breakAngle: 2,
+  startEndFadeMag: 4, distanceFade: [250, 150], drivability: 1,
+};
+const EDGE_BLEND = (width) => ([
+  { name: 'edge_left', material: GLOBAL_DECAL_MATERIALS.edgeAsphaltGrass, width, offset: -1.0, isEdge: true, mirrorByReversingNodes: true,
+    renderPriority: 9, textureLength: 8, breakAngle: 1, startEndFadeMag: 1 },
+  { name: 'edge_right', material: GLOBAL_DECAL_MATERIALS.edgeAsphaltGrass, width, offset: 1.0, isEdge: true,
+    renderPriority: 9, textureLength: 8, breakAngle: 1, startEndFadeMag: 1 },
+]);
+
 const ROAD_TEMPLATES = {
   default: [
-    { name: 'asphalt', material: GLOBAL_DECAL_MATERIALS.invisible, widthScale: 1.0, offset: 0, priority: 10 },
-    { name: 'edge_left', material: GLOBAL_DECAL_MATERIALS.edgeAsphaltGrass, width: 2.0, offset: -1.0, priority: 11, isEdge: true, mirrorByReversingNodes: true },
-    { name: 'edge_right', material: GLOBAL_DECAL_MATERIALS.edgeAsphaltGrass, width: 2.0, offset: 1.0, priority: 11, isEdge: true },
+    ASPHALT_BASE,
+    ...EDGE_BLEND(2.0),
   ],
   major: [
-    { name: 'asphalt', material: GLOBAL_DECAL_MATERIALS.invisible, widthScale: 1.0, offset: 0, priority: 10 },
-    { name: 'edge_left', material: GLOBAL_DECAL_MATERIALS.edgeAsphaltGrass, width: 2.5, offset: -1.0, priority: 11, isEdge: true, mirrorByReversingNodes: true },
-    { name: 'edge_right', material: GLOBAL_DECAL_MATERIALS.edgeAsphaltGrass, width: 2.5, offset: 1.0, priority: 11, isEdge: true },
-    { name: 'line_center', material: GLOBAL_DECAL_MATERIALS.lineYellowDouble, width: 0.4, offset: 0, priority: 20 },
-    { name: 'line_left', material: GLOBAL_DECAL_MATERIALS.lineWhite, width: 0.2, offset: -0.9, priority: 20, isEdgeRelative: true },
-    { name: 'line_right', material: GLOBAL_DECAL_MATERIALS.lineWhite, width: 0.2, offset: 0.9, priority: 20, isEdgeRelative: true },
+    ASPHALT_BASE,
+    ...EDGE_BLEND(2.5),
+    { name: 'line_center', material: GLOBAL_DECAL_MATERIALS.lineYellowDouble, width: 0.4, offset: 0,
+      renderPriority: 2, textureLength: 6.4, breakAngle: 1 },
+    { name: 'line_left', material: GLOBAL_DECAL_MATERIALS.lineWhite, width: 0.2, offset: -0.9, isEdgeRelative: true,
+      renderPriority: 1, textureLength: 6.4, breakAngle: 1 },
+    { name: 'line_right', material: GLOBAL_DECAL_MATERIALS.lineWhite, width: 0.2, offset: 0.9, isEdgeRelative: true,
+      renderPriority: 1, textureLength: 6.4, breakAngle: 1 },
   ],
   minor: [
-    { name: 'asphalt', material: GLOBAL_DECAL_MATERIALS.invisible, widthScale: 1.0, offset: 0, priority: 10 },
-    { name: 'edge_left', material: GLOBAL_DECAL_MATERIALS.edgeAsphaltGrass, width: 2.0, offset: -1.0, priority: 11, isEdge: true, mirrorByReversingNodes: true },
-    { name: 'edge_right', material: GLOBAL_DECAL_MATERIALS.edgeAsphaltGrass, width: 2.0, offset: 1.0, priority: 11, isEdge: true },
-    { name: 'line_center', material: GLOBAL_DECAL_MATERIALS.lineWhiteDashed, width: 0.2, offset: 0, priority: 20 },
+    ASPHALT_BASE,
+    ...EDGE_BLEND(2.0),
+    { name: 'line_center', material: GLOBAL_DECAL_MATERIALS.lineWhiteDashed, width: 0.2, offset: 0,
+      renderPriority: 2, textureLength: 6.4, breakAngle: 1 },
   ],
   unpaved: [
-    { name: 'dirt', material: GLOBAL_DECAL_MATERIALS.edgeDirt, widthScale: 1.1, offset: 0, priority: 10 },
+    { name: 'dirt', material: GLOBAL_DECAL_MATERIALS.dirtRoad, widthScale: 2.2, offset: 0,
+      renderPriority: 14, textureLength: 10, breakAngle: 1, startEndFadeMag: 3, drivability: 1 },
   ],
 };
 
@@ -1003,7 +1057,7 @@ const HIGHWAY_STYLE = {
   service:        { width: 4, edgeMaterial: GLOBAL_DECAL_MATERIALS.edgeAsphaltGrass },
   raceway:        { width: 6, edgeMaterial: GLOBAL_DECAL_MATERIALS.edgeAsphaltGrass },
   busway:         { width: 4, edgeMaterial: GLOBAL_DECAL_MATERIALS.edgeAsphaltGrass },
-  track:          { width: 4, edgeMaterial: GLOBAL_DECAL_MATERIALS.edgeDirt },
+  track:          { width: 4, edgeMaterial: GLOBAL_DECAL_MATERIALS.edgeAsphaltGrass },
 };
 
 const DEFAULT_ROAD_STYLE = { width: 3, edgeMaterial: GLOBAL_DECAL_MATERIALS.edgeAsphaltGrass };
@@ -1160,6 +1214,9 @@ function getEndpointTrimProfile(segmentFeature, nodeKey, isStart, intersections)
   for (const entry of entries) {
     const otherId = entry?.road?.id;
     if (otherId && memberIds.has(otherId)) continue;
+    // Ignore minor connectors (driveways, paths, …) — they shouldn't break paint.
+    const otherHighway = entry?.road?.highway || entry?.road?.tags?.highway || '';
+    if (MINOR_CROSSING_HIGHWAYS.has(otherHighway)) continue;
     const dir = getEntryEndpointDirection(entry);
     if (!dir) continue;
     const dotAgainstBack = (-selfDir.x * dir.x) + (-selfDir.y * dir.y);
@@ -1167,11 +1224,8 @@ function getEndpointTrimProfile(segmentFeature, nodeKey, isStart, intersections)
   }
 
   if (others.length === 0) {
-    return {
-      center: JUNCTION_MARKING_TRIM_M,
-      pos: JUNCTION_MARKING_TRIM_M,
-      neg: JUNCTION_MARKING_TRIM_M,
-    };
+    // Only minor connectors (or degenerate geometry) meet here — keep paint running.
+    return empty;
   }
 
   let continuationIndex = -1;
@@ -1208,47 +1262,23 @@ function getEndpointTrimProfile(segmentFeature, nodeKey, isStart, intersections)
   };
 }
 
-const ROAD_MARKING_STYLE = {
-  edgeBlend: {
-    material: GLOBAL_DECAL_MATERIALS.edgeAsphaltGrass,
-    halfWidth: 2,
-    offsetInsideEdge: 0.6,
-    breakAngle: 0.5,
-    detail: 0.3,
-    renderPriority: 8,
-    textureLength: 8,
-    startEndFade: [1, 1],
-  },
-  edgeWhite: {
-    material: GLOBAL_DECAL_MATERIALS.lineWhite,
-    halfWidth: 0.2,
-    offsetInsideEdge: 1.2,
-    breakAngle: 1,
-    renderPriority: 1,
-    textureLength: 6.4,
-    startEndFade: [0.2, 0.2],
-  },
-  centerDoubleYellow: {
-    material: GLOBAL_DECAL_MATERIALS.lineYellowDouble,
-    halfWidth: 0.4,
-    breakAngle: 1,
-    renderPriority: 2,
-    textureLength: 6.4,
-  },
-};
-
 // OSM highway types to exclude from road generation (non-vehicle ways).
 const ROAD_SKIP = new Set([
   'footway', 'path', 'pedestrian', 'steps', 'cycleway',
   'bridleway', 'corridor', 'proposed', 'construction',
 ]);
 
-// Only major roads receive painted lane markings.
+// Major roads receive full markings (double-yellow centre + white edge lines).
 const MAJOR_ROAD_MARKINGS = new Set([
   'motorway', 'motorway_link',
   'trunk', 'trunk_link',
   'primary', 'primary_link',
   'secondary', 'secondary_link',
+]);
+
+// Mid-tier roads get a lighter dashed-centre marking (no edge lines).
+const MINOR_MARKED_HIGHWAYS = new Set([
+  'tertiary', 'tertiary_link',
 ]);
 
 // Grass edge blends are useful mainly on higher class paved roads.
@@ -1285,7 +1315,7 @@ function isLikelyUnmarkedRoad(tags = {}) {
  * Decide if this highway class should get white/yellow lane line decals.
  */
 function shouldUseLaneMarkings(highway, tags = {}) {
-  if (!MAJOR_ROAD_MARKINGS.has(highway)) return false;
+  if (!MAJOR_ROAD_MARKINGS.has(highway) && !MINOR_MARKED_HIGHWAYS.has(highway)) return false;
   return !isLikelyUnmarkedRoad(tags);
 }
 
@@ -1470,8 +1500,10 @@ function makeRoadDecal(nodes, name, parentName, props, materialOverride) {
     breakAngle: props.breakAngle,
     renderPriority: props.renderPriority,
     textureLength: props.textureLength,
-    startEndFade: props.startEndFade,
   };
+  if (Array.isArray(props.startEndFade)) decal.startEndFade = props.startEndFade;
+  if (Array.isArray(props.distanceFade)) decal.distanceFade = props.distanceFade;
+  if (Number.isFinite(props.drivability)) decal.drivability = props.drivability;
   if (Number.isFinite(props.detail)) decal.detail = props.detail;
   return decal;
 }
@@ -1555,13 +1587,24 @@ function getLayeredRoadDecals(centerNodes, highway, tags, styleHalfWidth, parent
     else if (layer.name === 'edge_left') levelName = 'Edge Blend - Left';
     else if (layer.name === 'edge_right') levelName = 'Edge Blend - Right';
 
+    // Fade only at a road's true termini — never at internal chunk joins, or
+    // every ~chunk boundary would show a gap. mirrored layers swap start/end.
+    let startEndFade;
+    if (Number.isFinite(layer.startEndFadeMag) && layer.startEndFadeMag > 0) {
+      let s = options.isRoadStart ? layer.startEndFadeMag : 0;
+      let e = options.isRoadEnd ? layer.startEndFadeMag : 0;
+      if (layer.mirrorByReversingNodes) { const t = s; s = e; e = t; }
+      startEndFade = [s, e];
+    }
+
     const decal = makeRoadDecal(layeredNodes, levelName, parentName, {
       material: layer.material,
-      renderPriority: layer.priority,
-      breakAngle: 1.0,
-      textureLength: 5,
-      startEndFade: [1, 1],
-      detail: 0.1,
+      renderPriority: layer.renderPriority,
+      breakAngle: Number.isFinite(layer.breakAngle) ? layer.breakAngle : 1,
+      textureLength: Number.isFinite(layer.textureLength) ? layer.textureLength : 8,
+      startEndFade,
+      distanceFade: layer.distanceFade,
+      drivability: layer.drivability,
     });
 
     if (decal) decals.push(decal);
@@ -1690,6 +1733,8 @@ function generateDecalRoads(terrainData, squareSize) {
         {
           startTrim: i === 0 ? startTrimProfile : { center: 0, pos: 0, neg: 0 },
           endTrim: i === clippedSegments.length - 1 ? endTrimProfile : { center: 0, pos: 0, neg: 0 },
+          isRoadStart: i === 0,
+          isRoadEnd: i === clippedSegments.length - 1,
         },
       );
 
@@ -4157,7 +4202,7 @@ function buildGroundCoverObjects(terrainData, squareSize, includeTrees, biome) {
   const grassClumpScale = Math.max(1, Math.sqrt(BEAMNG_GRASS_DENSITY_MULTIPLIER));
   const widthMeters = terrainData.width * squareSize;
   const heightMeters = terrainData.height * squareSize;
-  const mapRadius = Math.max(30, roundTo(Math.min(widthMeters, heightMeters) * 0.48, 3));
+  const mapRadius = Math.max(60, roundTo(Math.min(widthMeters, heightMeters) * 0.85, 3));
   const centerHeight = getTerrainHeightWorld(
     (terrainData.bounds.north + terrainData.bounds.south) * 0.5,
     (terrainData.bounds.east + terrainData.bounds.west) * 0.5,
@@ -4340,14 +4385,16 @@ function buildGroundCoverObjects(terrainData, squareSize, includeTrees, biome) {
     material: groundCover.materialName,
     gridSize: Math.max(1, Math.round(2 / Math.sqrt(BEAMNG_GRASS_DENSITY_MULTIPLIER))),
     radius: mapRadius,
-    dissolveRadius: Math.max(40, roundTo(mapRadius * 0.65, 3)),
+    // Fade only near the placement edge so grass stays visible far out, instead
+    // of dissolving at ~0.65·radius.
+    dissolveRadius: Math.max(80, roundTo(mapRadius * 0.92, 3)),
     shapeCullRadius: mapRadius,
     maxBillboardTiltAngle: 40,
     maxElements: Math.min(
       BEAMNG_MAX_GROUNDCOVER_ELEMENTS,
       Math.max(
-        260000,
-        Math.round(((widthMeters * heightMeters) / 4.5) * BEAMNG_GRASS_DENSITY_MULTIPLIER),
+        360000,
+        Math.round(((widthMeters * heightMeters) / 3.2) * BEAMNG_GRASS_DENSITY_MULTIPLIER),
       ),
     ),
     windGustLength: 1.7,
@@ -4398,10 +4445,10 @@ function buildGroundCoverObjects(terrainData, squareSize, includeTrees, biome) {
     const approxRadius = Math.max(
       14,
       Math.min(
-        260,
+        400,
         Math.max(
-          Math.sqrt(areaSqM / Math.PI) * 1.1,
-          Math.max(maxX - minX, maxY - minY) * 0.55,
+          Math.sqrt(areaSqM / Math.PI) * 1.3,
+          Math.max(maxX - minX, maxY - minY) * 0.6,
         ),
       ),
     );
@@ -4417,7 +4464,7 @@ function buildGroundCoverObjects(terrainData, squareSize, includeTrees, biome) {
       material: groundCover.materialName,
       gridSize: areaSqM > 60000 ? 3 : 2,
       radius: roundTo(approxRadius, 3),
-      dissolveRadius: roundTo(Math.max(20, approxRadius * 0.8), 3),
+      dissolveRadius: roundTo(Math.max(40, approxRadius * 0.92), 3),
       shapeCullRadius: roundTo(Math.max(approxRadius, approxRadius * 1.25), 3),
       maxBillboardTiltAngle: 40,
       maxElements: Math.min(

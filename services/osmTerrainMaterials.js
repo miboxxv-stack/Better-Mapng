@@ -13,7 +13,6 @@ import {
   getTerrainLevelFallbacks,
   getTerrainSemanticCandidates,
 } from './beamngBiomeCatalog.js';
-import { createWGS84ToLocal } from './geoUtils.js';
 
 // ── Material names ─────────────────────────────────────────────────────────
 // Index 0 = DefaultMaterial (satellite base), 1–7 = BeamNG-referenced materials.
@@ -473,23 +472,13 @@ const CONCRETE_LANDUSES = new Set(['commercial', 'industrial', 'retail']);
  * Terrain space: (0,0) = SW corner, px increases eastward, py increases northward.
  * Layer map index = py * size + px  (row-major, bottom-left origin).
  */
-function geoToTerrainPx(lat, lng, bounds, size, toMetric = null, mpp = 0) {
-  // Match the OSM base texture's projection (osmTexture.js) so the material
-  // layerMap lines up with what the texture draws. The texture uses a local
-  // metric projection (createWGS84ToLocal) and normalizes by mpp * gridSize;
-  // a naive linear lat/lng box-stretch drifts from it by ~cos(lat) in X,
-  // which made grass land over textured sidewalks. SW origin (py northward).
-  let normX;
-  let normY;
-  if (toMetric && Number.isFinite(mpp) && mpp > 0) {
-    const [lx, ly] = toMetric.forward([lng, lat]);
-    const span = mpp * size;
-    normX = 0.5 + lx / span;
-    normY = 0.5 + ly / span;
-  } else {
-    normX = (lng - bounds.west)  / (bounds.east  - bounds.west);
-    normY = (lat - bounds.south) / (bounds.north - bounds.south);
-  }
+function geoToTerrainPx(lat, lng, bounds, size) {
+  // Linear lat/lng box-stretch, matching the OSM base texture (osmTexture.js)
+  // and geoToWorld() object placement — all three share this mapping so material
+  // carves line up with the drawn texture and the placed decal roads. SW origin
+  // (py northward).
+  const normX = (lng - bounds.west)  / (bounds.east  - bounds.west);
+  const normY = (lat - bounds.south) / (bounds.north - bounds.south);
   return {
     px: Math.max(0, Math.min(size - 1, Math.round(normX * (size - 1)))),
     py: Math.max(0, Math.min(size - 1, Math.round(normY * (size - 1)))),
@@ -617,16 +606,8 @@ function buildOSMLayerMap(terrainData, worldSize) {
   const metersPerPixel = worldSize / size;
   const layerMap = new Uint8Array(size * size);
 
-  // Project lat/lng with the SAME local metric projection and meters-per-pixel
-  // as the OSM base texture, so material carves align with the drawn texture.
-  const centerLat = (bounds.north + bounds.south) / 2;
-  const centerLng = (bounds.east + bounds.west) / 2;
-  const toMetric = createWGS84ToLocal(centerLat, centerLng);
-  const mpp = Number.isFinite(Number(terrainData?.processingMetersPerPixel))
-    && Number(terrainData.processingMetersPerPixel) > 0
-    ? Number(terrainData.processingMetersPerPixel)
-    : 1;
-  const toPx = (lat, lng) => geoToTerrainPx(lat, lng, bounds, size, toMetric, mpp);
+  // Linear projection shared with the OSM base texture + geoToWorld placement.
+  const toPx = (lat, lng) => geoToTerrainPx(lat, lng, bounds, size);
 
   // 1. Paint area polygons (painted first; roads override on top).
   for (const feature of osmFeatures) {

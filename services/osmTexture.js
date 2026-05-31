@@ -1,4 +1,3 @@
-import { createWGS84ToLocal } from "./geoUtils.js";
 import { buildRoadNetwork, getEffectiveRoadLayer, mergeLinearRoadSegments } from "./roadNetwork.js";
 
 // Colors aligned to OSM Carto style definitions
@@ -1771,19 +1770,15 @@ export const generateOSMTexture = async (terrainData, options = {}) => {
   const ctx = canvas.getContext("2d");
   if (!ctx) throw new Error("Could not get 2D context");
 
-  const centerLat = (terrainData.bounds.north + terrainData.bounds.south) / 2;
-  const centerLng = (terrainData.bounds.east + terrainData.bounds.west) / 2;
-  const toMetric = createWGS84ToLocal(centerLat, centerLng);
-  const halfW = terrainData.width / 2,
-    halfH = terrainData.height / 2;
-
-  const toPixel = (lat, lng) => {
-    const [lx, ly] = toMetric.forward([lng, lat]);
-    return {
-      x: lx * METERS_TO_PX + halfW * SCALE_FACTOR,
-      y: halfH * SCALE_FACTOR - ly * METERS_TO_PX,
-    };
-  };
+  // Linear lat/lng → pixel box-stretch, matching geoToWorld() object placement
+  // and the satellite resampler. (METERS_TO_PX, used for road widths, equals the
+  // px-per-world-metre of this mapping because squareSize == processingMpp.) A
+  // metric projection here would drift from the placed decals/objects by ~cos(lat).
+  const { north: bNorth, south: bSouth, east: bEast, west: bWest } = terrainData.bounds;
+  const toPixel = (lat, lng) => ({
+    x: ((lng - bWest) / (bEast - bWest)) * canvas.width,
+    y: ((bNorth - lat) / (bNorth - bSouth)) * canvas.height,
+  });
 
   // Use noise pattern for background instead of solid color
   const noisePattern = ctx.createPattern(
@@ -1875,19 +1870,13 @@ export function renderRoadOverlayOnCanvas(canvas, terrainData, options = {}) {
     ? Number(terrainData.processingMetersPerPixel)
     : 1;
   const metersToPx = scaleFactor / processingMetersPerPixel;
-  const centerLat = (terrainData.bounds.north + terrainData.bounds.south) / 2;
-  const centerLng = (terrainData.bounds.east + terrainData.bounds.west) / 2;
-  const toMetric = createWGS84ToLocal(centerLat, centerLng);
-  const halfW = terrainData.width / 2;
-  const halfH = terrainData.height / 2;
-
-  const toPixel = (lat, lng) => {
-    const [lx, ly] = toMetric.forward([lng, lat]);
-    return {
-      x: lx * metersToPx + halfW * scaleFactor,
-      y: halfH * scaleFactor - ly * metersToPx,
-    };
-  };
+  // Linear lat/lng → pixel box-stretch (matches geoToWorld + the satellite
+  // background this overlays). Metric projection would drift by ~cos(lat).
+  const { north: bNorth, south: bSouth, east: bEast, west: bWest } = terrainData.bounds;
+  const toPixel = (lat, lng) => ({
+    x: ((lng - bWest) / (bEast - bWest)) * canvas.width,
+    y: ((bNorth - lat) / (bNorth - bSouth)) * canvas.height,
+  });
 
   const roadFeatures = terrainData.osmFeatures.filter(
     (f) => f.type === "road" || f.type === "bridge_infra",
