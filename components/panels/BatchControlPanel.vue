@@ -21,71 +21,87 @@
       @update:grid-rows="(v) => gridRows = v"
     />
 
-    <div class="space-y-2">
-      <div class="flex items-center justify-between">
-        <p class="text-xs font-medium text-gray-700 dark:text-gray-300">{{ t('batch.tileOffsets') }}</p>
-        <BaseButton size="sm" variant="secondary" @click="resetTileOffsets">{{ t('batch.resetAll') }}</BaseButton>
-      </div>
-      <label class="flex items-center justify-between p-2 rounded bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 text-xs text-gray-700 dark:text-gray-300">
-        <span>{{ t('batch.tilesFollowCenter') }}</span>
-        <input type="checkbox" v-model="tileFollowCenterLocal" class="accent-[#FF6600] w-4 h-4 cursor-pointer" />
-      </label>
-      <p class="text-[10px] text-gray-500 dark:text-gray-400">{{ t('batch.offsetHint') }}</p>
-      <div class="max-h-44 overflow-y-auto border border-gray-200 dark:border-gray-600 rounded bg-gray-50 dark:bg-gray-700 p-2 space-y-1">
-        <div
-          v-for="entry in tileOffsetEntries"
-          :key="entry.index"
-          class="grid grid-cols-[54px_1fr_1fr_42px] gap-1 items-center"
-        >
-          <span class="text-[10px] text-gray-600 dark:text-gray-300">R{{ entry.row + 1 }}C{{ entry.col + 1 }}</span>
-          <input
-            type="number"
-            step="10"
-            class="bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded px-1.5 py-1 text-[10px] text-gray-900 dark:text-white"
-            :value="entry.offsetX"
-            @input="updateTileOffset(entry.index, 'offsetX', $event.target.value)"
-            placeholder="X"
-          />
-          <input
-            type="number"
-            step="10"
-            class="bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded px-1.5 py-1 text-[10px] text-gray-900 dark:text-white"
-            :value="entry.offsetY"
-            @input="updateTileOffset(entry.index, 'offsetY', $event.target.value)"
-            placeholder="Y"
-          />
-          <button
-            class="text-[10px] py-1 px-1 rounded border border-gray-300 dark:border-gray-600 text-gray-600 dark:text-gray-300 hover:bg-white dark:hover:bg-gray-800"
-            @click="resetTileOffset(entry.index)"
-          >
-            0
-          </button>
-        </div>
-      </div>
-    </div>
+    <!-- Tiles Follow Map Center — always visible, independent of the tile layout section -->
+    <label class="flex items-center justify-between p-2 rounded bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 text-xs text-gray-700 dark:text-gray-300 cursor-pointer">
+      <span>{{ t('batch.tilesFollowCenter') }}</span>
+      <input type="checkbox" v-model="tileFollowCenterLocal" class="accent-[#FF6600] w-4 h-4 cursor-pointer" />
+    </label>
 
+    <!-- Collapsible: per-tile offsets + names -->
     <div class="space-y-2">
-      <div class="flex items-center justify-between">
-        <p class="text-xs font-medium text-gray-700 dark:text-gray-300">{{ t('batch.tileNames') }}</p>
-        <BaseButton size="sm" variant="secondary" @click="resetTileNames">{{ t('batch.resetAll') }}</BaseButton>
-      </div>
-      <p class="text-[10px] text-gray-500 dark:text-gray-400">{{ t('batch.tileNamesHint') }}</p>
-      <div class="max-h-44 overflow-y-auto border border-gray-200 dark:border-gray-600 rounded bg-gray-50 dark:bg-gray-700 p-2 space-y-1">
-        <div
-          v-for="entry in tileNameEntries"
-          :key="entry.index"
-          class="grid grid-cols-[54px_1fr] gap-1 items-center"
-        >
-          <span class="text-[10px] text-gray-600 dark:text-gray-300">R{{ entry.row + 1 }}C{{ entry.col + 1 }}</span>
-          <input
-            type="text"
-            class="bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded px-1.5 py-1 text-[10px] text-gray-900 dark:text-white"
-            :value="entry.name"
-            :placeholder="entry.defaultName"
-            @input="updateTileName(entry.index, $event.target.value)"
-          />
+      <button @click="showTileLayout = !showTileLayout"
+        class="w-full flex items-center justify-between text-sm font-medium text-gray-700 dark:text-gray-300 hover:text-[#FF6600] transition-colors group">
+        <span class="flex items-center gap-2">
+          <Grid3X3 :size="16" class="text-gray-500 dark:text-gray-400 group-hover:text-[#FF6600] transition-colors" />
+          {{ t('batch.tileLayout') }}
+        </span>
+        <ChevronDown :size="14" :class="['transition-transform duration-200', showTileLayout ? 'rotate-180' : '']" />
+      </button>
+
+      <template v-if="showTileLayout">
+        <div class="space-y-2">
+          <div class="flex items-center justify-between">
+            <p class="text-xs font-medium text-gray-700 dark:text-gray-300">{{ t('batch.tileOffsets') }}</p>
+            <BaseButton size="sm" variant="secondary" @click="resetTileOffsets">{{ t('batch.resetAll') }}</BaseButton>
+          </div>
+          <p class="text-[10px] text-gray-500 dark:text-gray-400">{{ t('batch.offsetHint') }}</p>
+          <div class="max-h-44 overflow-y-auto border border-gray-200 dark:border-gray-600 rounded bg-gray-50 dark:bg-gray-700 p-2 space-y-1">
+            <div
+              v-for="entry in tileOffsetEntries"
+              :key="entry.index"
+              class="grid grid-cols-[54px_1fr_1fr_42px] gap-1 items-center"
+            >
+              <span class="text-[10px] text-gray-600 dark:text-gray-300">R{{ entry.row + 1 }}C{{ entry.col + 1 }}</span>
+              <input
+                type="number"
+                step="10"
+                class="bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded px-1.5 py-1 text-[10px] text-gray-900 dark:text-white"
+                :value="entry.offsetX"
+                @input="updateTileOffset(entry.index, 'offsetX', $event.target.value)"
+                placeholder="X"
+              />
+              <input
+                type="number"
+                step="10"
+                class="bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded px-1.5 py-1 text-[10px] text-gray-900 dark:text-white"
+                :value="entry.offsetY"
+                @input="updateTileOffset(entry.index, 'offsetY', $event.target.value)"
+                placeholder="Y"
+              />
+              <button
+                class="text-[10px] py-1 px-1 rounded border border-gray-300 dark:border-gray-600 text-gray-600 dark:text-gray-300 hover:bg-white dark:hover:bg-gray-800"
+                @click="resetTileOffset(entry.index)"
+              >
+                0
+              </button>
+            </div>
+          </div>
         </div>
-      </div>
+
+        <div class="space-y-2">
+          <div class="flex items-center justify-between">
+            <p class="text-xs font-medium text-gray-700 dark:text-gray-300">{{ t('batch.tileNames') }}</p>
+            <BaseButton size="sm" variant="secondary" @click="resetTileNames">{{ t('batch.resetAll') }}</BaseButton>
+          </div>
+          <p class="text-[10px] text-gray-500 dark:text-gray-400">{{ t('batch.tileNamesHint') }}</p>
+          <div class="max-h-44 overflow-y-auto border border-gray-200 dark:border-gray-600 rounded bg-gray-50 dark:bg-gray-700 p-2 space-y-1">
+            <div
+              v-for="entry in tileNameEntries"
+              :key="entry.index"
+              class="grid grid-cols-[54px_1fr] gap-1 items-center"
+            >
+              <span class="text-[10px] text-gray-600 dark:text-gray-300">R{{ entry.row + 1 }}C{{ entry.col + 1 }}</span>
+              <input
+                type="text"
+                class="bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded px-1.5 py-1 text-[10px] text-gray-900 dark:text-white"
+                :value="entry.name"
+                :placeholder="entry.defaultName"
+                @input="updateTileName(entry.index, $event.target.value)"
+              />
+            </div>
+          </div>
+        </div>
+      </template>
     </div>
 
     <hr class="border-gray-200 dark:border-gray-600" />
@@ -104,6 +120,10 @@
         <p>{{ t('batch.gridCoverage', { w: gridWidthDisplay, h: gridHeightDisplay }) }}</p>
         <p v-if="resolution >= 4096" class="text-amber-600 dark:text-amber-500 font-medium">⚠️ {{ t('batch.highResolutionWarning') }}</p>
       </ResolutionSelector>
+      <ProcessingResolutionInput
+        :model-value="processingMetersPerPixel"
+        @update:model-value="(v) => emit('update:processingMetersPerPixel', v)"
+      />
     </div>
 
     <div class="flex items-center justify-between p-2 rounded bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600">
@@ -250,6 +270,7 @@ import BatchGridConfig from '../batch/BatchGridConfig.vue';
 import BatchPerformanceProfile from '../batch/BatchPerformanceProfile.vue';
 import BatchExportOptions from '../batch/BatchExportOptions.vue';
 import BatchRunConfigControls from '../batch/BatchRunConfigControls.vue';
+import ProcessingResolutionInput from '../controls/ProcessingResolutionInput.vue';
 import BaseButton from '../base/BaseButton.vue';
 import { probeGPXZLimits } from '../../services/terrain';
 import { cloneRateLimitInfo, downloadJsonFile } from '../../services/traceability';
@@ -342,6 +363,8 @@ const gpxzApiKey = ref(localStorage.getItem('mapng_gpxzApiKey') || '');
 const gpxzStatus = ref(null);
 const isCheckingGPXZ = ref(false);
 const showCoordinates = ref(false);
+const showTileLayout = ref(localStorage.getItem('mapng_batch_show_tile_layout') === 'true');
+watch(showTileLayout, (v) => localStorage.setItem('mapng_batch_show_tile_layout', String(v)));
 const meshResolution = ref(parseInt(localStorage.getItem('mapng_batch_mesh')) || 256);
 const performanceProfile = ref(localStorage.getItem('mapng_batch_profile') || 'balanced');
 const runConfigStatus = ref('');

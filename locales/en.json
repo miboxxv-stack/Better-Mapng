@@ -146,6 +146,7 @@
     "largeBatchWarning": "Large batch ({count} tiles). This will take a long time and trigger many downloads.",
     "resourceHeavy": "Resource heavy.",
     "resourceHeavyBody": "Large grids or high-resolution tiles can still hit browser memory or download limits.",
+    "tileLayout": "Tile Offsets & Names",
     "tileOffsets": "Tile Offsets (meters)",
     "resetAll": "Reset All",
     "tilesFollowCenter": "Tiles Follow Map Center",

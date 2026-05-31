@@ -123,17 +123,10 @@
       >
       </ResolutionSelector>
 
-      <div class="space-y-1">
-        <label class="text-xs text-gray-500 dark:text-gray-400">{{ t('controlPanel.processingResolutionLabel') }}</label>
-        <input
-          v-model="processingMetersPerPixelInput"
-          type="text"
-          inputmode="decimal"
-          @input="handleProcessingMetersPerPixelInput"
-          class="w-full border rounded px-2 py-2 text-sm outline-none bg-white dark:bg-gray-800 border-gray-300 dark:border-gray-600 text-gray-900 dark:text-white focus:ring-2 focus:ring-[#FF6600] focus:border-[#FF6600]"
-        />
-        <p class="text-[10px] text-gray-500 dark:text-gray-400">{{ t('controlPanel.processingResolutionHint') }}</p>
-      </div>
+      <ProcessingResolutionInput
+        :model-value="processingMetersPerPixel"
+        @update:model-value="(v) => $emit('update:processingMetersPerPixel', v)"
+      />
 
       <!-- OSM Toggle -->
       <div class="p-2 rounded bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600">
@@ -293,6 +286,7 @@ import GenerateActions from '../controls/GenerateActions.vue';
 import ElevationUploadControl from '../controls/ElevationUploadControl.vue';
 import RunConfigControls from '../controls/RunConfigControls.vue';
 import JobStateControls from '../controls/JobStateControls.vue';
+import ProcessingResolutionInput from '../controls/ProcessingResolutionInput.vue';
 import TerrainStats from '../controls/TerrainStats.vue';
 import LazMetaCard from '../controls/LazMetaCard.vue';
 import RasterMetaCard from '../controls/RasterMetaCard.vue';
@@ -436,36 +430,10 @@ watch(() => props.terrainData, (newData) => {
   }
 });
 
-const processingMetersPerPixelInput = ref('1');
-
-const PROCESSING_RESOLUTION_INPUT_PATTERN = /^\d*\.?\d*$/;
-
 const processingMetersPerPixelNumber = computed(() => {
   const parsed = Number(props.processingMetersPerPixel);
   return Number.isFinite(parsed) && parsed > 0 ? parsed : 1;
 });
-
-const isValidProcessingResolutionInput = (value) => {
-  const trimmed = String(value ?? '').trim();
-  if (!trimmed || trimmed === '.') return false;
-  if (!PROCESSING_RESOLUTION_INPUT_PATTERN.test(trimmed)) return false;
-  const decimalPart = trimmed.split('.')[1] || '';
-  if (decimalPart.length > 10) return false;
-  const parsed = Number(trimmed);
-  return Number.isFinite(parsed) && parsed > 0;
-};
-
-const handleProcessingMetersPerPixelInput = () => {
-  if (!isValidProcessingResolutionInput(processingMetersPerPixelInput.value)) return;
-  emit('update:processingMetersPerPixel', Number(processingMetersPerPixelInput.value.trim()));
-};
-
-watch(() => props.processingMetersPerPixel, (newValue) => {
-  const parsed = Number(newValue);
-  processingMetersPerPixelInput.value = Number.isFinite(parsed) && parsed > 0
-    ? String(parsed)
-    : '1';
-}, { immediate: true });
 
 const metersPerPixel = computed(() => processingMetersPerPixelNumber.value);
 
