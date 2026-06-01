@@ -8,6 +8,37 @@
       </p>
     </div>
 
+    <!-- Output mode toggle: separate tiles vs one combined BeamNG level -->
+    <div class="space-y-1.5">
+      <div class="grid grid-cols-2 gap-1 p-1 rounded-lg bg-gray-100 dark:bg-gray-800 border border-gray-200 dark:border-gray-700">
+        <button
+          type="button"
+          @click="combinedLevel = false"
+          :class="[
+            'flex items-center justify-center gap-1.5 px-2 py-1.5 rounded-md text-xs font-medium transition-colors',
+            !combinedLevel ? 'bg-white dark:bg-gray-700 text-gray-900 dark:text-white shadow-sm' : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200',
+          ]"
+        >
+          <Grid3X3 :size="13" />
+          {{ t('batchCombined.modeSeparate') }}
+        </button>
+        <button
+          type="button"
+          @click="combinedLevel = true"
+          :class="[
+            'flex items-center justify-center gap-1.5 px-2 py-1.5 rounded-md text-xs font-medium transition-colors',
+            combinedLevel ? 'bg-white dark:bg-gray-700 text-gray-900 dark:text-white shadow-sm' : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200',
+          ]"
+        >
+          <PackageOpen :size="13" />
+          {{ t('batchCombined.modeCombined') }}
+        </button>
+      </div>
+      <p class="text-[10px] text-gray-500 dark:text-gray-400 px-0.5">
+        {{ combinedLevel ? t('batchCombined.modeCombinedHint') : t('batchCombined.modeSeparateHint') }}
+      </p>
+    </div>
+
     <BatchGridConfig
       :grid-cols="gridCols"
       :grid-rows="gridRows"
@@ -17,6 +48,8 @@
       :grid-width-display="gridWidthDisplay"
       :grid-height-display="gridHeightDisplay"
       :tile-area-display="tileAreaDisplay"
+      :combined-level="combinedLevel"
+      :resolution="resolution"
       @update:grid-cols="(v) => gridCols = v"
       @update:grid-rows="(v) => gridRows = v"
     />
@@ -134,7 +167,10 @@
       <input type="checkbox" v-model="sharedElevationBaseline" class="accent-[#FF6600] w-4 h-4 cursor-pointer" />
     </div>
 
-    <p v-if="sharedElevationBaseline" class="text-[10px] text-amber-600 dark:text-amber-500">
+    <p v-if="sharedElevationBaseline && hasOffsetTiles" class="text-[10px] text-amber-600 dark:text-amber-500">
+      {{ t('batch.sharedBaselineAutoHint') }}
+    </p>
+    <p v-else-if="sharedElevationBaseline" class="text-[10px] text-amber-600 dark:text-amber-500">
       {{ t('batch.sharedBaselineHint') }}
     </p>
 
@@ -185,7 +221,14 @@
 
     <hr class="border-gray-200 dark:border-gray-600" />
 
+    <BatchCombinedLevelOptions
+      v-if="combinedLevel"
+      :level-options="levelOptions"
+      :include-o-s-m="includeOSM"
+      @update:level-options="handleLevelOptionsUpdate"
+    />
     <BatchExportOptions
+      v-else
       :exports="exports"
       :include-o-s-m="includeOSM"
       :mesh-resolution="meshResolution"
@@ -195,8 +238,16 @@
 
     <hr class="border-gray-200 dark:border-gray-600" />
 
+    <!-- Combined level output summary -->
+    <div v-if="combinedLevel" class="text-[10px] text-gray-500 dark:text-gray-400 bg-gray-50 dark:bg-gray-700 p-2 rounded border border-gray-200 dark:border-gray-600 space-y-1">
+      <p><span class="font-medium text-gray-700 dark:text-gray-300">{{ t('batchCombined.outputSummary', { tiles: totalTiles, dim: combinedDim }) }}</span></p>
+      <p class="text-amber-600 dark:text-amber-500 font-medium mt-1">
+        ℹ️ {{ t('batchCombined.outputHint') }}
+      </p>
+    </div>
+
     <!-- Selected exports count -->
-    <div class="text-[10px] text-gray-500 dark:text-gray-400 bg-gray-50 dark:bg-gray-700 p-2 rounded border border-gray-200 dark:border-gray-600 space-y-1">
+    <div v-else class="text-[10px] text-gray-500 dark:text-gray-400 bg-gray-50 dark:bg-gray-700 p-2 rounded border border-gray-200 dark:border-gray-600 space-y-1">
       <p><span class="font-medium text-gray-700 dark:text-gray-300">{{ t('batch.selectedPerTile', { count: selectedExportCount, suffix: selectedExportCount !== 1 ? 's' : '' }) }}</span></p>
       <p>{{ t('batch.totalFiles', { tiles: totalTiles, exports: selectedExportCount, total: totalTiles * selectedExportCount }) }}</p>
       <p class="text-amber-600 dark:text-amber-500 font-medium mt-1">
@@ -234,11 +285,11 @@
         block
         size="lg"
         variant="primary"
-        :disabled="selectedExportCount === 0 || totalTiles === 0 || isRunning || (elevationSource === 'gpxz' && !gpxzApiKey)"
+        :disabled="startDisabled"
         @click="handleStart"
       >
         <Play :size="16" />
-        {{ t('batch.startBatch', { tiles: totalTiles }) }}
+        {{ combinedLevel ? t('batchCombined.startCombined', { tiles: totalTiles }) : t('batch.startBatch', { tiles: totalTiles }) }}
       </BaseButton>
 
       <template v-if="hasResumableSavedState">
@@ -262,13 +313,14 @@
 <script setup>
 import { ref, computed, watch, nextTick } from 'vue';
 import { useI18n } from 'vue-i18n';
-import { Grid3X3, Box, Trees, Mountain, MapPin, ChevronDown, Play, RotateCcw, X, AlertTriangle } from 'lucide-vue-next';
+import { Grid3X3, Box, Trees, Mountain, MapPin, ChevronDown, Play, RotateCcw, X, AlertTriangle, PackageOpen } from 'lucide-vue-next';
 import CoordinatesInput from '../map/CoordinatesInput.vue';
 import ElevationSourceSelector from '../map/ElevationSourceSelector.vue';
 import ResolutionSelector from '../map/ResolutionSelector.vue';
 import BatchGridConfig from '../batch/BatchGridConfig.vue';
 import BatchPerformanceProfile from '../batch/BatchPerformanceProfile.vue';
 import BatchExportOptions from '../batch/BatchExportOptions.vue';
+import BatchCombinedLevelOptions from '../batch/BatchCombinedLevelOptions.vue';
 import BatchRunConfigControls from '../batch/BatchRunConfigControls.vue';
 import ProcessingResolutionInput from '../controls/ProcessingResolutionInput.vue';
 import BaseButton from '../base/BaseButton.vue';
@@ -428,6 +480,100 @@ const handleExportsUpdate = (nextExports) => {
   localStorage.setItem('mapng_batch_exports', JSON.stringify(exports.value));
 };
 
+// ── Combined BeamNG level mode ──────────────────────────────────────────────
+// Grid must be a square power of 2 so the stitched heightmap (N × resolution)
+// is a power-of-2 square (BeamNG .ter requirement).
+const POW2_GRID_OPTIONS = [2, 4, 8];
+// 16384² is the in-browser ceiling (see BatchGridConfig for the rationale).
+const COMBINED_SUPPORTED_MAX = 16384;
+
+const DEFAULT_LEVEL_OPTIONS = {
+  levelName: '',
+  baseTexture: 'hybrid',
+  pbrSource: 'osm',
+  roadType: 'architect',
+  biomeId: '',
+  backdropSource: 'off',
+  includeBuildings: true,
+  applyFoundations: true,
+  includeTrees: true,
+  includeRocks: false,
+  includeWater: true,
+  seaLevelOffset: 0,
+};
+
+const normalizeLevelOptions = (value) => {
+  const src = (value && typeof value === 'object') ? value : {};
+  const merged = { ...DEFAULT_LEVEL_OPTIONS, ...src };
+  const out = {};
+  for (const key of Object.keys(DEFAULT_LEVEL_OPTIONS)) out[key] = merged[key];
+  out.seaLevelOffset = Number.isFinite(Number(out.seaLevelOffset)) ? Number(out.seaLevelOffset) : 0;
+  return out;
+};
+
+const combinedLevel = ref(localStorage.getItem('mapng_batch_combined_level') === 'true');
+
+const levelOptions = ref((() => {
+  try {
+    const saved = localStorage.getItem('mapng_batch_level_options');
+    return normalizeLevelOptions(saved ? JSON.parse(saved) : DEFAULT_LEVEL_OPTIONS);
+  } catch {
+    return normalizeLevelOptions(DEFAULT_LEVEL_OPTIONS);
+  }
+})());
+
+const handleLevelOptionsUpdate = (next) => {
+  levelOptions.value = normalizeLevelOptions(next);
+  localStorage.setItem('mapng_batch_level_options', JSON.stringify(levelOptions.value));
+};
+
+watch(combinedLevel, (v) => localStorage.setItem('mapng_batch_combined_level', String(v)));
+watch(levelOptions, (v) => localStorage.setItem('mapng_batch_level_options', JSON.stringify(normalizeLevelOptions(v))), { deep: true });
+
+// Shared baseline defaults off, but offsetting any tile can introduce elevation
+// seams between neighbours, so we auto-enable it the moment a tile is offset.
+// The checkbox stays fully user-toggleable either way.
+const hasOffsetTiles = computed(() =>
+  tileOffsets.value.some((entry) => Math.abs(entry.offsetX) > 0 || Math.abs(entry.offsetY) > 0)
+);
+
+watch(hasOffsetTiles, (offset, wasOffset) => {
+  if (offset && !wasOffset) sharedElevationBaseline.value = true;
+});
+
+const combinedTierFor = (n) => {
+  const dim = n * Math.max(1, props.resolution);
+  if (dim > COMBINED_SUPPORTED_MAX) return 'disabled';
+  return 'ok';
+};
+const combinedDim = computed(() => gridCols.value * Math.max(1, props.resolution));
+const combinedTier = computed(() => combinedTierFor(gridCols.value));
+
+// Snap an arbitrary grid size to the nearest valid power-of-2 square, stepping
+// down if the resolution cap would push the combined heightmap over the hard max.
+const snapToValidSquareGrid = () => {
+  const current = gridCols.value;
+  let best = POW2_GRID_OPTIONS[0];
+  let bestDelta = Infinity;
+  for (const n of POW2_GRID_OPTIONS) {
+    const delta = Math.abs(n - current);
+    if (delta < bestDelta) { best = n; bestDelta = delta; }
+  }
+  while (POW2_GRID_OPTIONS.indexOf(best) > 0 && combinedTierFor(best) === 'disabled') {
+    best = POW2_GRID_OPTIONS[POW2_GRID_OPTIONS.indexOf(best) - 1];
+  }
+  if (gridCols.value !== best) gridCols.value = best;
+  if (gridRows.value !== best) gridRows.value = best;
+};
+
+watch(combinedLevel, (on) => {
+  if (on) snapToValidSquareGrid();
+});
+// Re-validate when resolution changes while in combined mode (cap depends on it).
+watch(() => props.resolution, () => {
+  if (combinedLevel.value) snapToValidSquareGrid();
+});
+
 // Formatting helpers
 function formatDist(km) {
   return km >= 1 ? `${km.toFixed(1)} km` : `${(km * 1000).toFixed(0)} m`;
@@ -450,6 +596,18 @@ const gridHeightDisplay = computed(() => formatDist(gridHeightKm.value));
 const selectedExportCount = computed(() =>
   Object.values(exports.value).filter(Boolean).length
 );
+
+const startDisabled = computed(() => {
+  if (totalTiles.value === 0 || props.isRunning) return true;
+  if (elevationSource.value === 'gpxz' && !gpxzApiKey.value) return true;
+  if (combinedLevel.value) {
+    if (combinedTier.value === 'disabled') return true;
+    // Biome is required whenever OSM-derived materials/assets are in play.
+    if (includeOSM.value && !levelOptions.value.biomeId) return true;
+    return false;
+  }
+  return selectedExportCount.value === 0;
+});
 
 const hasResumableSavedState = computed(() => {
   if (!props.savedState || props.isRunning) return false;
@@ -550,6 +708,8 @@ const handleStart = () => {
     glbMeshResolution: meshResolution.value,
     performanceProfile: performanceProfile.value,
     exports: normalizeExports(exports.value),
+    combinedLevel: combinedLevel.value,
+    levelOptions: combinedLevel.value ? normalizeLevelOptions(levelOptions.value) : null,
   });
 };
 
@@ -579,6 +739,8 @@ const buildRunConfiguration = () => {
     glbMeshResolution: meshResolution.value,
     performanceProfile: performanceProfile.value,
     exports: normalizeExports(exports.value),
+    combinedLevel: combinedLevel.value,
+    levelOptions: normalizeLevelOptions(levelOptions.value),
   };
 };
 
@@ -755,6 +917,18 @@ const applyRunConfiguration = (config) => {
     exports.value = normalizeExports(src.exports);
     localStorage.setItem('mapng_batch_exports', JSON.stringify(exports.value));
   }
+
+  const combinedLevelValue = toBooleanOrNull(src.combinedLevel);
+  if (combinedLevelValue !== null) {
+    combinedLevel.value = combinedLevelValue;
+  }
+
+  if (src.levelOptions && typeof src.levelOptions === 'object') {
+    levelOptions.value = normalizeLevelOptions(src.levelOptions);
+    localStorage.setItem('mapng_batch_level_options', JSON.stringify(levelOptions.value));
+  }
+
+  if (combinedLevel.value) snapToValidSquareGrid();
 };
 
 const handleRunConfigFile = async (file) => {

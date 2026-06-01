@@ -335,6 +335,35 @@ export const project = (lat, lng, zoom) => {
 // Cached state about the user's GPXZ plan limits
 let gpxzRateLimitInfo = null;
 
+// Global request pacer shared across ALL concurrent GPXZ fetches.
+//
+// Per-tile pacing alone is not enough: batch mode runs several tiles'
+// fetchGPXZRaw() calls at once, so without a shared gate the aggregate request
+// rate is (fetchConcurrency × per-tile chunks) — far over the plan's rps and a
+// guaranteed source of 429s. This gate spaces request *starts* globally so the
+// combined rate across every tile stays under the plan limit. It is reserve-
+// then-await (synchronous slot reservation), which is safe because JS is
+// single-threaded — two callers can't interleave between the read and write.
+let gpxzNextSlotAt = 0;
+
+/**
+ * Wait for the next globally-paced GPXZ request slot. Spacing is derived from
+ * the probed plan rps with a small safety margin; falls back to 1 rps until the
+ * plan is known.
+ */
+const acquireGpxzSlot = async (signal) => {
+  const rps = Math.max(1, Number(gpxzRateLimitInfo?.rps) || 1);
+  // 10% headroom under the advertised rps absorbs timing jitter and the
+  // server's own window accounting, which otherwise still trips occasional 429s.
+  const minIntervalMs = Math.ceil(1000 / (rps * 0.9));
+  const now = performance.now();
+  const startAt = Math.max(now, gpxzNextSlotAt);
+  gpxzNextSlotAt = startAt + minIntervalMs;
+  const wait = startAt - now;
+  if (wait > 0) await new Promise((r) => setTimeout(r, wait));
+  signal?.throwIfAborted();
+};
+
 /**
  * Probe the GPXZ API to discover the user's plan limits.
  * Makes a lightweight /v1/elevation/point request and reads rate-limit headers.
@@ -479,13 +508,9 @@ const fetchGPXZRaw = async (bounds, apiKey, onProgress, signal) => {
     }
 
     const rateInfo = gpxzRateLimitInfo;
+    // pMap parallelism per tile; the global acquireGpxzSlot() gate (not this
+    // number) is what actually bounds the aggregate request rate across tiles.
     const concurrency = rateInfo?.concurrency || 1;
-    const rps = rateInfo?.rps || 1;
-    // Delay between requests per worker to stay under rps limit
-    // e.g. 8 workers at 10 rps → each worker delays 800ms between requests
-    // Free tier gets a 200ms buffer to avoid 429s from timing jitter
-    const rawDelay = Math.ceil((concurrency / rps) * 1000);
-    const perWorkerDelayMs = (rateInfo?.plan === 'free') ? Math.max(rawDelay, 1200) : rawDelay;
 
     // 2. Check resolution profile via Points API.
     // Sample center + near-corners so smoothing reflects mixed-coverage areas.
@@ -503,8 +528,8 @@ const fetchGPXZRaw = async (bounds, apiKey, onProgress, signal) => {
 
     let shouldSmooth = false;
     try {
-      // Wait before the points check to avoid 429 from the probe request
-      await new Promise((r) => setTimeout(r, perWorkerDelayMs));
+      // Pace the points check through the same global gate as raster requests.
+      await acquireGpxzSlot(signal);
       const latlons = sampledLatLons.map(([lat, lng]) => `${lat},${lng}`).join('|');
       const pointsUrl = `/api/gpxz/v1/elevation/points?latlons=${encodeURIComponent(latlons)}`;
       const pointsResp = await fetch(pointsUrl, {
@@ -604,17 +629,13 @@ const fetchGPXZRaw = async (bounds, apiKey, onProgress, signal) => {
       }
     }
 
-    console.log(`[GPXZ] Split into ${requests.length} tiles (with overlap). Concurrency: ${concurrency}, delay: ${perWorkerDelayMs}ms`);
+    console.log(`[GPXZ] Split into ${requests.length} tiles (with overlap). Concurrency: ${concurrency}, global pace: ${Math.ceil(1000 / (Math.max(1, Number(gpxzRateLimitInfo?.rps) || 1) * 0.9))}ms/req`);
     onProgress?.(`Fetching ${requests.length} GPXZ tiles (${rateInfo?.plan || 'free'} plan, ${concurrency}x concurrent)...`);
 
     let completedChunks = 0;
     const results = await pMap(
       requests,
       async (reqBounds) => {
-        // Rate limit delay — adjusted per worker for the plan's rps limit
-        await new Promise((r) => setTimeout(r, perWorkerDelayMs));
-        signal?.throwIfAborted();
-
         const url = `/api/gpxz/v1/elevation/hires-raster?bbox_top=${reqBounds.north}&bbox_bottom=${reqBounds.south}&bbox_left=${reqBounds.west}&bbox_right=${reqBounds.east}&res_m=best&projection=best&tight_bounds=false`;
 
         // Retry logic for 429 Rate Limit AND network errors
@@ -623,6 +644,8 @@ const fetchGPXZRaw = async (bounds, apiKey, onProgress, signal) => {
         const MAX_RETRIES = 5;
 
         while (retries < MAX_RETRIES) {
+          // Globally pace request starts across every concurrent tile.
+          await acquireGpxzSlot(signal);
           let response = null;
           try {
             response = await fetch(url, { headers: { "x-api-key": apiKey }, signal });

@@ -159,6 +159,7 @@
     "highResolutionWarning": "High resolution tiles require significant RAM per tile.",
     "sharedBaseline": "Shared Elevation Baseline (all heightmaps use one min/max)",
     "sharedBaselineHint": "Extra pre-scan required: batch runs one elevation-only pass first to compute global min/max.",
+    "sharedBaselineAutoHint": "Auto-enabled because one or more tiles are offset — keeps neighbouring tiles seam-free. Uncheck to override.",
     "includeOsm": "Include OSM Features",
     "gridCenter": "Grid Center",
     "selectedPerTile": "{count} export{suffix} selected per tile",
@@ -168,6 +169,21 @@
     "resumePrevious": "Resume Previous Job ({done}/{total} done)",
     "clearSavedJob": "Clear Saved Job",
     "clearCache": "Clear Cache"
+  },
+  "batchCombined": {
+    "modeSeparate": "Separate Tiles",
+    "modeCombined": "Combined Level",
+    "modeSeparateHint": "Each tile is processed and downloaded as its own set of files.",
+    "modeCombinedHint": "All tiles are stitched into one playable BeamNG level (square grid required).",
+    "title": "Combined BeamNG Level",
+    "gridSize": "Grid Size (square)",
+    "gridSizeHint": "Combined levels require a square, power-of-2 grid so the stitched heightmap is a valid terrain size.",
+    "combinedHeightmap": "Combined heightmap",
+    "largeSizeNote": "Largest in-browser size (~{mb} MB heightmap in RAM). Use a desktop browser with plenty of free memory.",
+    "disabledWarning": "Too large — exceeds the 16384 px in-browser limit. Lower tile resolution or grid size.",
+    "outputSummary": "{tiles} tiles → one {dim}×{dim} px BeamNG level",
+    "outputHint": "Tiles are stitched after processing, then exported as a single playable level ZIP.",
+    "startCombined": "Build Combined Level ({tiles} tiles)"
   },
   "upload": {
     "autoDetected": "coordinates auto-detected",

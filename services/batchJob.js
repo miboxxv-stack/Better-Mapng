@@ -9,6 +9,7 @@ import JSZip from 'jszip';
 import { encode } from 'fast-png';
 import { fetchTerrainData } from './terrain.js';
 import { exportToGLB, exportToDAE } from './export3d.js';
+import { exportBeamNGLevel } from './exportBeamNGLevel.js';
 import {
   generateHeightmapBlob,
   generateSatelliteBlob,
@@ -404,7 +405,12 @@ export function createBatchJobState(config) {
     gpxzStatus: config.gpxzStatus || null,
     glbMeshResolution: config.glbMeshResolution || 512,
     performanceProfile,
+    combinedLevel: !!config.combinedLevel,
+    levelOptions: config.combinedLevel ? normalizeCombinedLevelOptions(config.levelOptions) : null,
     elevationNormalization: {
+      // Combined mode stitches raw meters and quantizes once at export, so a
+      // seamless heightmap doesn't depend on the pre-scan. The baseline follows
+      // the user's choice (auto-enabled by the UI when tiles are offset).
       enabled: !!config?.elevationNormalization?.enabled,
       scope: 'global_batch',
       status: 'idle',
@@ -466,6 +472,8 @@ const migrateLoadedState = (state) => {
   state.performanceProfile = ['throughput', 'balanced', 'low_memory'].includes(state.performanceProfile)
     ? state.performanceProfile
     : 'balanced';
+  state.combinedLevel = !!state.combinedLevel;
+  state.levelOptions = state.combinedLevel ? normalizeCombinedLevelOptions(state.levelOptions) : null;
   const fallbackScheduler = deriveSchedulerConfig(state);
   state.scheduler = {
     ...fallbackScheduler,
@@ -981,6 +989,9 @@ function buildTileMetadata(state, tile, terrainData) {
 
 function shouldFetchOSMForBatch(state) {
   if (!toStrictBool(state?.includeOSM)) return false;
+  // A combined level consumes OSM features for roads, buildings, trees, etc.,
+  // so it always needs the OSM pass when OSM is enabled.
+  if (state?.combinedLevel) return true;
   const exports = state.exports || {};
   return (
     exports.osmTexture === true
@@ -1127,6 +1138,309 @@ function downloadCompositeHeightmap(state, composite) {
   triggerDownload(blob, `MapNG_Batch_Heightmap_Grid_${date}_${lat}_${lng}${scaledLabel}.png`);
 }
 
+// ─── Combined BeamNG Level assembly ──────────────────────────────────────────
+// In combined-level mode every finished tile is stitched into one terrain
+// (heightmap + base texture + merged OSM) which is exported as a single
+// playable level instead of producing per-tile downloads.
+
+// Canvas/WebGL textures cap at 8192px; above this the combined base texture is
+// downscaled. Roads come from decals, not the base texture, so this is cosmetic.
+const COMBINED_TEXTURE_MAX = 8192;
+
+const DEFAULT_COMBINED_LEVEL_OPTIONS = {
+  levelName: '',
+  baseTexture: 'hybrid',
+  pbrSource: 'osm',
+  roadType: 'architect',
+  biomeId: '',
+  backdropSource: 'off',
+  includeBuildings: true,
+  applyFoundations: true,
+  includeTrees: true,
+  includeRocks: false,
+  includeWater: true,
+  seaLevelOffset: 0,
+};
+
+function normalizeCombinedLevelOptions(raw = {}) {
+  const src = (raw && typeof raw === 'object') ? raw : {};
+  const merged = { ...DEFAULT_COMBINED_LEVEL_OPTIONS, ...src };
+  const out = {};
+  for (const key of Object.keys(DEFAULT_COMBINED_LEVEL_OPTIONS)) out[key] = merged[key];
+  out.seaLevelOffset = Number.isFinite(Number(out.seaLevelOffset)) ? Number(out.seaLevelOffset) : 0;
+  return out;
+}
+
+function createCombinedLevelContext(state) {
+  if (!state?.combinedLevel) return null;
+
+  const tileSize = Math.max(1, Number(state.resolution || 0));
+  const cols = Math.max(1, Number(state.gridCols || 1));
+  const rows = Math.max(1, Number(state.gridRows || 1));
+  const fullSize = tileSize * cols; // UI enforces a square (cols === rows) grid.
+  const baseTexture = normalizeCombinedLevelOptions(state.levelOptions).baseTexture;
+
+  // Base texture canvas downscaled to fit the 8192px cap; kept an exact multiple
+  // of the column count so tiles tile cleanly with no sub-pixel seams.
+  const texTile = Math.max(1, Math.floor(Math.min(fullSize, COMBINED_TEXTURE_MAX) / cols));
+  const texSize = texTile * cols;
+
+  return {
+    tileSize,
+    cols,
+    rows,
+    width: fullSize,
+    height: fullSize,
+    heightData: null,        // Float32Array(meters), allocated lazily on first tile
+    texCanvas: null,
+    texCtx: null,
+    texTile,
+    texSize,
+    baseTexture,
+    osmById: new Map(),
+    bounds: null,            // running union of tile bounds
+    writtenTiles: new Set(),
+  };
+}
+
+/**
+ * Resolve a drawable source (canvas or image) for the requested base texture,
+ * falling back to satellite then null.
+ */
+async function resolveTileTextureSource(terrainData, baseTexture) {
+  try {
+    if (baseTexture === 'hybrid') {
+      if (terrainData.hybridTextureCanvas) return terrainData.hybridTextureCanvas;
+      if (terrainData.hybridTextureUrl) return await loadImage(terrainData.hybridTextureUrl);
+    } else if (baseTexture === 'osm') {
+      if (terrainData.osmTextureCanvas) return terrainData.osmTextureCanvas;
+      if (terrainData.osmTextureUrl) return await loadImage(terrainData.osmTextureUrl);
+    }
+    if (terrainData.satelliteTextureUrl) return await loadImage(terrainData.satelliteTextureUrl);
+  } catch {
+    /* missing/broken texture — leave that tile's base texture blank */
+  }
+  return null;
+}
+
+/**
+ * Stitch one finished tile into the combined level context: raw-meter heights,
+ * base texture, merged OSM features, and the bounds union. Heights are stored in
+ * meters and stay seamless because the shared baseline aligns all tiles to one
+ * absolute range (exportBeamNGLevel quantizes to 16-bit later).
+ */
+async function writeTileToCombinedLevel(combined, state, tile, terrainData) {
+  if (!combined || !terrainData?.heightMap) return;
+
+  const key = `${tile.row}:${tile.col}`;
+  if (combined.writtenTiles.has(key)) return;
+
+  // 1. Heightmap (Float32 meters). The UI caps the combined dimension at 16384²
+  // (~1 GB here), which allocates fine; this guard only trips on an already
+  // memory-starved tab and surfaces a clear message instead of a raw RangeError.
+  if (!combined.heightData) {
+    try {
+      combined.heightData = new Float32Array(combined.width * combined.height);
+    } catch (err) {
+      throw new Error(
+        `Combined level heightmap (${combined.width}×${combined.height}) could not be allocated — `
+        + 'the browser is out of memory. Close other tabs, or lower the grid size or tile resolution.',
+      );
+    }
+  }
+  const R = combined.tileSize;
+  const W = combined.width;
+  const tw = Number(terrainData.width) || R;
+  const th = Number(terrainData.height) || R;
+  const src = terrainData.heightMap;
+  const startX = tile.col * R;
+  const startY = tile.row * R;
+
+  for (let y = 0; y < R; y++) {
+    const sy = th === R ? y : Math.min(th - 1, Math.floor((y / R) * th));
+    const dstRow = (startY + y) * W + startX;
+    const srcRow = sy * tw;
+    if (tw === R) {
+      combined.heightData.set(src.subarray(srcRow, srcRow + R), dstRow);
+    } else {
+      for (let x = 0; x < R; x++) {
+        const sx = Math.min(tw - 1, Math.floor((x / R) * tw));
+        combined.heightData[dstRow + x] = src[srcRow + sx];
+      }
+    }
+  }
+
+  // 2. Base texture.
+  if (combined.baseTexture !== 'none') {
+    if (!combined.texCanvas) {
+      combined.texCanvas = document.createElement('canvas');
+      combined.texCanvas.width = combined.texSize;
+      combined.texCanvas.height = combined.texSize;
+      combined.texCtx = combined.texCanvas.getContext('2d');
+    }
+    const srcImg = await resolveTileTextureSource(terrainData, combined.baseTexture);
+    if (srcImg && combined.texCtx) {
+      combined.texCtx.drawImage(
+        srcImg,
+        tile.col * combined.texTile,
+        tile.row * combined.texTile,
+        combined.texTile,
+        combined.texTile,
+      );
+    }
+  }
+
+  // 3. OSM features (absolute lat/lng — concat + dedup by element id at seams).
+  if (Array.isArray(terrainData.osmFeatures)) {
+    for (const feature of terrainData.osmFeatures) {
+      const id = feature?.id != null ? String(feature.id) : `anon_${combined.osmById.size}`;
+      if (!combined.osmById.has(id)) combined.osmById.set(id, feature);
+    }
+  }
+
+  // 4. Bounds union.
+  const b = terrainData.bounds;
+  if (b) {
+    if (!combined.bounds) {
+      combined.bounds = { north: b.north, south: b.south, east: b.east, west: b.west };
+    } else {
+      combined.bounds.north = Math.max(combined.bounds.north, b.north);
+      combined.bounds.south = Math.min(combined.bounds.south, b.south);
+      combined.bounds.east = Math.max(combined.bounds.east, b.east);
+      combined.bounds.west = Math.min(combined.bounds.west, b.west);
+    }
+  }
+
+  combined.writtenTiles.add(key);
+}
+
+function canvasToObjectURL(canvas) {
+  return new Promise((resolve) => {
+    try {
+      canvas.toBlob((blob) => resolve(blob ? URL.createObjectURL(blob) : null), 'image/png');
+    } catch {
+      resolve(null);
+    }
+  });
+}
+
+/**
+ * Build the single terrainData consumed by exportBeamNGLevel from the stitched
+ * combined context. Returns { terrainData, cleanup } where cleanup revokes any
+ * object URL created for the base texture.
+ */
+async function assembleCombinedTerrainData(state, combined) {
+  let minHeight = Number(state?.elevationNormalization?.globalMinHeight);
+  let maxHeight = Number(state?.elevationNormalization?.globalMaxHeight);
+  if (!Number.isFinite(minHeight) || !Number.isFinite(maxHeight) || maxHeight <= minHeight) {
+    // Fallback: derive from the stitched data if the pre-scan range is missing.
+    minHeight = Infinity;
+    maxHeight = -Infinity;
+    const data = combined.heightData;
+    for (let i = 0; i < data.length; i++) {
+      const h = data[i];
+      if (h < minHeight) minHeight = h;
+      if (h > maxHeight) maxHeight = h;
+    }
+    if (!Number.isFinite(minHeight)) minHeight = 0;
+    if (!Number.isFinite(maxHeight)) maxHeight = 0;
+  }
+
+  const terrainData = {
+    heightMap: combined.heightData,
+    width: combined.width,
+    height: combined.height,
+    minHeight,
+    maxHeight,
+    bounds: combined.bounds,
+    osmFeatures: Array.from(combined.osmById.values()),
+    processingMetersPerPixel: Number(state.processingMetersPerPixel || 1),
+  };
+
+  let cleanupUrl = null;
+  if (combined.texCanvas && combined.baseTexture !== 'none') {
+    if (combined.baseTexture === 'hybrid') {
+      terrainData.hybridTextureCanvas = combined.texCanvas;
+    } else if (combined.baseTexture === 'osm') {
+      terrainData.osmTextureCanvas = combined.texCanvas;
+    } else {
+      cleanupUrl = await canvasToObjectURL(combined.texCanvas);
+      terrainData.satelliteTextureUrl = cleanupUrl;
+    }
+  }
+
+  const cleanup = () => {
+    if (cleanupUrl) URL.revokeObjectURL(cleanupUrl);
+    if (combined.texCanvas) {
+      combined.texCanvas.width = 1;
+      combined.texCanvas.height = 1;
+    }
+    combined.texCanvas = null;
+    combined.texCtx = null;
+    combined.heightData = null;
+    combined.osmById.clear();
+  };
+
+  return { terrainData, cleanup };
+}
+
+/**
+ * Map the panel's combined-level options onto exportBeamNGLevel options.
+ */
+function buildCombinedExportOptions(state, combined, onProgress) {
+  const lo = normalizeCombinedLevelOptions(state.levelOptions);
+  const backdropOn = lo.backdropSource && lo.backdropSource !== 'off';
+  return {
+    baseTexture: lo.baseTexture,
+    pbrSource: lo.pbrSource,
+    roadType: lo.roadType,
+    biomeId: lo.biomeId || undefined,
+    includeBackdrop: backdropOn,
+    backdropElevationSource: backdropOn ? lo.backdropSource : 'global30m',
+    backdropGpxzApiKey: state.gpxzApiKey || '',
+    includeBuildings: lo.includeBuildings,
+    applyFoundations: lo.applyFoundations,
+    includeWater: lo.includeWater,
+    seaLevelOffset: lo.seaLevelOffset,
+    includeTrees: lo.includeTrees,
+    includeRocks: lo.includeRocks,
+    levelName: String(lo.levelName || '').trim(),
+    elevationSource: state.elevationSource,
+    requestedResolution: combined.width,
+    requestedProcessingMetersPerPixel: Number(state.processingMetersPerPixel || 1),
+    onProgress,
+  };
+}
+
+/**
+ * Assemble and export the combined BeamNG level as a single ZIP download.
+ */
+async function finalizeCombinedLevel(state, combined, onProgress) {
+  if (!combined?.writtenTiles?.size) return;
+
+  onProgress?.({ tileIndex: -1, step: 'Assembling combined level…', tile: null });
+  const { terrainData, cleanup } = await assembleCombinedTerrainData(state, combined);
+
+  const center = combined.bounds
+    ? {
+      lat: (combined.bounds.north + combined.bounds.south) / 2,
+      lng: (combined.bounds.east + combined.bounds.west) / 2,
+    }
+    : { ...state.center };
+
+  try {
+    const options = buildCombinedExportOptions(state, combined, ({ step, pct }) => {
+      onProgress?.({ tileIndex: -1, step: `Combined level: ${step}${Number.isFinite(pct) ? ` (${pct}%)` : ''}`, tile: null });
+    });
+    const { blob, filename } = await exportBeamNGLevel(terrainData, center, options);
+    if (blob instanceof Blob) {
+      triggerDownload(blob, filename || `MapNG_CombinedLevel_${new Date().toISOString().slice(0, 10)}.zip`);
+    }
+  } finally {
+    cleanup();
+  }
+}
+
 async function computeBatchElevationNormalization(state, scheduleFetch, onProgress, signal) {
   const normalization = state.elevationNormalization;
   if (!normalization?.enabled) return;
@@ -1238,8 +1552,9 @@ async function processTile(state, tile, ctx, signal) {
 
       const terrainData = await scheduleFetch(tile, () => runTimedStage(tile, 'fetch_total', async () => {
         onProgress({ tileIndex: tile.index, step: `Fetching terrain data (${label})...`, tile });
-        const needsOsmTexture = !!(shouldFetchOSM && state.exports.osmTexture);
-        const needsHybridTexture = !!(shouldFetchOSM && state.exports.hybridTexture);
+        const combinedBaseTexture = state.combinedLevel ? normalizeCombinedLevelOptions(state.levelOptions).baseTexture : null;
+        const needsOsmTexture = !!(shouldFetchOSM && (state.exports.osmTexture || combinedBaseTexture === 'osm'));
+        const needsHybridTexture = !!(shouldFetchOSM && (state.exports.hybridTexture || combinedBaseTexture === 'hybrid'));
         return fetchTerrainData(
           tile.center,
           state.resolution,
@@ -1313,6 +1628,37 @@ async function processTile(state, tile, ctx, signal) {
       }
 
       checkpoint(state);
+
+      // Combined-level mode: stitch this tile into the shared level and skip the
+      // per-tile ZIP/exports/download entirely. The level is exported once after
+      // all tiles complete (see runBatchJob → finalizeCombinedLevel).
+      if (state.combinedLevel) {
+        onProgress({ tileIndex: tile.index, step: `Stitching ${label} into combined level...`, tile });
+        await ctx.onTerrainReady?.(tile, terrainData);
+
+        const tileSnapshot = await runTimedStage(tile, 'snapshot_generation', async () => generateTileSnapshot(terrainData, state));
+        tile.snapshot = tileSnapshot;
+
+        const beforeReleaseSample = sampleMemory(state, { tile, label: 'before_zip', force: true });
+        if (beforeReleaseSample) tile.memory.beforeZipUsedBytes = beforeReleaseSample.usedBytes;
+
+        releaseTerrainResources(terrainData);
+
+        tile.status = TILE_STATES.DONE;
+        tile.lifecycle.completedAt = Date.now();
+        tile.lifecycle.totalMs = tile.lifecycle.startedAt
+          ? Math.max(0, tile.lifecycle.completedAt - tile.lifecycle.startedAt)
+          : 0;
+        state.tileCompletionTimes.push(Date.now() - tileStart);
+        updateCounts(state);
+        checkpoint(state);
+        onTileComplete(tile);
+
+        await new Promise(r => setTimeout(r, 120));
+        const endSample = sampleMemory(state, { tile, label: 'post_cleanup', force: true });
+        if (endSample) tile.memory.endUsedBytes = endSample.usedBytes;
+        return;
+      }
 
       const zip = new JSZip();
       const metadata = buildTileMetadata(state, tile, terrainData);
@@ -1481,6 +1827,7 @@ export async function runBatchJob(state, onProgress, onTileComplete, onError, si
 
   const uninstallFetchCache = installBatchFetchCache();
   const compositeHeightmap = createCompositeHeightmapContext(state);
+  const combinedLevel = createCombinedLevelContext(state);
   const queues = buildQueues(state, (tile, stage, waitMs) => {
     addTiming(tile, stage, waitMs);
   });
@@ -1508,6 +1855,9 @@ export async function runBatchJob(state, onProgress, onTileComplete, onError, si
           onError,
           onHeightmapGenerated: (completedTile, terrainData) => {
             writeTileToCompositeHeightmap(compositeHeightmap, state, completedTile, terrainData);
+          },
+          onTerrainReady: async (completedTile, terrainData) => {
+            await writeTileToCombinedLevel(combinedLevel, state, completedTile, terrainData);
           },
           ...queues,
         }, signal);
@@ -1549,6 +1899,9 @@ export async function runBatchJob(state, onProgress, onTileComplete, onError, si
       if (state.totalCompleted > 0) {
         onProgress({ tileIndex: -1, step: 'Generating elevation report...', tile: null });
         downloadBatchElevationReport(state);
+      }
+      if (state.status === JOB_STATES.COMPLETED && combinedLevel?.writtenTiles?.size === state.tiles.length) {
+        await finalizeCombinedLevel(state, combinedLevel, onProgress);
       }
       sampleMemory(state, { label: 'job_completed', force: true });
       checkpoint(state);
