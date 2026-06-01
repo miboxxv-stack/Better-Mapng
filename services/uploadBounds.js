@@ -102,7 +102,7 @@ export const computeUploadedCropBounds = (center, resolution, coverageBounds) =>
   return clampSelectionToCoverage(rawBounds, coverageBounds);
 };
 
-export const getMaxSquareCropResolution = (meta, processingMpp = 1, allowExperimental16384 = false) => {
+export const getMaxSquareCropResolution = (meta, processingMpp = 1) => {
   // nativeWidth/Height are the coverage edges in metres (1 m/px). The exported
   // heightmap edge in pixels is coverageMetres / processingMpp, so a finer pixel
   // size (e.g. 0.75 m/px) unlocks a higher power-of-2 within the same area.
@@ -117,20 +117,16 @@ export const getMaxSquareCropResolution = (meta, processingMpp = 1, allowExperim
     : 1;
   const maxEdgePixels = maxEdgeMeters / mpp;
 
-  const allowed = VALID_SQUARE_EXPORT_RESOLUTIONS.filter((value) => {
-    if (!allowExperimental16384 && value === 16384) return false;
-    return value <= maxEdgePixels;
-  });
+  const allowed = VALID_SQUARE_EXPORT_RESOLUTIONS.filter((value) => value <= maxEdgePixels);
 
   return allowed.length ? allowed[allowed.length - 1] : null;
 };
 
-export const getSquareCropResolutionOptions = (meta, processingMpp = 1, allowExperimental16384 = false) => {
-  const maxResolution = getMaxSquareCropResolution(meta, processingMpp, allowExperimental16384);
+export const getSquareCropResolutionOptions = (meta, processingMpp = 1) => {
+  const maxResolution = getMaxSquareCropResolution(meta, processingMpp);
   if (!maxResolution) return [];
 
   return VALID_SQUARE_EXPORT_RESOLUTIONS.filter((value) => {
-    if (!allowExperimental16384 && value === 16384) return false;
     return value <= maxResolution;
   });
 };

@@ -94,7 +94,6 @@
           :modelValue="resolution"
           @update:modelValue="$emit('resolutionChange', $event)"
           :label="t('controlPanel.resolutionOutputSize')"
-          :allow-experimental16384="devMode"
           :max-resolution="maxSquareCropResolution"
         >
           <p>{{ t('controlPanel.squareCropWithinCoverage') }}</p>
@@ -119,7 +118,6 @@
         :modelValue="resolution"
         @update:modelValue="$emit('resolutionChange', $event)"
         :label="t('controlPanel.resolutionOutputSize')"
-        :allow-experimental16384="devMode"
       >
       </ResolutionSelector>
 
@@ -487,7 +485,7 @@ const nativeDims = computed(() => lazNativeDims.value || georeferencedRasterNati
 // native-vs-square-crop choice; uploads lacking a CRS stay native-only since a
 // geographic crop can't be positioned without bounds.
 const supportsUploadAreaMode = computed(() => !!props.uploadedElevationMeta?.bounds);
-const maxSquareCropResolution = computed(() => getMaxSquareCropResolution(props.uploadedElevationMeta, metersPerPixel.value, !!props.devMode));
+const maxSquareCropResolution = computed(() => getMaxSquareCropResolution(props.uploadedElevationMeta, metersPerPixel.value));
 
 watch([() => props.uploadedAreaMode, maxSquareCropResolution], ([mode, maxResolution]) => {
   if (mode !== 'crop' || !Number.isFinite(maxResolution) || maxResolution <= 0) return;

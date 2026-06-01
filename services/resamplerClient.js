@@ -60,17 +60,51 @@ const postToWorker = (message, transferables = [], options = {}) => {
     });
 };
 
-const canvasFromRgbaBuffer = (width, height, rgbaBuffer) => {
-    const canvas = document.createElement('canvas');
-    canvas.width = width;
-    canvas.height = height;
-    const ctx = canvas.getContext('2d');
-    // new ImageData(array, w, h) wraps the existing Uint8ClampedArray directly
-    // (no copy), saving ~1 GB at 16k vs ctx.createImageData() + .set().
+// The satellite texture is downscaled to 8192 downstream anyway, and a 16384²
+// canvas hits Chromium's max canvas area (2^28 px) — at that exact limit Chrome
+// silently yields a *blank* (black) canvas while Firefox still works, which is
+// why satellite/hybrid exports came out black only on Chromium at 16k. So we
+// never create a canvas larger than this; the full-res heightMap is separate
+// and unaffected, so the .ter keeps its native resolution.
+const SAT_SOURCE_MAX_SIZE = 8192;
+
+const canvasFromRgbaBuffer = async (width, height, rgbaBuffer) => {
     const pixels = rgbaBuffer instanceof Uint8ClampedArray
         ? rgbaBuffer
         : new Uint8ClampedArray(rgbaBuffer);
-    ctx.putImageData(new ImageData(pixels, width, height), 0, 0);
+    // ImageData is backed by a plain ArrayBuffer (no canvas-area limit), so it is
+    // safe to build at full resolution even when width/height exceed the cap.
+    const imageData = new ImageData(pixels, width, height);
+
+    const overCap = width > SAT_SOURCE_MAX_SIZE || height > SAT_SOURCE_MAX_SIZE;
+    if (overCap && typeof createImageBitmap === 'function') {
+        try {
+            const scale = Math.min(SAT_SOURCE_MAX_SIZE / width, SAT_SOURCE_MAX_SIZE / height);
+            const outW = Math.max(1, Math.round(width * scale));
+            const outH = Math.max(1, Math.round(height * scale));
+            // createImageBitmap resizes off the canvas path, so no oversized
+            // canvas is ever allocated.
+            const bitmap = await createImageBitmap(imageData, {
+                resizeWidth: outW,
+                resizeHeight: outH,
+                resizeQuality: 'high',
+            });
+            const canvas = document.createElement('canvas');
+            canvas.width = outW;
+            canvas.height = outH;
+            canvas.getContext('2d').drawImage(bitmap, 0, 0);
+            if ('close' in bitmap) bitmap.close();
+            console.log(`[ResamplerClient] satellite source canvas capped ${width}x${height} → ${outW}x${outH}`);
+            return canvas;
+        } catch (e) {
+            console.warn('[ResamplerClient] capped satellite canvas failed, using full size:', e.message);
+        }
+    }
+
+    const canvas = document.createElement('canvas');
+    canvas.width = width;
+    canvas.height = height;
+    canvas.getContext('2d').putImageData(imageData, 0, 0);
     return canvas;
 };
 
@@ -340,7 +374,7 @@ export const resampleHeightAndImageOffThread = async (
                 return {
                     heightMap: result.heightMap,
                     bounds: result.bounds,
-                    canvas: canvasFromRgbaBuffer(width, height, result.rgbaBuffer),
+                    canvas: await canvasFromRgbaBuffer(width, height, result.rgbaBuffer),
                 };
             }
         } catch (e) {
@@ -403,7 +437,7 @@ export const resampleImageOffThread = async (
             }, [imageSourceData.pixels.buffer]);
 
             if (result && result.rgbaBuffer) {
-                return canvasFromRgbaBuffer(width, height, result.rgbaBuffer);
+                return await canvasFromRgbaBuffer(width, height, result.rgbaBuffer);
             }
         } catch (e) {
             console.warn('[ResamplerClient] Image resampling failed, falling back:', e);

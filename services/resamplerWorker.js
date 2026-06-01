@@ -693,15 +693,25 @@ const finalizeHeightMap = (
             });
             return;
         }
+        // Gap expansion + relaxation cost scales with pixel count, so the fixed
+        // 64-pass / 200-iteration budgets that are fine at 1–2k become a multi-
+        // minute hang at 8k–16k — especially when a scan crosses a data-coverage
+        // border and leaves a large no-data region (e.g. the edge of Poland's
+        // dataset). Scale the iteration budgets down as resolution grows so the
+        // absolute work stays bounded; full quality is retained at normal sizes.
+        const megapixels = (width * height) / (2048 * 2048);
+        const expandPasses = Math.max(8, Math.round(64 / Math.max(1, Math.sqrt(megapixels))));
+        const relaxIterations = Math.max(20, Math.round(200 / Math.max(1, megapixels)));
+
         let relaxMask = seededMask;
         if (expandFilledGaps) {
             reportProgress?.({ stage: 'finalize', message: 'Expanding filled gaps...', current: 2, total: 3, force: true });
-            const expandedMask = expandFill(heightMap, width, height, noData, 64, 3, seededMask);
+            const expandedMask = expandFill(heightMap, width, height, noData, expandPasses, 3, seededMask);
             relaxMask = expandedMask || seededMask;
         } else {
             reportProgress?.({ stage: 'finalize', message: 'Skipping gap expansion for uploaded elevation.', current: 2, total: 3, force: true });
         }
-        relaxFilled(heightMap, width, height, noData, relaxMask, 200);
+        relaxFilled(heightMap, width, height, noData, relaxMask, relaxIterations);
     }
 
     if (smooth) {

@@ -25,13 +25,11 @@ const props = defineProps({
   modelValue: { type: Number, required: true },
   label:      { type: String,  default: '' },
   disabled:   { type: Boolean, default: false },
-  allowExperimental16384: { type: Boolean, default: false },
   maxResolution: { type: Number, default: null },
 });
 defineEmits(['update:modelValue']);
 
 const options = computed(() => VALID_SQUARE_EXPORT_RESOLUTIONS.filter((value) => {
-  if (!props.allowExperimental16384 && value === 16384) return false;
   if (Number.isFinite(props.maxResolution) && props.maxResolution > 0) {
     return value <= props.maxResolution;
   }

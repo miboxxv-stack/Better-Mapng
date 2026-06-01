@@ -21,6 +21,12 @@ const SATELLITE_API_URL =
   'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile';
 const NO_DATA_VALUE = -99999;
 
+// Browsers cap canvas dimensions (and total area). Chromium throws
+// "Index or size is negative or greater than the allowed amount" once a canvas
+// side or its area exceeds the limit, which is what large/high-zoom backdrops hit
+// when the stitched tile canvas grows past ~16384px a side. Stay safely under it.
+const MAX_CANVAS_DIM = 16384;
+
 // Position definitions with lat/lng offset multipliers
 // dLat: +1 = north, -1 = south
 // dLng: +1 = east,  -1 = west
@@ -303,9 +309,21 @@ export const fetchSurroundingTiles = async (
   const tMaxTX = Math.floor(tSE.x / TILE_SIZE);
   const tMaxTY = Math.floor(tSE.y / TILE_SIZE);
 
+  const tCanvasW = (tMaxTX - tMinTX + 1) * TILE_SIZE;
+  const tCanvasH = (tMaxTY - tMinTY + 1) * TILE_SIZE;
+  // Terrain zoom is fixed, so an over-limit terrain canvas can't be auto-reduced
+  // like satellite — fail with an actionable message instead of a cryptic
+  // DOMException ("Index or size is negative...") deep in drawImage/getImageData.
+  if (tCanvasW > MAX_CANVAS_DIM || tCanvasH > MAX_CANVAS_DIM) {
+    throw new Error(
+      `Surrounding-tile area is too large to assemble in the browser `
+      + `(${tCanvasW}×${tCanvasH}px terrain canvas exceeds the ${MAX_CANVAS_DIM}px limit). `
+      + `Select fewer surrounding tiles or a smaller center area.`,
+    );
+  }
   const tCanvas = document.createElement('canvas');
-  tCanvas.width  = (tMaxTX - tMinTX + 1) * TILE_SIZE;
-  tCanvas.height = (tMaxTY - tMinTY + 1) * TILE_SIZE;
+  tCanvas.width  = tCanvasW;
+  tCanvas.height = tCanvasH;
   const tCtx = tCanvas.getContext('2d', { willReadFrequently: true });
 
   // 3. Calculate satellite tile range for combined area (optional)
@@ -317,13 +335,27 @@ export const fetchSurroundingTiles = async (
   let sCtx = null;
 
   if (includeSatellite) {
-    const sNW = project(combined.north, combined.west, satelliteZoom);
-    const sSE = project(combined.south, combined.east, satelliteZoom);
-
-    sMinTX = Math.floor(sNW.x / TILE_SIZE);
-    sMinTY = Math.floor(sNW.y / TILE_SIZE);
-    sMaxTX = Math.floor(sSE.x / TILE_SIZE);
-    sMaxTY = Math.floor(sSE.y / TILE_SIZE);
+    // Auto-reduce satellite zoom until the stitched canvas fits the browser
+    // canvas limit. Each zoom step down halves the canvas dimension; without
+    // this a large/high-zoom backdrop throws a DOMException at getContext/
+    // drawImage time and the download spins forever near the end.
+    let effSatZoom = satelliteZoom;
+    while (effSatZoom > 0) {
+      const nw = project(combined.north, combined.west, effSatZoom);
+      const se = project(combined.south, combined.east, effSatZoom);
+      sMinTX = Math.floor(nw.x / TILE_SIZE);
+      sMinTY = Math.floor(nw.y / TILE_SIZE);
+      sMaxTX = Math.floor(se.x / TILE_SIZE);
+      sMaxTY = Math.floor(se.y / TILE_SIZE);
+      const w = (sMaxTX - sMinTX + 1) * TILE_SIZE;
+      const h = (sMaxTY - sMinTY + 1) * TILE_SIZE;
+      if (w <= MAX_CANVAS_DIM && h <= MAX_CANVAS_DIM) break;
+      effSatZoom -= 1;
+    }
+    if (effSatZoom !== satelliteZoom) {
+      console.warn(`[Surrounding] Satellite zoom reduced ${satelliteZoom} → ${effSatZoom} to fit canvas limit`);
+      satelliteZoom = effSatZoom;
+    }
 
     sCanvas = document.createElement('canvas');
     sCanvas.width  = (sMaxTX - sMinTX + 1) * TILE_SIZE;

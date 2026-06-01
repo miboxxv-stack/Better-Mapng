@@ -443,15 +443,21 @@ export const resampleToMeterGrid = async (
         console.debug('[Resampler] Hole filling enabled: starting push/pull seed');
         const seededMask = pushPullInpaint(heightMap, width, height, -99999);
         console.debug('[Resampler] Push/pull seed complete');
+        // Scale gap-fill budgets down as resolution grows; the fixed 64-pass /
+        // 200-iteration cost hangs at 8k–16k (matches resamplerWorker.js). This
+        // is the main-thread fallback, so an unbounded loop freezes the whole UI.
+        const megapixels = (width * height) / (2048 * 2048);
+        const expandPasses = Math.max(8, Math.round(64 / Math.max(1, Math.sqrt(megapixels))));
+        const relaxIterations = Math.max(20, Math.round(200 / Math.max(1, megapixels)));
         let relaxMask = seededMask;
         if (expandFilledGaps) {
-            const expandedMask = expandFill(heightMap, width, height, -99999, 64, 3, seededMask);
+            const expandedMask = expandFill(heightMap, width, height, -99999, expandPasses, 3, seededMask);
             console.debug('[Resampler] Expand fill complete');
             relaxMask = expandedMask || seededMask;
         } else {
             console.debug('[Resampler] Expand fill skipped');
         }
-        relaxFilled(heightMap, width, height, -99999, relaxMask, 200);
+        relaxFilled(heightMap, width, height, -99999, relaxMask, relaxIterations);
         console.debug('[Resampler] Relaxation complete');
     }
 
