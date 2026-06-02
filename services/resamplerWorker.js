@@ -760,15 +760,20 @@ const resampleHeight = async ({ id, center, width, height, targetBounds = null, 
     };
 };
 
-const resampleHeightAndImage = async ({ id, center, width, height, targetBounds = null, smooth, fillHoles = true, expandFilledGaps = true, tiles, fallback, epsgDefs, imageSource }) => {
+const resampleHeightAndImage = async ({ id, center, width, height, targetBounds = null, smooth, fillHoles = true, expandFilledGaps = true, tiles, fallback, epsgDefs, imageSource, flat = false }) => {
     const heightMap = new Float32Array(width * height);
     const rgbaBuffer = new Uint8ClampedArray(width * height * 4);
     const toWGS84 = createLocalToWGS84(center.lat, center.lng);
     const NO_DATA = -99999;
     const reportProgress = createProgressReporter(id);
-    reportProgress({ stage: 'prepare', message: 'Preparing uploaded elevation tiles...', current: 0, total: 1, force: true });
-    const preparedGroups = await buildPreparedTileGroups(tiles, epsgDefs, NO_DATA);
-    reportProgress({ stage: 'prepare', message: 'Uploaded elevation tiles ready.', current: 1, total: 1, force: true });
+    // Flat mode: no elevation source — leave heightMap zero-filled and skip both
+    // the per-pixel height sampling and hole-filling. The satellite image is
+    // still resampled so textures and OSM overlays work normally.
+    const preparedGroups = flat ? [] : await buildPreparedTileGroups(tiles, epsgDefs, NO_DATA);
+    if (!flat) {
+        reportProgress({ stage: 'prepare', message: 'Preparing uploaded elevation tiles...', current: 0, total: 1, force: true });
+        reportProgress({ stage: 'prepare', message: 'Uploaded elevation tiles ready.', current: 1, total: 1, force: true });
+    }
 
     for (let y = 0; y < height; y++) {
         const rowOffset = y * width;
@@ -776,9 +781,11 @@ const resampleHeightAndImage = async ({ id, center, width, height, targetBounds 
         for (let x = 0; x < width; x++) {
             const [lng, lat] = getPixelLatLng(x, y, width, height, toWGS84, targetBounds);
 
-            let h = sampleHeightAt(lng, lat, preparedGroups, fallback, NO_DATA);
-            if (!Number.isFinite(h) || h <= -200 || h === NO_DATA) h = NO_DATA;
-            heightMap[rowOffset + x] = h;
+            if (!flat) {
+                let h = sampleHeightAt(lng, lat, preparedGroups, fallback, NO_DATA);
+                if (!Number.isFinite(h) || h <= -200 || h === NO_DATA) h = NO_DATA;
+                heightMap[rowOffset + x] = h;
+            }
 
             writeSampledImagePixel(
                 rgbaBuffer,
@@ -796,14 +803,16 @@ const resampleHeightAndImage = async ({ id, center, width, height, targetBounds 
         if ((y & 31) === 31 || y === height - 1) {
             reportProgress({
                 stage: 'sample-height-image',
-                message: 'Mapping uploaded elevation to the output grid...',
+                message: flat ? 'Mapping satellite imagery to the output grid...' : 'Mapping uploaded elevation to the output grid...',
                 current: y + 1,
                 total: height,
             });
         }
     }
 
-    finalizeHeightMap(heightMap, width, height, NO_DATA, smooth, fillHoles, expandFilledGaps, reportProgress);
+    if (!flat) {
+        finalizeHeightMap(heightMap, width, height, NO_DATA, smooth, fillHoles, expandFilledGaps, reportProgress);
+    }
 
     return {
         heightMap,

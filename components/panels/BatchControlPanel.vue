@@ -880,7 +880,7 @@ const applyRunConfiguration = (config) => {
   }
 
   const explicitSource = typeof src.elevationSource === 'string' ? src.elevationSource.toLowerCase() : null;
-  if (explicitSource && ['default', 'usgs', 'gpxz', 'kron86'].includes(explicitSource)) {
+  if (explicitSource && ['default', 'usgs', 'gpxz', 'kron86', 'none'].includes(explicitSource)) {
     elevationSource.value = explicitSource;
   } else {
     const useUSGSValue = toBooleanOrNull(src.useUSGS);

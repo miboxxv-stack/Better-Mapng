@@ -1444,6 +1444,8 @@ async function finalizeCombinedLevel(state, combined, onProgress) {
 async function computeBatchElevationNormalization(state, scheduleFetch, onProgress, signal) {
   const normalization = state.elevationNormalization;
   if (!normalization?.enabled) return;
+  // Flat mode has no elevation to normalize (every tile is zero) — skip the scan.
+  if (state.elevationSource === 'none') return;
 
   normalization.status = 'scanning';
   normalization.scannedTiles = 0;
@@ -1596,6 +1598,7 @@ async function processTile(state, tile, ctx, signal) {
             generateHybridTextureAsset: needsHybridTexture,
             globalTileConcurrency: Number(state.scheduler?.globalTileConcurrency || 20),
             processingMetersPerPixel: Number(state.processingMetersPerPixel || 1),
+            flat: state.elevationSource === 'none',
           },
         );
       }));

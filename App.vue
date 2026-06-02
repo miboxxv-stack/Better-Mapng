@@ -600,6 +600,7 @@ const handleGenerate = async (showPreview, fetchOSM, elevationSource = 'default'
   const useUSGS = normalizedSource === 'usgs';
   const useGPXZ = normalizedSource === 'gpxz';
   const useKRON86 = normalizedSource === 'kron86';
+  const useFlat = normalizedSource === 'none';
 
   const requestKey = buildGenerationKey(
     center.value,
@@ -728,6 +729,7 @@ const handleGenerate = async (showPreview, fetchOSM, elevationSource = 'default'
           processingMetersPerPixel: Number(processingMpp || 1),
           enhanceRoads,
           levelRoads,
+          flat: useFlat,
         },
       );
     }

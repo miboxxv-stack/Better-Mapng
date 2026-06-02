@@ -315,6 +315,7 @@ export const resampleHeightAndImageOffThread = async (
     targetBounds = null,
     onProgress = null,
     expandFilledGaps = true,
+    flat = false,
 ) => {
     if (getWorker() && imageSourceData) {
         try {
@@ -361,6 +362,7 @@ export const resampleHeightAndImageOffThread = async (
                 smooth,
                 fillHoles,
                 expandFilledGaps,
+                flat,
                 tiles: tilesForWorker,
                 fallback: fallbackForWorker,
                 epsgDefs,

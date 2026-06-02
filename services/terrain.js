@@ -1033,6 +1033,7 @@ export const fetchTerrainData = async (
     targetBounds = null,
     enhanceRoads = false,
     levelRoads = false,
+    flat = false,
   } = generationOptions || {};
   // Normalize longitude to handle world wrapping
   const normalizedCenter = {
@@ -1221,8 +1222,9 @@ export const fetchTerrainData = async (
   const requests = [];
 
   // Terrain Requests
-  // Always fetch global tiles to serve as fallback for holes in high-res data
-  if (!sourceGeoTiffs || sourceGeoTiffs.source !== "gpxz" || gpxzChunkFailures) {
+  // Always fetch global tiles to serve as fallback for holes in high-res data.
+  // Flat mode skips elevation entirely, so no terrain tiles are needed.
+  if (!flat && (!sourceGeoTiffs || sourceGeoTiffs.source !== "gpxz" || gpxzChunkFailures)) {
     for (let tx = minTileX; tx <= maxTileX; tx++) {
       for (let ty = minTileY; ty <= maxTileY; ty++) {
         requests.push({ tx, ty, type: "terrain" });
@@ -1354,7 +1356,11 @@ export const fetchTerrainData = async (
     };
   };
 
-  if (terrainDataImg) {
+  if (flat) {
+    // Flat mode: no elevation data was fetched — every sample is zero so the
+    // resampled grid is perfectly level. Satellite + OSM still flow normally.
+    heightSampler = () => 0;
+  } else if (terrainDataImg) {
     heightSampler = (lat, lng) => {
       // Bilinear Interpolation for smoother terrain
       const p = project(lat, lng, TERRAIN_ZOOM);
@@ -1446,6 +1452,9 @@ export const fetchTerrainData = async (
     !(useGPXZ && rawData && !gpxzChunkFailures),
     imageSamplerData,
     fetchBounds,
+    undefined, // onProgress
+    undefined, // expandFilledGaps (defaults to true)
+    flat,
   );
 
   // 7. Fetch OSM Data
