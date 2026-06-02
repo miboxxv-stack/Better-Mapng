@@ -2,6 +2,34 @@
 
 This document maps MapNG BeamNG export artifacts to the official docs in refs/official_levels_documentation.
 
+> **Source of truth:** the end-to-end workflow specification lives in
+> `docs/beamng-level-export-guide.md`. This matrix is the per-artifact status
+> tracker against that guide. When adding/changing an export artifact, update the
+> guide first, then this matrix, then the tests.
+
+## Doc review findings (2026-06 pass against the updated official docs)
+
+The full doc set in `refs/official_levels_documentation/` was reviewed against the
+current exporter. Headline findings:
+
+- **Confirmed correct:** package layout, NDJSON object files + recursive SimGroup
+  folders, `.ter` v9 binary layout (version/size/heightMap/layerMap/materialCount/
+  names), `terrain.terrain.json`, TerrainBlock fields, `theLevelInfo` naming and
+  the `globalEnviromentMap` (one-"n") spelling, info.json spawn/roadRules wiring,
+  forest type/placement coupling, and the shared metric projection for terrain
+  paint alignment.
+- **Open issue — terrain size ceiling:** `Terrain-Files.md` documents the heightmap
+  *import* range as `[128, 8192]`, power-of-two, square. MapNG now exports terrain
+  up to 16384. Must verify the runtime `.ter` loader tolerates >8192 against
+  `refs/base_game_content`, or cap terrain at 8192 (texture-only above). Tracked in
+  the guide as Rule T3.
+- **Open issue — `.ter` version lockstep:** the loader fails if `version > FILE_VERSION`.
+  The `.ter` first byte (`0x09`) and `terrain.terrain.json.version` (9) must stay
+  in lockstep and be re-verified per target game build. Now asserted by tests
+  (Rule T1).
+- **Confirmed gaps (roadmap):** minimap generation, groundModels overrides,
+  prefabs, datablocks, and a rich DecalData library remain unimplemented.
+
 ## Scope
 
 - Source-of-truth docs are local markdown files in refs/official_levels_documentation.
