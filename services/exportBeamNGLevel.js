@@ -3917,6 +3917,18 @@ const BEAMNG_MAX_FOREST_PLACEMENTS_PER_TYPE = 12000;
 const BEAMNG_MAX_GROUNDCOVER_ELEMENTS = 650000;
 const BEAMNG_MAX_GROUNDCOVER_OBJECTS = 48;
 
+// A GroundCover object spreads `maxElements` across a gridSize×gridSize grid of
+// cells, so per-cell density is maxElements / gridSize². BeamNG warns
+// ("has too many elements") and culls when a cell exceeds its per-cell billboard
+// cap. Shipped levels stay at/under ~10,000 elements per cell (e.g. gridSize 8 /
+// maxElements 640,000). Pick the smallest gridSize that keeps per-cell density
+// under this budget so dense fields don't overflow their cells.
+const BEAMNG_MAX_GROUNDCOVER_PER_CELL = 10000;
+function gridSizeForElements(maxElements, minGridSize = 2) {
+  const needed = Math.ceil(Math.sqrt(Math.max(1, maxElements) / BEAMNG_MAX_GROUNDCOVER_PER_CELL));
+  return Math.max(minGridSize, needed);
+}
+
 /**
  * Randomly jitter a lat/lng point by up to N meters using deterministic seed.
  */
@@ -4259,7 +4271,7 @@ function buildGroundCoverObjects(terrainData, squareSize, includeTrees, biome) {
         material,
         Types: types,
         dissolveRadius: Math.max(30, roundTo(radius * 0.75, 3)),
-        gridSize: areaSqM > 45000 ? 12 : 10,
+        gridSize: Math.max(areaSqM > 45000 ? 12 : 10, gridSizeForElements(Math.min(400000, Math.max(90000, Math.round(areaSqM * 1.9))))),
         maxBillboardTiltAngle: 60,
         maxElements: Math.min(400000, Math.max(90000, Math.round(areaSqM * 1.9))),
         noShapes: true,
@@ -4376,6 +4388,13 @@ function buildGroundCoverObjects(terrainData, squareSize, includeTrees, biome) {
     ];
   };
 
+  const baseCoverMaxElements = Math.min(
+    BEAMNG_MAX_GROUNDCOVER_ELEMENTS,
+    Math.max(
+      360000,
+      Math.round(((widthMeters * heightMeters) / 3.2) * BEAMNG_GRASS_DENSITY_MULTIPLIER),
+    ),
+  );
   const groundCoverObjects = [{
     __parent: 'vegetation',
     class: 'GroundCover',
@@ -4383,20 +4402,14 @@ function buildGroundCoverObjects(terrainData, squareSize, includeTrees, biome) {
     persistentId: generatePersistentId(),
     position: [0, 0, roundTo(centerHeight, 3)],
     material: groundCover.materialName,
-    gridSize: Math.max(1, Math.round(2 / Math.sqrt(BEAMNG_GRASS_DENSITY_MULTIPLIER))),
+    gridSize: gridSizeForElements(baseCoverMaxElements),
     radius: mapRadius,
     // Fade only near the placement edge so grass stays visible far out, instead
     // of dissolving at ~0.65·radius.
     dissolveRadius: Math.max(80, roundTo(mapRadius * 0.92, 3)),
     shapeCullRadius: mapRadius,
     maxBillboardTiltAngle: 40,
-    maxElements: Math.min(
-      BEAMNG_MAX_GROUNDCOVER_ELEMENTS,
-      Math.max(
-        360000,
-        Math.round(((widthMeters * heightMeters) / 3.2) * BEAMNG_GRASS_DENSITY_MULTIPLIER),
-      ),
-    ),
+    maxElements: baseCoverMaxElements,
     windGustLength: 1.7,
     windGustStrength: 0.2,
     windTurbulenceFrequency: 0.3,
@@ -4455,6 +4468,10 @@ function buildGroundCoverObjects(terrainData, squareSize, includeTrees, biome) {
     const centerHeightWorld = getTerrainHeightWorld(centroidLat, centroidLng, terrainData);
     const [centerX, centerY] = geoToWorldPoint(centroidLat, centroidLng, terrainData, squareSize, 0);
 
+    const fieldMaxElements = Math.min(
+      BEAMNG_MAX_GROUNDCOVER_ELEMENTS,
+      Math.max(50000, Math.round(areaSqM * 2.8 * BEAMNG_GRASS_DENSITY_MULTIPLIER)),
+    );
     groundCoverObjects.push({
       __parent: 'vegetation',
       class: 'GroundCover',
@@ -4462,15 +4479,12 @@ function buildGroundCoverObjects(terrainData, squareSize, includeTrees, biome) {
       persistentId: generatePersistentId(),
       position: [roundTo(centerX, 3), roundTo(centerY, 3), roundTo(centerHeightWorld, 3)],
       material: groundCover.materialName,
-      gridSize: areaSqM > 60000 ? 3 : 2,
+      gridSize: gridSizeForElements(fieldMaxElements),
       radius: roundTo(approxRadius, 3),
       dissolveRadius: roundTo(Math.max(40, approxRadius * 0.92), 3),
       shapeCullRadius: roundTo(Math.max(approxRadius, approxRadius * 1.25), 3),
       maxBillboardTiltAngle: 40,
-      maxElements: Math.min(
-        BEAMNG_MAX_GROUNDCOVER_ELEMENTS,
-        Math.max(50000, Math.round(areaSqM * 2.8 * BEAMNG_GRASS_DENSITY_MULTIPLIER)),
-      ),
+      maxElements: fieldMaxElements,
       windGustLength: 1.7,
       windGustStrength: 0.2,
       windTurbulenceFrequency: 0.3,

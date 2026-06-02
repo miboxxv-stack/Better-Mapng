@@ -56,12 +56,31 @@ current exporter. Headline findings:
 | main.decals.json + managedDecalData.json scaffold | Decal-Data.md | Implemented | Scaffolding only; no rich DecalData library generation yet. |
 | main.forestbrushes4.json | Forest-Brushes.md | Implemented | Emits a ForestBrush + ForestBrushElement per placed forest item type (referencing managedItemData keys) plus the ForestBrushGroup, matching refs/MapNG_template. Falls back to an empty ForestBrushGroup when no vegetation is placed. |
 | art/forest/managedItemData.json + forest/*.forest4.json | Forest-Data-and.md | Implemented | Emitted when vegetation placement exists. |
+| GroundCover objects (grass) | GroundCover.md | Implemented | See "GroundCover density rule" below. |
 | Native road signs (TSStatic + .link) | Introducing-assets-folder.md, Level-Object-Files.md | Implemented | OSM stop/give_way point nodes emit TSStatic objects referencing native signs_usa meshes via the link registry, under a `signs` SimGroup. Procedural sign boxes are no longer baked into the OSM objects DAE. Ambiguous generic `traffic_sign` nodes are skipped. |
 | .link files for official assets | Introducing-assets-folder.md | Partial | Link files are emitted and exporter object payloads run through rewrite hooks before ZIP write (MissionGroup scene folders plus managed forest data). Exporter ZIP integration assertions now cover decal/architect/mesh road modes; broader asset-type coverage can still be expanded further. |
 | signalControllerDefinitions.json | Traffic-Signals.md | Partial | Exported conditionally when generated signals use custom controller definitions (currently for give_way/yield mapping). |
 | groundModels/*.json overrides | Ground-Models.md | Planned | Not currently exported. |
 | Prefab files (.prefab.json/.prefab) | Prefabs-.prefab-and-.prefab.json.md | Planned | Not currently emitted by exporter. |
 | Datablock JSON files | Datablocks.md | Planned | Not currently emitted by exporter. |
+
+## GroundCover density rule
+
+`GroundCover` spreads `maxElements` across a `gridSize × gridSize` grid of cells,
+so the per-cell element count is `maxElements / gridSize²`. BeamNG logs
+`GroundCoverCell::updateRender | [name] has too many elements` and culls a cell
+when it exceeds the engine's per-cell billboard cap.
+
+**Rule:** keep per-cell density at or under ~10,000 elements
+(`BEAMNG_MAX_GROUNDCOVER_PER_CELL`). Shipped levels in `refs/base_game_content`
+stay within this (e.g. `gridSize: 8` / `maxElements: 640000` → 10,000/cell).
+
+The exporter derives `gridSize` from the computed `maxElements` via
+`gridSizeForElements()` in `services/exportBeamNGLevel.js` for every generated
+grass `GroundCover` object (`mapng_grass_cover`, `mapng_grass_field_*`,
+`mapng_template_cover_*`) so dense fields scale their grid up instead of
+overflowing a tiny grid. Verified in-game: the "too many elements" warnings are
+resolved.
 
 ## Current Priority Gaps
 
