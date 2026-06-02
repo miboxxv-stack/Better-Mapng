@@ -10,8 +10,7 @@
     "deploy": "npm run deploy:prod",
     "deploy:prod": "npm run build && npx wrangler deploy",
     "deploy:dev": "npm run build && npx wrangler deploy --env dev",
-    "test:geotiff": "node --test tests/exportGeoTiff.test.mjs",
-    "test:beamng": "node --test services/beamngLinkFiles.test.mjs services/beamngExportConformance.test.mjs services/beamngMapNavigation.test.mjs services/beamngSignals.test.mjs services/exportBeamNGLevel.integration.test.mjs"
+    "test:beamng": "node --test tests/beamngLinkFiles.test.mjs tests/beamngExportConformance.test.mjs tests/beamngExportGuideConformance.test.mjs tests/beamngMapNavigation.test.mjs tests/beamngSignals.test.mjs tests/exportBeamNGLevel.integration.test.mjs"
   },
   "dependencies": {
     "@tresjs/cientos": "^4.3.1",

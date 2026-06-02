@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 
-import { buildBeamNGSignalData, buildBeamNGSignalExportBundle } from './beamngSignals.js';
+import { buildBeamNGSignalData, buildBeamNGSignalExportBundle } from '../services/beamngSignals.js';
 
 function makeTerrainData(osmFeatures = []) {
   const width = 16;

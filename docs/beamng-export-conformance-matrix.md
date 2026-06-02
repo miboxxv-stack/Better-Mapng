@@ -77,6 +77,7 @@ current exporter. Headline findings:
 Executable conformance checks for required files are implemented in:
 
 - services/beamngExportConformance.js
-- services/beamngExportConformance.test.mjs
+- tests/beamngExportConformance.test.mjs
+- tests/beamngExportGuideConformance.test.mjs (guide §10 invariants)
 
 The exporter uses this validator before ZIP finalization to fail fast on missing required files.

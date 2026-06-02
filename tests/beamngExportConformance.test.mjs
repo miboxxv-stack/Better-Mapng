@@ -5,7 +5,7 @@ import JSZip from 'jszip';
 import {
   getRequiredLevelFiles,
   validateBeamNGZipStructure,
-} from './beamngExportConformance.js';
+} from '../services/beamngExportConformance.js';
 
 test('getRequiredLevelFiles returns core files', () => {
   const required = getRequiredLevelFiles();

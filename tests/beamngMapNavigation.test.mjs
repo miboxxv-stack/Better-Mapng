@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 
-import { buildManualMapNavigationData } from './beamngMapNavigation.js';
+import { buildManualMapNavigationData } from '../services/beamngMapNavigation.js';
 
 function makeTerrainData(osmFeatures = []) {
   const width = 8;

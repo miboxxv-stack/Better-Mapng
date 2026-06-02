@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import JSZip from 'jszip';
 
-import { exportBeamNGLevel } from './exportBeamNGLevel.js';
+import { exportBeamNGLevel } from '../services/exportBeamNGLevel.js';
 
 function installCanvasPolyfill() {
   const originalDocument = globalThis.document;
