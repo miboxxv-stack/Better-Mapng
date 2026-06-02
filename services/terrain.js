@@ -1513,6 +1513,7 @@ export const fetchTerrainData = async (
     kron86FallbackReason,
     sourceGeoTiffs,
     processingMetersPerPixel: effectiveMetersPerPixel,
+    flat,
   };
 
   if (includeOSM && osmFeatures.length > 0) {

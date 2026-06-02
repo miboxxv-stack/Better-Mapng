@@ -341,7 +341,8 @@
     "enhanceRoads": "Smooth Roads",
     "enhanceRoadsHint": "Smooths bumps along the road. Skips bridges.",
     "levelRoads": "Level Roads (Pathing)",
-    "levelRoadsHint": "Forces roads to have zero transverse tilt (flat side-to-side)."
+    "levelRoadsHint": "Forces roads to have zero transverse tilt (flat side-to-side).",
+    "roadsDisabledFlat": "Unavailable with Flat elevation — the terrain is already level."
   },
   "batchExport": {
     "title": "Export Options",

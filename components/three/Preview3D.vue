@@ -323,7 +323,7 @@
 </template>
 
 <script setup>
-import { ref, computed, reactive, onErrorCaptured } from "vue";
+import { ref, computed, reactive, watch, onErrorCaptured } from "vue";
 import { useI18n } from 'vue-i18n';
 import * as THREE from "three";
 import { TresCanvas } from "@tresjs/core";
@@ -465,6 +465,12 @@ const handleSurroundingsLoadingState = (state) => {
 const mergedTerrainData = computed(() => {
   return props.terrainData;
 });
+
+// Flat terrain sits at height 0, so default the water plane just below ground
+// (−1 m) instead of at 0 where it would flood the entire level.
+watch(() => props.terrainData?.flat, (flat) => {
+  if (flat) waterLevelOffsetMeters.value = -1;
+}, { immediate: true });
 
 const presets = Object.keys(hdrPresets);
 const sunPositionOptions = Object.keys(SUN_PRESETS);

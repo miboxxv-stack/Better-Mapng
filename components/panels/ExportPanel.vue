@@ -158,12 +158,14 @@
             <span class="text-[10px] text-gray-500 dark:text-gray-400 shrink-0">{{ t('exportPanel.seaLevelOffset') }}</span>
             <div class="flex items-center gap-1">
               <input
-                v-model.number="beamNGSeaLevelOffset"
+                :value="terrainData?.flat ? -1 : beamNGSeaLevelOffset"
+                @input="beamNGSeaLevelOffset = Number($event.target.value)"
+                :disabled="terrainData?.flat"
                 type="number"
                 step="1"
                 min="-2000"
                 max="2000"
-                class="w-20 text-[9px] bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded px-1.5 py-0.5 text-gray-600 dark:text-gray-300"
+                class="w-20 text-[9px] bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded px-1.5 py-0.5 text-gray-600 dark:text-gray-300 disabled:opacity-50 disabled:cursor-not-allowed"
               />
               <span class="text-[9px] text-gray-500 dark:text-gray-400">m</span>
             </div>
@@ -1423,7 +1425,11 @@ const handleBeamNGLevelExport = async () => {
     const effectiveIncludeBuildings = hasOsmData.value ? beamNGIncludeBuildings.value : false;
     const effectiveApplyFoundations = hasOsmData.value ? beamNGApplyFoundations.value : false;
     const effectiveIncludeWater = hasOsmData.value ? beamNGIncludeWater.value : false;
-    const effectiveSeaLevelOffset = normalizeBeamNGSeaLevelOffset(beamNGSeaLevelOffset.value);
+    // Flat terrain sits at height 0; place the water plane just below ground
+    // (−1 m) so it doesn't flood the whole level. Matches the 3D preview default.
+    const effectiveSeaLevelOffset = props.terrainData?.flat
+      ? -1
+      : normalizeBeamNGSeaLevelOffset(beamNGSeaLevelOffset.value);
     const effectiveIncludeTrees = hasOsmData.value ? beamNGIncludeTrees.value : false;
     const effectiveIncludeRocks = hasOsmData.value ? beamNGIncludeRocks.value : false;
     const effectiveBackdropGpxzApiKey = effectiveBackdropSource === 'gpxz' ? String(props.gpxzApiKey || '') : '';

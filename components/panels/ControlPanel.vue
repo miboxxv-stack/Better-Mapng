@@ -136,23 +136,23 @@
 
       <!-- Road Enhancing Toggle -->
       <div class="p-2 rounded bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600">
-        <BaseToggle v-model="enhanceRoads">
+        <BaseToggle v-model="enhanceRoads" :disabled="isFlat">
           <Route :size="12" class="text-[#FF6600]" />
           {{ t('controlPanel.enhanceRoads') }}
         </BaseToggle>
         <p class="mt-1 ml-6 text-[10px] text-gray-500 dark:text-gray-400 leading-tight">
-          {{ t('controlPanel.enhanceRoadsHint') }}
+          {{ isFlat ? t('controlPanel.roadsDisabledFlat') : t('controlPanel.enhanceRoadsHint') }}
         </p>
       </div>
 
       <!-- Road Pathing Toggle -->
       <div class="p-2 rounded bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600">
-        <BaseToggle v-model="levelRoads">
+        <BaseToggle v-model="levelRoads" :disabled="isFlat">
           <Route :size="12" class="text-blue-600 dark:text-blue-400" />
           {{ t('controlPanel.levelRoads') }}
         </BaseToggle>
         <p class="mt-1 ml-6 text-[10px] text-gray-500 dark:text-gray-400 leading-tight">
-          {{ t('controlPanel.levelRoadsHint') }}
+          {{ isFlat ? t('controlPanel.roadsDisabledFlat') : t('controlPanel.levelRoadsHint') }}
         </p>
       </div>
 
@@ -375,6 +375,17 @@ watch(elevationSource, (newVal) => {
   useGPXZ.value = newVal === 'gpxz';
   localStorage.setItem('mapng_elevationSource', newVal);
 });
+
+// Flat mode produces perfectly level terrain, so the road-into-terrain options
+// (which carve/raise elevation under roads) are meaningless — disable + force
+// them off while flat is selected.
+const isFlat = computed(() => elevationSource.value === 'none');
+watch(isFlat, (flat) => {
+  if (flat) {
+    enhanceRoads.value = false;
+    levelRoads.value = false;
+  }
+}, { immediate: true });
 
 // Persist OSM toggle
 watch(fetchOSM, (newVal) => {

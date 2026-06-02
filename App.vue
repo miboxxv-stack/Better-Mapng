@@ -601,6 +601,11 @@ const handleGenerate = async (showPreview, fetchOSM, elevationSource = 'default'
   const useGPXZ = normalizedSource === 'gpxz';
   const useKRON86 = normalizedSource === 'kron86';
   const useFlat = normalizedSource === 'none';
+  // Flat terrain is already level, so road-into-terrain carving is meaningless.
+  if (useFlat) {
+    enhanceRoads = false;
+    levelRoads = false;
+  }
 
   const requestKey = buildGenerationKey(
     center.value,
