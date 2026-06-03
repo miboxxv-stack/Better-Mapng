@@ -688,13 +688,19 @@ const UTAH_RUNTIME_MATERIAL_DEFS = {
     subSurfaceIntensity: 1,
     translucentBlendOp: 'None',
   },
+};
+
+// Materials bound by the native barrier/object meshes (guardrail, jersey,
+// screenfence, …) that MapNG can emit for OSM barriers regardless of biome.
+// These must be present in EVERY export, so getBiomeRuntimeMaterialDefs always
+// merges them. Most barrier materials resolve from BeamNG's global library, but
+// `catchfence` (bound by screenfence1.dae) does not — without our definition the
+// mesh falls back to a stale embedded `catchfence_d` texture and errors in-game.
+const SHARED_BARRIER_MATERIAL_DEFS = {
   catchfence: {
     name: 'catchfence',
     mapTo: 'catchfence',
     class: 'Material',
-    // The screenfence/catchfence mesh binds a `catchfence` material. Provide the
-    // real PBR maps from the shared /assets/ folder so it isn't bare/untextured
-    // and doesn't fall back to the mesh's stale embedded `catchfence_d` texture.
     Stages: [{
       baseColorMap: '/assets/materials/tileable/metal/catchfence/t_catchfence_01_b.color.png',
       normalMap: '/assets/materials/tileable/metal/catchfence/t_catchfence_01_nm.normal.png',
@@ -1153,13 +1159,11 @@ const JUNGLE_ROCK_ISLAND_RUNTIME_MATERIAL_DEFS = {
     groundType: 'leaves_thin',
     groundDepth: 1,
   },
-  catchfence: UTAH_RUNTIME_MATERIAL_DEFS.catchfence,
 };
 
 const INDUSTRIAL_RUNTIME_MATERIAL_DEFS = {
   ...EAST_COAST_RUNTIME_MATERIAL_DEFS,
   ...AUTOMATION_TEST_TRACK_RUNTIME_MATERIAL_DEFS,
-  catchfence: UTAH_RUNTIME_MATERIAL_DEFS.catchfence,
 };
 
 const EUROPEAN_TEMPLATE_RUNTIME_MATERIAL_DEFS = {
@@ -1258,7 +1262,6 @@ const EUROPEAN_TEMPLATE_RUNTIME_MATERIAL_DEFS = {
     subSurface: true,
     subSurfaceIntensity: 0.0700000003,
   },
-  catchfence: UTAH_RUNTIME_MATERIAL_DEFS.catchfence,
 };
 
 const BIOME_RUNTIME_MATERIAL_DEFS = {
@@ -1277,5 +1280,9 @@ const BIOME_RUNTIME_MATERIAL_DEFS = {
 
 export function getBiomeRuntimeMaterialDefs(biome) {
   const levelName = typeof biome === 'string' ? biome : biome?.levelName;
-  return BIOME_RUNTIME_MATERIAL_DEFS[levelName] ?? {};
+  const biomeDefs = BIOME_RUNTIME_MATERIAL_DEFS[levelName] ?? {};
+  // Shared barrier/object materials apply to every biome (the meshes that use
+  // them are emitted from OSM data regardless of biome selection), so they are
+  // always included. A biome may still override them.
+  return { ...SHARED_BARRIER_MATERIAL_DEFS, ...biomeDefs };
 }
