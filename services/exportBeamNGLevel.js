@@ -3122,6 +3122,21 @@ function geoToWorldPoint(lat, lng, terrainData, squareSize, zOffset = 0) {
 }
 
 /**
+ * Sample terrain height (relative to minHeight, like geoToWorldPoint's Z) at a
+ * world-space X/Y position. Inverse of geoToWorldPoint's planar mapping:
+ *   worldX = (u - 0.5) * worldSize ; worldY = (0.5 - v) * worldSize.
+ */
+function getTerrainHeightAtWorldXY(worldX, worldY, terrainData, squareSize) {
+  const { bounds, width } = terrainData;
+  const worldSize = width * squareSize;
+  const u = worldX / worldSize + 0.5;
+  const v = 0.5 - worldY / worldSize;
+  const lat = bounds.north - v * (bounds.north - bounds.south);
+  const lng = bounds.west + u * (bounds.east - bounds.west);
+  return getTerrainHeightWorld(lat, lng, terrainData);
+}
+
+/**
  * Build a 3x3 Z-up rotation matrix from yaw radians.
  */
 function rotationMatrixFromYaw(yaw) {
@@ -3480,6 +3495,66 @@ const NATIVE_SIGN_ASSETS = {
 
 const MAX_NATIVE_SIGN_OBJECTS = 4000;
 
+// Material definitions used by the signs_usa meshes. Linking only the .dae gets
+// the geometry but leaves the sign faces bare metal because the `signs_usa`
+// material (the painted texture atlas) and the `eca_bld_metalbeams` pole
+// material are never provided.
+//
+// Texture maps point at the SHARED /assets/ folder directly (BeamNG 0.37+).
+// In the game the level-scoped paths (levels/east_coast_usa/.../*.dds) are now
+// just *.dds.link redirects into /assets/, so referencing the level path only
+// works if that redirect file is also present. The /assets/ paths are global,
+// install-guaranteed, and independent of which base level is installed, so we
+// reference them directly. See ASSET_TEXTURE_PATHS / docs assets-folder note.
+function getSignRuntimeMaterialDefs() {
+  return {
+    signs_usa: {
+      name: 'signs_usa',
+      mapTo: 'signs_usa',
+      class: 'Material',
+      Stages: [
+        {
+          colorMap: '/assets/materials/signage/signs_usa/eca_roadsigns_d.dds',
+          specularMap: '/assets/materials/signage/signs_usa/eca_roadsigns_s.dds',
+          pixelSpecular: true,
+          roughnessFactor: 0.607767701,
+          useAnisotropic: true,
+          vertColor: true,
+        },
+        {}, {}, {},
+      ],
+      alphaRef: 64,
+      alphaTest: true,
+      annotation: 'TRAFFIC_SIGNS',
+      groundType: 'METAL',
+      materialTag0: 'beamng',
+      materialTag1: 'vehicle',
+      translucentBlendOp: 'None',
+    },
+    eca_bld_metalbeams: {
+      name: 'eca_bld_metalbeams',
+      mapTo: 'eca_bld_metalbeams',
+      class: 'Material',
+      Stages: [
+        {
+          colorMap: '/assets/materials/trim/metal/eca_bld_metalbeams/eca_bld_metalbeams_d.dds',
+          normalMap: '/assets/materials/trim/metal/eca_bld_metalbeams/eca_bld_metalbeams_n.dds',
+          specularMap: '/assets/materials/trim/metal/eca_bld_metalbeams/eca_bld_metalbeams_s.dds',
+          detailMap: '/assets/materials/trim/metal/eca_bld_metalbeams/detail_grunge_01_low_desat.dds',
+          detailScale: [0.2, 0.2],
+          useAnisotropic: true,
+        },
+        {}, {}, {},
+      ],
+      annotation: 'TRAFFIC_SIGNS',
+      groundType: 'METAL',
+      materialTag0: 'beamng',
+      materialTag1: 'building',
+      translucentBlendOp: 'None',
+    },
+  };
+}
+
 /**
  * Resolve an OSM point feature's tags to a native BeamNG sign asset.
  *
@@ -3495,17 +3570,72 @@ function resolveNativeSignAsset(tags = {}) {
 }
 
 /**
+ * Project a world-space point onto the nearest road polyline and return the
+ * closest point, the road tangent there, and the perpendicular distance.
+ *
+ * roads: [{ pts: [[x,y], …], halfWidth }]. Returns null if no road is near.
+ */
+function findNearestRoad(px, py, roads, maxSearch) {
+  let best = null;
+  for (const road of roads) {
+    const pts = road.pts;
+    for (let i = 0; i + 1 < pts.length; i++) {
+      const ax = pts[i][0], ay = pts[i][1];
+      const bx = pts[i + 1][0], by = pts[i + 1][1];
+      const dx = bx - ax, dy = by - ay;
+      const segLen2 = dx * dx + dy * dy;
+      if (segLen2 < 1e-9) continue;
+      let t = ((px - ax) * dx + (py - ay) * dy) / segLen2;
+      t = Math.max(0, Math.min(1, t));
+      const cx = ax + t * dx, cy = ay + t * dy;
+      const dist = Math.hypot(px - cx, py - cy);
+      if (!best || dist < best.dist) {
+        const len = Math.sqrt(segLen2);
+        best = { dist, cx, cy, tx: dx / len, ty: dy / len, halfWidth: road.halfWidth };
+      }
+    }
+  }
+  if (!best || best.dist > maxSearch) return null;
+  return best;
+}
+
+/**
  * Convert OSM stop/give_way point nodes into native BeamNG sign TSStatic
  * objects, replacing the procedural sign boxes that used to be baked into the
  * OSM objects DAE. Returned objects use `__parent: 'signs'` and are run through
  * the link registry by the caller.
+ *
+ * OSM tends to place sign nodes on the road centerline, which would leave signs
+ * standing in the middle of the road. We offset each sign perpendicular to the
+ * nearest road, out past its edge onto the shoulder, on the side that faces
+ * approaching traffic (right side for right-hand-drive), and yaw the sign to
+ * face back down the road toward oncoming vehicles.
  */
-function buildNativeSignObjects(terrainData, squareSize) {
+function buildNativeSignObjects(terrainData, squareSize, rightHandDrive = false) {
   const features = terrainData.osmFeatures?.filter((feature) => (
     feature.type === 'street_furniture'
     && Array.isArray(feature.geometry)
     && feature.geometry.length === 1
   )) ?? [];
+
+  // Pre-project drivable roads to world-space polylines once for offset lookup.
+  const roads = [];
+  for (const feature of terrainData.osmFeatures ?? []) {
+    if (feature.type !== 'road' || !Array.isArray(feature.geometry) || feature.geometry.length < 2) continue;
+    const highway = feature.tags?.highway;
+    if (!highway || ['footway', 'path', 'pedestrian', 'steps', 'cycleway', 'bridleway', 'corridor'].includes(highway)) continue;
+    const isOneWay = isOneWayRoad(feature.tags || {});
+    const halfWidth = estimateRoadHalfWidth(feature.tags || {}, highway, isOneWay);
+    const pts = feature.geometry
+      .filter((p) => Number.isFinite(p?.lat) && Number.isFinite(p?.lng))
+      .map((p) => geoToWorldPoint(p.lat, p.lng, terrainData, squareSize, 0));
+    if (pts.length >= 2) roads.push({ pts, halfWidth });
+  }
+
+  // Shoulder clearance beyond the road edge so the post sits off the asphalt.
+  const SHOULDER_M = 1.5;
+  // Cap the search so a sign far from any road isn't yanked across the map.
+  const MAX_ROAD_SEARCH_M = 25;
 
   const objects = [];
   for (let i = 0; i < features.length; i++) {
@@ -3516,13 +3646,37 @@ function buildNativeSignObjects(terrainData, squareSize) {
     const pt = feature.geometry[0];
     if (!Number.isFinite(pt?.lat) || !Number.isFinite(pt?.lng)) continue;
     const world = geoToWorldPoint(pt.lat, pt.lng, terrainData, squareSize, 0);
+
+    let posX = world[0];
+    let posY = world[1];
+    let yaw = 0;
+
+    const near = findNearestRoad(world[0], world[1], roads, MAX_ROAD_SEARCH_M);
+    if (near) {
+      // Perpendicular to the road tangent. Two candidates; pick the traffic side.
+      // Right-hand-drive → signs face traffic from the right of travel direction.
+      const side = rightHandDrive ? -1 : 1;
+      const perpX = -near.ty * side;
+      const perpY = near.tx * side;
+      const offset = near.halfWidth + SHOULDER_M;
+      // Offset from the road centerline point (not the original node) so signs
+      // sit a consistent distance from the edge even if OSM placed them off-center.
+      posX = near.cx + perpX * offset;
+      posY = near.cy + perpY * offset;
+      // Face the sign back toward oncoming traffic: look along -tangent for the
+      // approach. Yaw measured so the sign's forward axis points at the road.
+      yaw = Math.atan2(-perpY, -perpX);
+    }
+
+    const z = getTerrainHeightAtWorldXY(posX, posY, terrainData, squareSize);
+
     objects.push({
       __parent: 'signs',
       class: 'TSStatic',
       name: `sign_${i}`,
       persistentId: generatePersistentId(),
-      position: [roundTo(world[0], 3), roundTo(world[1], 3), roundTo(world[2], 3)],
-      rotationMatrix: rotationMatrixFromYaw(0),
+      position: [roundTo(posX, 3), roundTo(posY, 3), roundTo(z, 3)],
+      rotationMatrix: rotationMatrixFromYaw(yaw),
       shapeName: asset.shapeName,
       useInstanceRenderData: true,
     });
@@ -4831,7 +4985,7 @@ export async function exportBeamNGLevel(terrainData, center, options = {}) {
     ? buildNativeBarrierObjects(exportTerrainData, squareSize, biome)
     : [];
   const barrierFolderItems = buildBarrierFolderItems(barrierObjects);
-  const signObjects = buildNativeSignObjects(exportTerrainData, squareSize);
+  const signObjects = buildNativeSignObjects(exportTerrainData, squareSize, resolvedRightHandDrive);
   const roadFolderGroups = buildRoadFolderGroups(roadArchitectSession);
   const usesEastCoastFenceMaterials = barrierFolderItems.some((obj) => (
     String(obj?.shapeName || '').toLowerCase().includes('eca_bld_wood_fence_a.dae')
@@ -5300,6 +5454,12 @@ export async function exportBeamNGLevel(terrainData, center, options = {}) {
   // Write Biome materials (which used to be in art/shapes/) to map_assets/official_assets/biome_materials/
   // because they override official names without having specific meshes.
   zip.file(`${base}/map_assets/official_assets/biome_materials/main.materials.json`, JSON.stringify(getBiomeRuntimeMaterialDefs(biome), null, 2));
+
+  // Sign paint materials (signs_usa atlas + metal pole). Without these the
+  // linked sign meshes render as bare metal. See getSignRuntimeMaterialDefs.
+  if (signObjects.length > 0) {
+    zip.file(`${base}/map_assets/official_assets/signs_materials/main.materials.json`, JSON.stringify(getSignRuntimeMaterialDefs(), null, 2));
+  }
 
   // ── art/cubemaps/Universal_cubemap_reflection ─────────────────────────────
   // Bundled universal reflection cubemap + CubemapData/Material definition.

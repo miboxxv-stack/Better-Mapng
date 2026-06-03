@@ -268,6 +268,39 @@ test('exportBeamNGLevel rewrites barrier shape paths and emits .link files acros
       );
       const signLink = `${String(signStatic.shapeName).replace(/^\//, '')}.link`;
       assert.ok(zip.file(signLink), `Missing sign link file ${signLink}`);
+
+      // Sign paint materials must be bundled so the linked mesh isn't bare metal.
+      const signMatPath = `${base}/map_assets/official_assets/signs_materials/main.materials.json`;
+      const signMatFile = zip.file(signMatPath);
+      assert.ok(signMatFile, `Missing ${signMatPath} for roadType=${roadType}`);
+      const signMats = JSON.parse(await signMatFile.async('string'));
+      assert.equal(signMats.signs_usa?.class, 'Material', 'signs_usa material missing');
+      // Textures must reference the shared /assets/ folder directly (0.37+), not
+      // a level-scoped path that depends on a specific base level being installed.
+      assert.equal(
+        signMats.signs_usa.Stages[0].colorMap,
+        '/assets/materials/signage/signs_usa/eca_roadsigns_d.dds',
+        'signs_usa colorMap must point at the shared /assets/ paint atlas',
+      );
+      assert.ok(signMats.eca_bld_metalbeams, 'metal pole material missing');
+      assert.match(
+        signMats.eca_bld_metalbeams.Stages[0].colorMap,
+        /^\/assets\/materials\//,
+        'metal pole texture must reference the shared /assets/ folder',
+      );
+
+      // Signs must be offset off the road centerline (not left in the middle of
+      // the road). The fixture sign sits at ~(0.45,0.55) on the road diagonal;
+      // after offset it should not coincide with the unoffset world point.
+      assert.ok(Array.isArray(signStatic.position) && signStatic.position.length === 3,
+        'sign must have a 3D position');
+      const rot = signStatic.rotationMatrix;
+      assert.ok(Array.isArray(rot) && rot.length === 9, 'sign must have a rotation matrix');
+      // A sign near a road should be yawed to face it (non-identity rotation).
+      assert.ok(
+        Math.abs(rot[0] - 1) > 1e-6 || Math.abs(rot[1]) > 1e-6,
+        `Sign near a road should be rotated to face traffic for roadType=${roadType}`,
+      );
     }
   } finally {
     restorePolyfills();
