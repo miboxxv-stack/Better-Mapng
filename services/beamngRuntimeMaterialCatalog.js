@@ -692,9 +692,22 @@ const UTAH_RUNTIME_MATERIAL_DEFS = {
     name: 'catchfence',
     mapTo: 'catchfence',
     class: 'Material',
+    // The screenfence/catchfence mesh binds a `catchfence` material. Provide the
+    // real PBR maps from the shared /assets/ folder so it isn't bare/untextured
+    // and doesn't fall back to the mesh's stale embedded `catchfence_d` texture.
     Stages: [{
-      diffuseColor: [0.72, 0.72, 0.72, 1],
+      baseColorMap: '/assets/materials/tileable/metal/catchfence/t_catchfence_01_b.color.png',
+      normalMap: '/assets/materials/tileable/metal/catchfence/t_catchfence_01_nm.normal.png',
+      metallicMap: '/assets/materials/tileable/metal/catchfence/t_catchfence_01_m.data.png',
+      roughnessMap: '/assets/materials/tileable/metal/catchfence/t_catchfence_01_r.data.png',
+      opacityMap: '/assets/materials/tileable/metal/catchfence/t_catchfence_01_o.data.png',
+      metallicFactor: 0.8,
+      roughnessFactor: 0.8,
+      pixelSpecular: true,
+      vertColor: true,
     }],
+    alphaRef: 100,
+    alphaTest: true,
     translucentBlendOp: 'None',
   },
 };
