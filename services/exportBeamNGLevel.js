@@ -866,11 +866,14 @@ function chunkPolyline(points, maxNodes = 50) {
   return chunks;
 }
 
-// Minimum world-space distance (metres) between consecutive DecalRoad nodes.
-// OSM data can have nodes every 1–2 m in urban areas; at that density, BeamNG's
-// spline creates visible facets between every pair of nodes.  Decimating to a
-// coarser spacing lets the spline interpolate a smooth curve instead.
-const MIN_NODE_SPACING_M = 4.0;
+// Target spacing (metres) for road nodes.  OSM way geometry is irregular —
+// ~1–2 m in dense urban areas but often 20–50 m+ on rural straightaways, where
+// a vertex is only dropped at curves.  We resample every road centerline to this
+// uniform spacing BEFORE converting to world space, so that (a) the spline never
+// draws a long straight chord between sparse vertices, and (b) every node samples
+// the real terrain height at its own position (via geoToWorld) and the road hugs
+// the terrain instead of floating over valleys / cutting through crests.
+const ROAD_NODE_SPACING_M = 2.0;
 const JUNCTION_MARKING_TRIM_M = 4.0;
 
 // Crossing roads of these classes should NOT cause lane markings to be trimmed
@@ -881,22 +884,56 @@ const MINOR_CROSSING_HIGHWAYS = new Set([
 ]);
 
 /**
- * Remove DecalRoad nodes that are closer than MIN_NODE_SPACING_M to the
- * previous kept node (measured in XY world-space metres).  Always keeps the
- * first and last node so the road reaches its endpoints exactly.
+ * Resample a lat/lng polyline to a uniform arc-length spacing (in metres).
+ *
+ * Distances are measured with a local equirectangular approximation at the
+ * polyline's mean latitude — accurate to well under a centimetre over the few
+ * kilometres an exported tile spans.  The first vertex is always preserved and
+ * the exact final vertex is appended (so the road reaches its real endpoints);
+ * every interior point is placed `spacingM` metres along the path.  Densifies
+ * sparse straightaways AND thins over-dense urban geometry in one pass.
+ *
+ * Input/return: array of { lat, lng } (any extra fields on points are dropped).
  */
-function decimateNodes(nodes) {
-  if (nodes.length <= 2) return nodes;
-  const out = [nodes[0]];
-  for (let i = 1; i < nodes.length - 1; i++) {
-    const prev = out[out.length - 1];
-    const dx = nodes[i][0] - prev[0];
-    const dy = nodes[i][1] - prev[1];
-    if (Math.sqrt(dx * dx + dy * dy) >= MIN_NODE_SPACING_M) {
-      out.push(nodes[i]);
+function resampleGeometryToSpacing(geometry, spacingM) {
+  if (!Array.isArray(geometry) || geometry.length < 2 || !(spacingM > 0)) return geometry;
+
+  const meanLat = geometry.reduce((sum, p) => sum + p.lat, 0) / geometry.length;
+  const mPerDegLat = 111320;
+  const mPerDegLng = 111320 * Math.cos((meanLat * Math.PI) / 180);
+  const dist = (a, b) => Math.hypot(
+    (b.lng - a.lng) * mPerDegLng,
+    (b.lat - a.lat) * mPerDegLat,
+  );
+
+  const out = [{ lat: geometry[0].lat, lng: geometry[0].lng }];
+  let prev = geometry[0];
+  let distSinceLast = 0; // metres accumulated since the last emitted point
+
+  for (let i = 1; i < geometry.length; i++) {
+    const curr = geometry[i];
+    let segLen = dist(prev, curr);
+    while (distSinceLast + segLen >= spacingM) {
+      const need = spacingM - distSinceLast; // distance from `prev` to the new point
+      const t = segLen > 1e-9 ? need / segLen : 0;
+      const np = {
+        lat: prev.lat + (curr.lat - prev.lat) * t,
+        lng: prev.lng + (curr.lng - prev.lng) * t,
+      };
+      out.push(np);
+      prev = np;
+      segLen = dist(prev, curr);
+      distSinceLast = 0;
     }
+    distSinceLast += segLen;
+    prev = curr;
   }
-  out.push(nodes[nodes.length - 1]);
+
+  // Append the exact final vertex unless the last emitted point already lands on it.
+  const last = geometry[geometry.length - 1];
+  if (dist(out[out.length - 1], last) > 1e-6) {
+    out.push({ lat: last.lat, lng: last.lng });
+  }
   return out;
 }
 
@@ -946,7 +983,9 @@ function trimNodesByDistance(nodes, trimStartM = 0, trimEndM = 0) {
   }
   trimmed.push(sampleAtDistance(endD));
 
-  return decimateNodes(trimmed);
+  // Interior nodes are already uniformly spaced; only the two endpoints were
+  // resampled to the trim distances, so return as-is (no decimation).
+  return trimmed;
 }
 
 // All names below are BeamNG's GLOBAL ("m_") road material library, shipped with
@@ -1480,7 +1519,9 @@ function offsetNodes(nodes, offset, halfWidth) {
       halfWidth,
     ]);
   }
-  return decimateNodes(out);
+  // Input centerline is already uniformly spaced; the offset inherits that
+  // spacing one-to-one, so keep every node rather than decimating.
+  return out;
 }
 
 /**
@@ -1702,6 +1743,7 @@ function generateDecalRoads(terrainData, squareSize) {
     // Clip to the terrain's safe inner boundary, splitting at crossings.
     // Then further chunk each segment so no single DecalRoad is too long.
     const clippedSegments = clipGeometryToMargin(segmentFeature.geometry, terrainData.bounds)
+      .map(s => resampleGeometryToSpacing(s, ROAD_NODE_SPACING_M))
       .flatMap(s => chunkPolyline(s));
 
     if (clippedSegments.length === 0) continue;
@@ -1721,7 +1763,9 @@ function generateDecalRoads(terrainData, squareSize) {
         ]);
       }
 
-      const centerNodes = decimateNodes(rawNodes);
+      // Nodes are already uniformly spaced (geometry was resampled to
+      // ROAD_NODE_SPACING_M before world conversion), so no decimation here.
+      const centerNodes = rawNodes;
       if (centerNodes.length < 2) continue;
 
       const layeredDecals = getLayeredRoadDecals(
@@ -2454,6 +2498,7 @@ function generateMeshRoads(terrainData, squareSize) {
     const fullWidth = halfWidth * 2;
 
     const clippedSegments = clipGeometryToMargin(feature.geometry, terrainData.bounds)
+      .map(s => resampleGeometryToSpacing(s, ROAD_NODE_SPACING_M))
       .flatMap(s => chunkPolyline(s));
 
     for (const segment of clippedSegments) {
@@ -2471,13 +2516,10 @@ function generateMeshRoads(terrainData, squareSize) {
         ]);
       }
 
-      // Reuse decimation but strip/re-add the extra fields (decimateNodes works on [x,y,z,w])
-      const stripped = rawNodes.map(n => [n[0], n[1], n[2], n[3]]);
-      const decimated = decimateNodes(stripped);
-      if (decimated.length < 2) continue;
-
-      // Reattach depth and normal after decimation
-      const nodes = decimated.map(n => [n[0], n[1], n[2], n[3], 0.5, 0, 0, 1]);
+      // Geometry was already resampled to ROAD_NODE_SPACING_M before world
+      // conversion, so nodes are uniformly spaced — no decimation needed.
+      if (rawNodes.length < 2) continue;
+      const nodes = rawNodes.map(n => [n[0], n[1], n[2], n[3], 0.5, 0, 0, 1]);
 
       meshRoads.push({
         class: 'MeshRoad',
