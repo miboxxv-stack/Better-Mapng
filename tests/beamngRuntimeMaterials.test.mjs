@@ -20,18 +20,24 @@ const BIOMES = [
   'unknown_biome_falls_back', // exercises the default path
 ];
 
-test('every biome includes the shared catchfence barrier material with /assets textures', () => {
+// Shared barrier materials bound by the native barrier/fence meshes. Every
+// biome must include each, with /assets/ textures.
+const SHARED_BARRIER_MATERIALS = ['catchfence', 'chainlink'];
+
+test('every biome includes the shared barrier materials with /assets textures', () => {
   for (const biome of BIOMES) {
     const defs = getBiomeRuntimeMaterialDefs(biome);
-    const cf = defs.catchfence;
-    assert.ok(cf, `biome "${biome}" is missing the catchfence material`);
-    assert.equal(cf.mapTo, 'catchfence');
-    const baseColor = cf.Stages?.[0]?.baseColorMap;
-    assert.match(
-      String(baseColor),
-      /^\/assets\/materials\/.*catchfence.*\.png$/,
-      `biome "${biome}" catchfence must use a shared /assets/ texture`,
-    );
+    for (const mat of SHARED_BARRIER_MATERIALS) {
+      const def = defs[mat];
+      assert.ok(def, `biome "${biome}" is missing the ${mat} material`);
+      assert.equal(def.mapTo, mat);
+      const baseColor = def.Stages?.[0]?.baseColorMap;
+      assert.match(
+        String(baseColor),
+        /^\/assets\/materials\/.*\.png$/,
+        `biome "${biome}" ${mat} must use a shared /assets/ texture`,
+      );
+    }
   }
 });
 

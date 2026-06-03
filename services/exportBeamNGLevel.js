@@ -3169,10 +3169,15 @@ const NATIVE_BARRIER_ASSETS = {
     yawOffset: 0,
   },
   chainLinkFence: {
-    shapeName: '/levels/west_coast_usa/art/shapes/objects/screenfence1.dae',
-    segmentLength: 3.5,
-    // In official mesh data, min Z is about -1.52.
-    zOffset: 1.55,
+    // hirochi fence_pedestrian: a clean chain-link mesh with NO embedded
+    // textures (unlike west_coast screenfence1.dae, which hardcodes a missing
+    // catchfence_d.dds). Its `chainlink` material resolves from BeamNG's global
+    // library + /assets/, so nothing extra needs bundling.
+    shapeName: '/levels/hirochi_raceway/art/shapes/objects/fence_pedestrian.dae',
+    // Mesh runs along its local Y axis (length ~2.0 m), like guardrail/jersey
+    // which use +90° here and orient correctly, so match that. min Z ≈ -1.7.
+    segmentLength: 2,
+    zOffset: 1.7,
     yawOffset: Math.PI * 0.5,
   },
 };

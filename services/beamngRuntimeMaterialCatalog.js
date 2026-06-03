@@ -716,6 +716,26 @@ const SHARED_BARRIER_MATERIAL_DEFS = {
     alphaTest: true,
     translucentBlendOp: 'None',
   },
+  // Bound by the chain-link fence mesh (fence_pedestrian.dae). Defined in
+  // BeamNG's global library too, but we bundle it pointing at /assets/ so it
+  // resolves regardless of biome.
+  chainlink: {
+    name: 'chainlink',
+    mapTo: 'chainlink',
+    class: 'Material',
+    Stages: [{
+      baseColorMap: '/assets/materials/tileable/metal/chainlink/t_chainlink_fence_b.color.png',
+      normalMap: '/assets/materials/tileable/metal/chainlink/t_chainlink_fence_nm.normal.png',
+      metallicMap: '/assets/materials/tileable/metal/chainlink/t_chainlink_fence_m.data.png',
+      roughnessMap: '/assets/materials/tileable/metal/chainlink/t_chainlink_fence_r.data.png',
+      opacityMap: '/assets/materials/tileable/metal/chainlink/t_chainlink_fence_o.data.png',
+      pixelSpecular: true,
+      vertColor: true,
+    }],
+    alphaRef: 80,
+    alphaTest: true,
+    translucentBlendOp: 'None',
+  },
 };
 
 const AUTOMATION_TEST_TRACK_RUNTIME_MATERIAL_DEFS = {
