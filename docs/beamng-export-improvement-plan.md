@@ -100,11 +100,15 @@ the source so users don't have to.
       already compute the road mask), or ship the asphalt material with its own
       darker base color, so painted roads match out of the box.
 
-12. **Textureless "default" terrain material next to roads (🟡).** He finds a
-    flat, untextured `default` material hugging the roads that he has to delete
-    or re-point at the grass material.
-    - Action: never emit a textureless terrain material adjacent to roads;
-      assign a real textured material (or drop the slot).
+12. **Textureless "default" terrain material next to roads (🟡). ✅ DONE
+    (needs in-game eyes).** He found a flat, untextured `default` material
+    hugging the roads that he had to delete or re-point at grass.
+    - Done: `DefaultMaterial` (the unclassified catch-all, incl. the road-side
+      band) now inherits the biome's primary ground surface — real
+      detail/macro/normal/roughness + correct groundmodel — instead of neutral
+      slots + asphalt physics (`osmTerrainMaterials.js`). Covered by an
+      OSM/PBR-mode integration test. **Verify in-game:** confirm it blends with
+      grass and doesn't look odd over satellite base textures.
 
 13. **`ForestWindEmitter` not placed (🟢). ✅ DONE.** Trees don't react to wind
     because MapNG didn't emit a `ForestWindEmitter`; he added one manually via

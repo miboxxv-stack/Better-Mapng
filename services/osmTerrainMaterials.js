@@ -920,23 +920,9 @@ export async function buildTerrainMaterials(terrainData, worldSize, exportLevelN
     };
   }
 
-  // DefaultMaterial: satellite base, neutral for all other channels.
-  const defaultUuid = crypto.randomUUID();
-  const defaultKey  = `DefaultMaterial-${defaultUuid}`;
-  materialDefs[defaultKey] = {
-    name: defaultKey,
-    class: 'TerrainMaterial',
-    persistentId: defaultUuid,
-    internalName: 'DefaultMaterial',
-    groundmodelName: 'GROUNDMODEL_ASPHALT1',
-    baseColorBaseTex: satellitePath,
-    baseColorBaseTexSize: baseSize,
-    diffuseSize: baseSize,
-    ...neutralSlots(),
-  };
-
   // Clone real BeamNG terrain materials and repoint only the base slots to this
   // exported level's terrain base, following the Terrain Material Editor flow.
+  let primaryGroundDef = null;
   for (const refMaterial of referenceMaterials) {
     const uuid = crypto.randomUUID();
     const key = `${refMaterial.internalName}-${uuid}`;
@@ -956,7 +942,42 @@ export async function buildTerrainMaterials(terrainData, worldSize, exportLevelN
     materialDef.heightBaseTex = p('shared_r.png');
     materialDef.heightBaseTexSize = baseSize;
     materialDefs[key] = materialDef;
+    // First reference material is the biome's dominant ground cover (semantic
+    // "Grass"); DefaultMaterial inherits its surface below.
+    if (!primaryGroundDef) primaryGroundDef = materialDef;
   }
+
+  // DefaultMaterial is the catch-all the OSM painter assigns to terrain it can't
+  // classify — including the band hugging every road. It used to ship with
+  // neutral detail slots + asphalt physics, so it rendered flat and gave
+  // grass-covered land asphalt grip. Inherit the primary ground material's full
+  // surface (detail/macro/normal/roughness + groundmodel) so unclassified land
+  // blends with the surrounding ground instead of looking flat — the export-side
+  // equivalent of the guide's "point the default material at the grass textures"
+  // fix. Base slots already match (both repoint to the per-export terrain base),
+  // so blending with every other layer is preserved.
+  const defaultUuid = crypto.randomUUID();
+  const defaultKey  = `DefaultMaterial-${defaultUuid}`;
+  materialDefs[defaultKey] = primaryGroundDef
+    ? {
+        ...cloneMaterialTemplate(primaryGroundDef),
+        name: defaultKey,
+        persistentId: defaultUuid,
+        internalName: 'DefaultMaterial',
+      }
+    : {
+        // No reference materials resolved (degenerate biome) — keep the old
+        // satellite-base-only definition rather than crash.
+        name: defaultKey,
+        class: 'TerrainMaterial',
+        persistentId: defaultUuid,
+        internalName: 'DefaultMaterial',
+        groundmodelName: 'GROUNDMODEL_ASPHALT1',
+        baseColorBaseTex: satellitePath,
+        baseColorBaseTexSize: baseSize,
+        diffuseSize: baseSize,
+        ...neutralSlots(),
+      };
 
   return { layerMap, materialNames: MATERIAL_NAMES, materialDefs, textureFiles, textureSetName };
 }

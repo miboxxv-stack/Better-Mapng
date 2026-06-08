@@ -179,7 +179,7 @@ function parseNDJSON(text) {
     .map((line) => JSON.parse(line));
 }
 
-async function runExportForRoadType(roadType, { includeTrees = false } = {}) {
+async function runExportForRoadType(roadType, { includeTrees = false, pbrSource = 'none' } = {}) {
   const result = await exportBeamNGLevel(
     makeTerrainData(),
     { lat: 0.5, lng: 0.5 },
@@ -188,7 +188,7 @@ async function runExportForRoadType(roadType, { includeTrees = false } = {}) {
       levelName: 'mapng_demo',
       biomeId: 'west_coast_usa',
       baseTexture: 'none',
-      pbrSource: 'none',
+      pbrSource,
       includeBuildings: false,
       applyFoundations: false,
       includeBackdrop: false,
@@ -375,6 +375,35 @@ test('exportBeamNGLevel rewrites managed forest shape paths across road modes', 
         );
       }
     }
+  } finally {
+    restorePolyfills();
+  }
+});
+test('exportBeamNGLevel gives DefaultMaterial real surface detail + non-asphalt physics (OSM/PBR)', async () => {
+  const restorePolyfills = installCanvasPolyfill();
+
+  try {
+    const zip = await runExportForRoadType('decal', { pbrSource: 'osm' });
+    const matPath = 'levels/mapng_demo/art/terrains/main.materials.json';
+    const matFile = zip.file(matPath);
+    assert.ok(matFile, `Missing ${matPath}`);
+
+    const defs = JSON.parse(await matFile.async('string'));
+    const def = Object.values(defs).find((d) => d?.internalName === 'DefaultMaterial');
+    assert.ok(def, 'Expected a DefaultMaterial terrain material');
+
+    // DefaultMaterial is the unclassified catch-all (incl. the band next to
+    // roads). It must inherit the primary ground surface: a real detail texture
+    // (not the neutral shared slot) and grass-like physics (not asphalt grip).
+    assert.ok(
+      def.baseColorDetailTex && !/shared_r_sm/.test(def.baseColorDetailTex),
+      `DefaultMaterial should inherit a real detail texture, got "${def.baseColorDetailTex}"`,
+    );
+    assert.notEqual(
+      def.groundmodelName,
+      'GROUNDMODEL_ASPHALT1',
+      'DefaultMaterial should no longer use asphalt physics for unclassified land',
+    );
   } finally {
     restorePolyfills();
   }
