@@ -67,9 +67,22 @@ export function buildRoadNetwork(roadFeatures = [], options = {}) {
     decimals = DEFAULT_COORD_PRECISION,
   } = options;
 
-  const roads = roadFeatures.filter(
-    (feature) => feature?.type === 'road' && Array.isArray(feature.geometry) && feature.geometry.length >= 2,
-  );
+  // Drop non-finite vertices before anything else. OSM ways can reference
+  // unresolved nodes, leaving NaN/undefined lat/lng in the geometry; a single
+  // bad vertex otherwise becomes a DecalRoad/MeshRoad node at ±inf, which BeamNG
+  // rejects at batch-build time ("packed position exceeded supported local
+  // range … by inf m") and the entire road silently fails to render. Keep only
+  // features that still have ≥2 valid vertices after cleaning.
+  const isFinitePoint = (pt) =>
+    pt != null && Number.isFinite(Number(pt.lat)) && Number.isFinite(Number(pt.lng));
+
+  const roads = roadFeatures
+    .filter((feature) => feature?.type === 'road' && Array.isArray(feature.geometry))
+    .map((feature) => {
+      const clean = feature.geometry.filter(isFinitePoint);
+      return clean.length === feature.geometry.length ? feature : { ...feature, geometry: clean };
+    })
+    .filter((feature) => feature.geometry.length >= 2);
 
   const nodeCounts = new Map();
   for (const road of roads) {

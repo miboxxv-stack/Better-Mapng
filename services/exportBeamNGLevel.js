@@ -1848,6 +1848,11 @@ function generateDecalRoads(terrainData, squareSize) {
       const rawNodes = [];
       for (const pt of segment) {
         const [wx, wy, wz] = geoToWorld(pt.lat, pt.lng, terrainData, squareSize, 0.1);
+        // Defense in depth: a non-finite node becomes an inf DecalRoad position
+        // that BeamNG rejects at batch build, taking the whole road down. Source
+        // geometry is already sanitized in buildRoadNetwork; skip here too so no
+        // future path can emit one.
+        if (!Number.isFinite(wx) || !Number.isFinite(wy) || !Number.isFinite(wz)) continue;
         rawNodes.push([
           Math.round(wx * 1000) / 1000,
           Math.round(wy * 1000) / 1000,
