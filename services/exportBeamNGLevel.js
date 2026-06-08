@@ -110,6 +110,99 @@ function computeBeamNGTerrainSize(width, height) {
   return 2 ** Math.floor(Math.log2(minDim));
 }
 
+// Map a BeamNG country key (e.g. "levels.common.country.usa") to an info.json
+// `region` identifier and a sensible `roadRules.turnOnRed` default. Region is a
+// camelCase identifier per Level-Metadata.md (e.g. "northAmerica"). turnOnRed is
+// only commonly legal in North America; everything else defaults to the documented
+// `false`.
+const COUNTRY_REGION_MAP = [
+  { match: /(usa|united_states|canada|mexico)/, region: 'northAmerica' },
+  { match: /(brazil|argentina|chile|colombia|peru)/, region: 'southAmerica' },
+  { match: /(japan|china|korea|india|thailand|indonesia|singapore)/, region: 'asia' },
+  { match: /(australia|new_zealand)/, region: 'oceania' },
+  { match: /(egypt|nigeria|kenya|south_africa|morocco)/, region: 'africa' },
+  // Default bucket for the many European country keys (italy, germany, france, …).
+  { match: /(italy|germany|france|spain|uk|united_kingdom|england|netherlands|belgium|sweden|norway|poland|austria|switzerland|europe)/, region: 'europe' },
+];
+
+function getRegionForCountry(country) {
+  const key = String(country ?? '').toLowerCase();
+  for (const { match, region } of COUNTRY_REGION_MAP) {
+    if (match.test(key)) return region;
+  }
+  return 'northAmerica';
+}
+
+function getTurnOnRedForCountry(country) {
+  // Right-turn-on-red is broadly legal in the US/Canada and rare elsewhere.
+  return /(usa|united_states|canada)/.test(String(country ?? '').toLowerCase());
+}
+
+// Self-contained level ground models (Ground-Models.md). The terrain materials
+// emitted by the OSM painter link each layer to one of these via
+// `groundmodelName` (GRASS/DIRT/SAND/ROCK/ASPHALT/GRAVEL/MUD), and DecalRoads
+// project onto the terrain — so the terrain material under a road determines its
+// physics surface. That is the OSM `surface=*` → ground-model mapping.
+//
+// Values mirror the vanilla `/art/groundmodels.json` definitions verbatim, so
+// shipping them changes no physics behavior; the benefit is a self-contained mod
+// that does not depend on global ground-model names existing (the doc-recommended
+// pattern). ASPHALT keeps its `groundmodel_asphalt1` alias so the non-PBR fallback
+// resolves locally too.
+const MAPNG_GROUND_MODELS = {
+  ASPHALT: {
+    staticFrictionCoefficient: 0.98, slidingFrictionCoefficient: 0.70,
+    hydrodynamicFriction: 0, stribeckVelocity: 4.5, strength: 1,
+    roughnessCoefficient: 0, defaultDepth: 0, collisiontype: 'ASPHALT',
+    skidMarks: true, aliases: ['groundmodel_asphalt1', 'grid', 'concrete', 'concrete2'],
+  },
+  GRASS: {
+    staticFrictionCoefficient: 0.61, slidingFrictionCoefficient: 0.65,
+    hydrodynamicFriction: 0.005, stribeckVelocity: 4, strength: 1,
+    roughnessCoefficient: 0.43, fluidDensity: 8000, flowConsistencyIndex: 1500,
+    flowBehaviorIndex: 0.7, dragAnisotropy: 0, shearStrength: 4000,
+    defaultDepth: 0.05, collisiontype: 'GRASS', skidMarks: false,
+    aliases: ['grass', 'grass2', 'grass3', 'grass4', 'forest', 'forest_floor'],
+  },
+  DIRT: {
+    staticFrictionCoefficient: 0.70, slidingFrictionCoefficient: 0.73,
+    hydrodynamicFriction: 0.0067, stribeckVelocity: 5, strength: 1,
+    roughnessCoefficient: 0.42, fluidDensity: 14000, flowConsistencyIndex: 2100,
+    flowBehaviorIndex: 0.75, dragAnisotropy: 0.5, shearStrength: 2500,
+    defaultDepth: 0, collisiontype: 'DIRT', skidMarks: false,
+    aliases: ['dirt_grass', 'derby_dirt'],
+  },
+  GRAVEL: {
+    staticFrictionCoefficient: 0.69, slidingFrictionCoefficient: 0.74,
+    hydrodynamicFriction: 0.0072, stribeckVelocity: 6, strength: 1,
+    roughnessCoefficient: 0.44, fluidDensity: 16000, flowConsistencyIndex: 2500,
+    flowBehaviorIndex: 0.75, dragAnisotropy: 0.5, shearStrength: 4000,
+    defaultDepth: 0, collisiontype: 'GRAVEL', skidMarks: false,
+    aliases: ['dirt_loose'],
+  },
+  ROCK: {
+    staticFrictionCoefficient: 0.93, slidingFrictionCoefficient: 0.65,
+    hydrodynamicFriction: 0, stribeckVelocity: 4, strength: 1,
+    roughnessCoefficient: 0.15, defaultDepth: 0, collisiontype: 'ROCK',
+    skidMarks: false, aliases: ['rock_cliff', 'rocks_large'],
+  },
+  SAND: {
+    staticFrictionCoefficient: 0.6, slidingFrictionCoefficient: 0.6,
+    hydrodynamicFriction: 0.02, stribeckVelocity: 6, strength: 1,
+    roughnessCoefficient: 0.5, fluidDensity: 25000, flowConsistencyIndex: 5000,
+    flowBehaviorIndex: 0.25, dragAnisotropy: 0.5, shearStrength: 12000,
+    defaultDepth: 0.1, collisiontype: 'SAND', skidMarks: false,
+    aliases: ['beachsand', 'sandtrap'],
+  },
+  MUD: {
+    staticFrictionCoefficient: 0.55, slidingFrictionCoefficient: 0.55,
+    hydrodynamicFriction: 0.01, stribeckVelocity: 6, strength: 1,
+    roughnessCoefficient: 0.5, fluidDensity: 7000, flowConsistencyIndex: 2000,
+    flowBehaviorIndex: 0.5, dragAnisotropy: 0.75, shearStrength: 4000,
+    defaultDepth: 0.15, collisiontype: 'MUD', skidMarks: false,
+  },
+};
+
 /**
  * Convert a WGS84 coordinate to BeamNG world-space [x, y, z].
  * Z is meters above the terrain's minimum elevation (+ offset).
@@ -5126,6 +5219,12 @@ export async function exportBeamNGLevel(terrainData, center, options = {}) {
 
   // ── info.json ──────────────────────────────────────────────────────────────
   const worldSizeMeters = Math.round(worldSize * 100) / 100;
+  // Minimap: the satellite/PBR base color texture IS a north-up top-down image of
+  // the level, so it doubles as the big-map/minimap tile (Level-Metadata.md
+  // §minimap). offset = [west, north] corner = [-halfExtent, +halfExtent]; size is
+  // the world extent in meters. Path is level-relative (prefixed at load time).
+  const minimapHalfExtent = Math.round(halfExtent * 100) / 100;
+  const minimapImageRel = 'art/terrains/terrain.png';
 
   zip.file(`${base}/info.json`, JSON.stringify({
     authors: 'mapng',
@@ -5148,9 +5247,16 @@ export async function exportBeamNGLevel(terrainData, center, options = {}) {
     supportsTraffic,
     supportsTimeOfDay: true,
     country: resolvedCountry,
+    region: getRegionForCountry(resolvedCountry),
     roadRules: {
-      rightHandDrive: resolvedRightHandDrive
-    }
+      rightHandDrive: resolvedRightHandDrive,
+      turnOnRed: getTurnOnRedForCountry(resolvedCountry),
+    },
+    minimap: [{
+      file: minimapImageRel,
+      size: [worldSizeMeters, worldSizeMeters],
+      offset: [-minimapHalfExtent, minimapHalfExtent],
+    }],
   }, null, 2));
 
   // ── city.sites.json ───────────────────────────────────────────────────────
@@ -5548,6 +5654,12 @@ export async function exportBeamNGLevel(terrainData, center, options = {}) {
   };
   zip.file(`${base}/art/terrains/main.materials.json`, JSON.stringify(terrainMaterialDefs, null, 2));
 
+  // ── groundModels/mapng_groundmodels.json ──────────────────────────────────
+  // Self-contained physics surfaces (Ground-Models.md). Merged after the global
+  // /art/groundmodels.json; the terrain materials' `groundmodelName` values link
+  // each painted surface (asphalt roads, dirt/gravel tracks, grass, etc.) here.
+  zip.file(`${base}/groundModels/mapng_groundmodels.json`, JSON.stringify(MAPNG_GROUND_MODELS, null, 2));
+
   // ── terrain.terrain.json — update materials list to match .ter contents ────
   const terrainMaterialNames = pbrResult?.materialNames ?? ['DefaultMaterial'];
   const heightMapSize = size * size;
@@ -5690,6 +5802,15 @@ export async function exportBeamNGLevel(terrainData, center, options = {}) {
         gravity: -9.81,
         nearClip: 0.1,
         visibleDistance: 4000,
+        // Depth bias tuned with visibleDistance to keep DecalRoad markings from
+        // z-fighting the terrain (LevelInfo.md §decalBias).
+        decalBias: 0.0005,
+        // Global audio environment + attenuation model (LevelInfo.md). The engine
+        // falls back to AudioAmbienceDefault if unset; declare it explicitly.
+        soundAmbience: 'AudioAmbienceDefault',
+        soundDistanceModel: 'Logarithmic',
+        // Time→temperature curve in °C (noon=0, midnight=0.5, wraps at 1).
+        temperatureCurveC: [0, 16, 0.25, 22, 0.5, 13, 0.75, 11, 1, 16],
       },
       {
         __parent: 'sky_and_sun',
@@ -5742,7 +5863,9 @@ export async function exportBeamNGLevel(terrainData, center, options = {}) {
     baseTexSize: size,
     terrainFile: terrainBinaryVirtualPath,
     materialTextureSet: pbrResult?.textureSetName ?? '',
-    minimapImage: '',
+    // Point the terrain block's minimap at the base color texture (north-up
+    // top-down). BeamNG convention: leading "levels/…", no leading slash.
+    minimapImage: `levels/${levelName}/${minimapImageRel}`,
   }];
 
   if (osmDaeBlob) {

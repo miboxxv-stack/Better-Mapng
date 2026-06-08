@@ -7,28 +7,49 @@ This document maps MapNG BeamNG export artifacts to the official docs in refs/of
 > tracker against that guide. When adding/changing an export artifact, update the
 > guide first, then this matrix, then the tests.
 
-## Doc review findings (2026-06 pass against the updated official docs)
+## Doc review findings (2026-06 pass against the refreshed official docs)
 
-The full doc set in `refs/official_levels_documentation/` was reviewed against the
-current exporter. Headline findings:
+The full refreshed doc set in `refs/official_levels_documentation/` was re-read in
+detail and re-checked against the current exporter and against vanilla content
+(`refs/beamng/content/levels/*.zip`) and `refs/MapNG_template/`. Headline findings:
 
-- **Confirmed correct:** package layout, NDJSON object files + recursive SimGroup
-  folders, `.ter` v9 binary layout (version/size/heightMap/layerMap/materialCount/
-  names), `terrain.terrain.json`, TerrainBlock fields, `theLevelInfo` naming and
-  the `globalEnviromentMap` (one-"n") spelling, info.json spawn/roadRules wiring,
-  forest type/placement coupling, and the shared metric projection for terrain
-  paint alignment.
-- **Open issue — terrain size ceiling:** `Terrain-Files.md` documents the heightmap
-  *import* range as `[128, 8192]`, power-of-two, square. MapNG now exports terrain
-  up to 16384. Must verify the runtime `.ter` loader tolerates >8192 against
-  `refs/base_game_content`, or cap terrain at 8192 (texture-only above). Tracked in
-  the guide as Rule T3.
-- **Open issue — `.ter` version lockstep:** the loader fails if `version > FILE_VERSION`.
-  The `.ter` first byte (`0x09`) and `terrain.terrain.json.version` (9) must stay
-  in lockstep and be re-verified per target game build. Now asserted by tests
-  (Rule T1).
-- **Confirmed gaps (roadmap):** minimap generation, groundModels overrides,
-  prefabs, datablocks, and a rich DecalData library remain unimplemented.
+- **Confirmed correct:** package layout (top-level `levels/` per `Correctly-packing-mods.md`),
+  NDJSON object files + recursive SimGroup folders + `__parent` (both hierarchy
+  mechanisms used), `.ter` v9 binary layout (version/size/heightMap/layerMap/
+  materialCount/names, no `layerTextureMap` block), `terrain.terrain.json`,
+  TerrainBlock fields, `theLevelInfo` naming and the `globalEnviromentMap` (one-"n")
+  spelling, info.json spawn/roadRules wiring, MeshRoad 8-value nodes vs DecalRoad
+  4-value nodes, DecalRoad `improvedSpline:true`, forest `.forest4.json` NDJSON with
+  scalar `scale`, GroundCover per-cell density rule, and the shared metric projection
+  for terrain paint alignment.
+- **Resolved — `.ter` version:** the docs' worked examples show `version: 8`, but that
+  is a placeholder. Vanilla `automation_test_track` and `refs/MapNG_template` both
+  ship `.ter` byte0 = **9** and `terrain.terrain.json` `version: 9`. The exporter's
+  `9` is correct; keep byte0/json `version` in lockstep and re-verify per game build
+  (Rule T1, tested in §10.5).
+- **Resolved — terrain size upper bound:** `Terrain-Files.md`'s `[128, 8192]` is the
+  editor heightmap-*import* constraint, not the runtime `.ter` loader limit. 16384×16384
+  terrain is **author-verified loading in-game** (2026-06), so `computeBeamNGTerrainSize`
+  exporting up to 16384 is fine. Only remaining nuance (Rule T3): no enforced 128 lower
+  bound — a fixture-only edge case (8×8 test grid), optional to guard.
+- **Minor — height encode/decode asymmetry:** encode uses `/65535`, engine decodes
+  `stored × maxHeight/65536` (sub-mm at the top; the 65535 encode avoids u16 overflow).
+  Documented in Rule T2.
+- **Materials best practice (new emphasis):** reference `*.color.png`/`*.normal.png`/
+  `*.data.png`, never `.dds` directly — the Texture Cooker cooks PNG→DDS at load
+  (`Texture-Cooker.md`, `Legacy-Normal-Maps.md`). Verify generated `main.materials.json`
+  texture refs follow this.
+- **LevelInfo fidelity (new docs):** `LevelInfo.md` documents `decalBias`,
+  `soundAmbience`, `soundDistanceModel`, `temperatureCurveC`, etc.; MapNG emits a
+  minimal subset — optional fidelity additions tracked below.
+- **Roadmap items knocked out (2026-06):** minimap generation, self-contained
+  `groundModels/mapng_groundmodels.json`, and LevelInfo fidelity fields (decalBias,
+  soundAmbience, soundDistanceModel, temperatureCurveC) + info.json `region`/
+  `roadRules.turnOnRed` are now implemented and tested. DecalData road *markings* are
+  delivered by DecalRoad line layers (a separate DecalData marking library would be
+  redundant); the managedDecalData/main.decals scaffold stays for decorative decals.
+- **Remaining gaps (roadmap):** prefabs, datablocks (beyond the cubemap), and a
+  decorative DecalData library (crosswalks/cracks needing bundled textures).
 
 ## Scope
 
@@ -42,7 +63,7 @@ current exporter. Headline findings:
 
 | Artifact | Official doc(s) | Status | Notes |
 | --- | --- | --- | --- |
-| info.json | Level-Metadata.md | Implemented | Includes roadRules, supportsTraffic, supportsTimeOfDay, country, spawn metadata. supportsTraffic is now gated by nav-producing road mode. |
+| info.json | Level-Metadata.md | Implemented | Includes roadRules (rightHandDrive + turnOnRed), region (derived from country), supportsTraffic (gated by nav-producing road mode), supportsTimeOfDay, country, spawn metadata, and a minimap tile (see below). |
 | city.sites.json | Sites-.sites.json.md | Implemented | Default level sites scaffold generated. |
 | map.json | Navigation-Map.md | Partial | Architect/mesh exports now generate manual OSM-derived segments with oneWay/flipDirection, manual lane counts, drivability, maxspeed-based speedLimit hints, and autoJunction disabling for grade-separated links (bridge/tunnel/layered) and dense same-grade intersections. Link roads preserve finer segment granularity to avoid over-merged ramps. Private links are marked hiddenInNavi/gatedRoad. |
 | signals.json | Traffic-Signals.md | Partial | OSM-driven traffic light and stop-sign instances/controllers/sequences are now generated. give_way nodes now use a custom yield controller type defined by level-local signal definitions, and traffic lights can infer protected-green controllers from nearby turn-lane tags with staged phase timing via per-phase startTime offsets. Lane-level controller grouping is now inferred from traffic_signals:direction/turn tags, protected-vs-through overlap timing is adaptively tuned by inferred road priority and lane density, protected lead/main split is lane-priority weighted so through-heavy axes receive longer shared-main windows, and dense axis plans are normalized to bounded cycle durations. |
@@ -52,17 +73,20 @@ current exporter. Headline findings:
 | terrain.terrain.json | Terrain-Files.md | Implemented | Metadata file emitted at level root and linked to art/terrains terrain binaries. |
 | TerrainBlock object | Terrain-Files.md, Level-Object-Files.md | Implemented | squareSize, maxHeight, terrainFile emitted. |
 | Terrain materials file | Terrain-Files.md | Implemented | art/terrains/main.materials.json generated. |
+| Minimap (info.json.minimap + TerrainBlock.minimapImage) | Level-Metadata.md, TerrainBlock.md | Implemented | Reuses the north-up base color texture (art/terrains/terrain.png) as the top-down tile; offset = NW corner, size = world meters. |
+| groundModels/mapng_groundmodels.json | Ground-Models.md | Implemented | Self-contained ASPHALT/GRASS/DIRT/GRAVEL/ROCK/SAND/MUD mirroring vanilla values; terrain materials link via groundmodelName (OSM surface → painted layer → ground model). ASPHALT alias keeps GROUNDMODEL_ASPHALT1 resolving. |
+| LevelInfo fidelity | LevelInfo.md | Implemented | theLevelInfo now sets decalBias, soundAmbience, soundDistanceModel, temperatureCurveC in addition to fog/gravity/visibleDistance/globalEnviromentMap. |
 | art/cubemaps universal reflection cubemap | Datablocks.md, refs/MapNG_template | Implemented | Bundles a universal reflection cubemap (6 HDR DDS faces + CubemapData/Material in main.materials.json) and points LevelInfo.globalEnviromentMap at it; falls back to the biome's official cubemap name if the bundled asset can't be loaded. |
-| main.decals.json + managedDecalData.json scaffold | Decal-Data.md | Implemented | Scaffolding only; no rich DecalData library generation yet. |
+| main.decals.json + managedDecalData.json scaffold | Decal-Data.md | Implemented (scaffold by design) | Valid empty v2.0 scaffold. Road markings are delivered by DecalRoad line layers (line_center/line_left/line_right), the doc-preferred mechanism, so a separate DecalData marking library would be redundant. Scaffold remains for decorative decals (crosswalks/cracks) that need bundled textures. |
 | main.forestbrushes4.json | Forest-Brushes.md | Implemented | Emits a ForestBrush + ForestBrushElement per placed forest item type (referencing managedItemData keys) plus the ForestBrushGroup, matching refs/MapNG_template. Falls back to an empty ForestBrushGroup when no vegetation is placed. |
 | art/forest/managedItemData.json + forest/*.forest4.json | Forest-Data-and.md | Implemented | Emitted when vegetation placement exists. |
 | GroundCover objects (grass) | GroundCover.md | Implemented | See "GroundCover density rule" below. |
 | Native road signs (TSStatic + .link) | Introducing-assets-folder.md, Level-Object-Files.md | Implemented | OSM stop/give_way point nodes emit TSStatic objects referencing native signs_usa meshes via the link registry, under a `signs` SimGroup. Procedural sign boxes are no longer baked into the OSM objects DAE. Ambiguous generic `traffic_sign` nodes are skipped. |
 | .link files for official assets | Introducing-assets-folder.md | Partial | Link files are emitted and exporter object payloads run through rewrite hooks before ZIP write (MissionGroup scene folders plus managed forest data). Exporter ZIP integration assertions now cover decal/architect/mesh road modes; broader asset-type coverage can still be expanded further. |
 | signalControllerDefinitions.json | Traffic-Signals.md | Partial | Exported conditionally when generated signals use custom controller definitions (currently for give_way/yield mapping). |
-| groundModels/*.json overrides | Ground-Models.md | Planned | Not currently exported. |
+| groundModels/*.json overrides | Ground-Models.md | Implemented | See the dedicated groundModels row above (mapng_groundmodels.json, self-contained). |
 | Prefab files (.prefab.json/.prefab) | Prefabs-.prefab-and-.prefab.json.md | Planned | Not currently emitted by exporter. |
-| Datablock JSON files | Datablocks.md | Planned | Not currently emitted by exporter. |
+| Datablock JSON files | Datablocks.md | Partial | Cubemap CubemapData/Material emitted (see cubemap row); no other datablock JSON generated. |
 
 ## GroundCover density rule
 

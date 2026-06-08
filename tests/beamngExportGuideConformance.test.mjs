@@ -278,3 +278,106 @@ test('guide §10.12: supportsTraffic implies a nav graph', async () => {
     }
   });
 });
+
+// ── §10.13 — road node arity (MeshRoad 8-value, DecalRoad 4-value) ────────────
+// MeshRoad.md lists "tool-generated nodes use the four-value DecalRoad format
+// instead of the eight-value MeshRoad format" as a common breaking mistake.
+test('guide §10.13: DecalRoad nodes are 4-value', async () => {
+  const restore = installCanvasPolyfill();
+  try {
+    const zip = await exportZip({ roadType: 'decal' });
+    const file = zip.file(`${BASE}/main/MissionGroup/Decal_Roads/items.level.json`);
+    if (!file) return; // no decal roads in this fixture run
+    for (const obj of parseNDJSON(await file.async('string'))) {
+      if (obj.class !== 'DecalRoad' || !Array.isArray(obj.nodes)) continue;
+      for (const node of obj.nodes) {
+        assert.ok(Array.isArray(node) && node.length === 4 && node.every((n) => typeof n === 'number'),
+          `DecalRoad node must be [x,y,z,width]: ${JSON.stringify(node)}`);
+      }
+    }
+  } finally {
+    restore();
+  }
+});
+
+test('guide §10.13: MeshRoad nodes are 8-value', async () => {
+  const restore = installCanvasPolyfill();
+  try {
+    const zip = await exportZip({ roadType: 'mesh' });
+    const file = zip.file(`${BASE}/main/MissionGroup/Mesh_roads/items.level.json`);
+    if (!file) return; // no mesh roads in this fixture run
+    let checked = 0;
+    for (const obj of parseNDJSON(await file.async('string'))) {
+      if (obj.class !== 'MeshRoad' || !Array.isArray(obj.nodes)) continue;
+      for (const node of obj.nodes) {
+        assert.ok(Array.isArray(node) && node.length === 8 && node.every((n) => typeof n === 'number'),
+          `MeshRoad node must be [x,y,z,width,depth,nx,ny,nz]: ${JSON.stringify(node)}`);
+        checked++;
+      }
+    }
+    assert.ok(checked > 0, 'expected at least one MeshRoad node in mesh mode');
+  } finally {
+    restore();
+  }
+});
+
+// ── §S2 — LevelInfo fidelity fields ──────────────────────────────────────────
+test('guide §S2: LevelInfo carries decalBias + sound fidelity fields', async () => {
+  await withZip(async (zip) => {
+    const sky = parseNDJSON(await readText(zip, 'main/MissionGroup/sky_and_sun/items.level.json'));
+    const li = sky.find((o) => o.class === 'LevelInfo');
+    assert.ok(li, 'Expected a LevelInfo');
+    assert.equal(typeof li.decalBias, 'number', 'LevelInfo.decalBias should be a number');
+    assert.equal(li.soundAmbience, 'AudioAmbienceDefault', 'LevelInfo.soundAmbience default');
+    assert.equal(li.soundDistanceModel, 'Logarithmic', 'LevelInfo.soundDistanceModel default');
+  });
+});
+
+// ── §2 — info.json region + roadRules.turnOnRed ──────────────────────────────
+test('guide §2: info.json has region and roadRules.turnOnRed', async () => {
+  await withZip(async (zip) => {
+    const info = JSON.parse(await readText(zip, 'info.json'));
+    assert.ok(typeof info.region === 'string' && info.region.length > 0, 'info.region must be set');
+    assert.equal(typeof info.roadRules.turnOnRed, 'boolean', 'roadRules.turnOnRed must be boolean');
+  });
+});
+
+// ── Rule I3 — minimap emitted and the referenced file exists ──────────────────
+test('guide §I3: info.json minimap references an existing tile + TerrainBlock.minimapImage set', async () => {
+  await withZip(async (zip) => {
+    const info = JSON.parse(await readText(zip, 'info.json'));
+    assert.ok(Array.isArray(info.minimap) && info.minimap.length > 0, 'info.minimap must be non-empty');
+    const tile = info.minimap[0];
+    assert.ok(zip.file(`${BASE}/${tile.file}`), `minimap tile "${tile.file}" must exist in the ZIP`);
+    assert.ok(Array.isArray(tile.size) && tile.size.length === 2, 'minimap size must be [w,h]');
+    assert.ok(Array.isArray(tile.offset) && tile.offset.length === 2, 'minimap offset must be [x,y]');
+
+    const objs = parseNDJSON(await readText(zip, 'main/MissionGroup/level_objects/items.level.json'));
+    const tb = objs.find((o) => o.class === 'TerrainBlock');
+    assert.ok(tb.minimapImage && tb.minimapImage.length > 0, 'TerrainBlock.minimapImage must be set');
+  });
+});
+
+// ── §7 — self-contained groundModels file ────────────────────────────────────
+test('guide §7: groundModels file is valid and keeps the asphalt alias', async () => {
+  await withZip(async (zip) => {
+    const f = zip.file(`${BASE}/groundModels/mapng_groundmodels.json`);
+    assert.ok(f, 'Expected groundModels/mapng_groundmodels.json');
+    const gm = JSON.parse(await f.async('string'));
+    assert.ok(gm.ASPHALT, 'ASPHALT ground model must be defined');
+    assert.ok(Array.isArray(gm.ASPHALT.aliases) && gm.ASPHALT.aliases.includes('groundmodel_asphalt1'),
+      'ASPHALT must alias groundmodel_asphalt1 so the fallback resolves locally');
+    // Every terrain material groundmodelName must resolve to a defined model or alias.
+    const terrainMats = JSON.parse(await readText(zip, 'art/terrains/main.materials.json'));
+    const names = new Set();
+    for (const [key, def] of Object.entries(gm)) {
+      names.add(key.toUpperCase());
+      for (const a of def.aliases || []) names.add(String(a).toUpperCase());
+    }
+    for (const def of Object.values(terrainMats)) {
+      if (def.class !== 'TerrainMaterial' || !def.groundmodelName) continue;
+      assert.ok(names.has(String(def.groundmodelName).toUpperCase()),
+        `TerrainMaterial.groundmodelName "${def.groundmodelName}" must resolve in the level groundModels`);
+    }
+  });
+});
