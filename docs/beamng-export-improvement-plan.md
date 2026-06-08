@@ -84,6 +84,67 @@ long-term risk to conformance because it makes targeted change hard.
 
 ---
 
+## Phase D — Insights from the community Steam guide (🟡/🟢)
+
+Derived from a power-user Steam guide (`refs/Steam-Community-Guide-MapNG.md`)
+written by a modder who uses MapNG regularly. These are the friction points he
+documents working *around* in the World Editor — each is a candidate to fix at
+the source so users don't have to.
+
+11. **Asphalt color won't match on user-added roads (🟡, biggest UX pain).**
+    All terrain materials share one base-color texture, so when a user paints
+    asphalt onto a *new* road in-editor the color doesn't change — he has to
+    either give asphalt an independent base color or bake the road into
+    `terrain.png` by hand (a multi-step Paint.NET workflow in his guide).
+    - Action: bake the asphalt mask into the base-color texture on export (we
+      already compute the road mask), or ship the asphalt material with its own
+      darker base color, so painted roads match out of the box.
+
+12. **Textureless "default" terrain material next to roads (🟡).** He finds a
+    flat, untextured `default` material hugging the roads that he has to delete
+    or re-point at the grass material.
+    - Action: never emit a textureless terrain material adjacent to roads;
+      assign a real textured material (or drop the slot).
+
+13. **`ForestWindEmitter` not placed (🟢).** Trees don't react to wind because
+    MapNG doesn't emit a `ForestWindEmitter`; he adds one manually via Create
+    Object → Other classes.
+    - Action: emit a `ForestWindEmitter` in the scene tree when forest is included.
+
+14. **Groundcover not lush + no wind (🟡).** He bumps grass `maxElements` hard
+    and copies ECUSA wind settings to make grass lively. Even with our dynamic
+    `maxElements`, the defaults read as sparse and static to a real user.
+    - Action: richer default groundcover density + ship grass wind settings on
+      `mapng_grass_cover` (tunable, dialed back from ECUSA's strong values).
+
+15. **Decal-road node density at intersections (🟡).** Uneven node spacing
+    causes texture stretching, and intersections need *denser* nodes to bend
+    cleanly. The 2 m uniform resample (dfb9037) helps the straights; intersections
+    still need densification + clean splits.
+    - Action: densify nodes approaching intersections and ensure decal roads are
+      split cleanly there. Overlaps with item 7 (navigation depth at junctions).
+
+16. **Decal-road length limit drops texture on big maps (🟢).** Past a length,
+    the decal stops rendering; his fix is raising `ImprovedSpline > Detail`
+    (0.2–0.5) or splitting the road.
+    - Action: pre-split long decal roads on export, or set `Detail` appropriately
+      so the limit isn't hit.
+
+17. **Start/end fade at MapNG-split joins (🟢).** Where MapNG splits decal roads,
+    start/end fade makes them visibly fade at the join. Our layer comments claim
+    fade is applied only at true termini — worth verifying the split path doesn't
+    reintroduce it.
+    - Action: confirm chunk joins carry no fade (or fuse split roads on export).
+
+18. **Backdrop is non-drivable with no edge protection (🟢).** He recommends
+    placing signs/blockades at the terrain edge because the backdrop mesh isn't
+    meant to be driven onto and doesn't transition cleanly.
+    - Action (optional): place edge barriers at the map boundary, and/or improve
+      the backdrop→terrain seam. Also consider backdrop LOD/decimation — he notes
+      it inflates polycount on big maps.
+
+---
+
 ## Suggested sequencing
 
 - **Now:** Phase A (correctness). Small, high-value, test-backed.
