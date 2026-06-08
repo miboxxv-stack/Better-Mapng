@@ -322,6 +322,12 @@ test('exportBeamNGLevel rewrites managed forest shape paths across road modes', 
       assert.ok(forestObject, `Expected Forest object in vegetation items for roadType=${roadType}`);
       assert.equal(forestObject.name, 'theForest');
 
+      // A ForestWindEmitter must accompany the forest so placed trees sway
+      // instead of standing perfectly still (Forest.md §ForestWindEmitter).
+      const windEmitter = vegetationItems.find((item) => item?.class === 'ForestWindEmitter');
+      assert.ok(windEmitter, `Expected ForestWindEmitter in vegetation items for roadType=${roadType}`);
+      assert.equal(windEmitter.windEnabled, true);
+
       const managedPath = 'levels/mapng_demo/art/forest/managedItemData.json';
       const managedFile = zip.file(managedPath);
       assert.ok(managedFile, `Missing ${managedPath} for roadType=${roadType}`);

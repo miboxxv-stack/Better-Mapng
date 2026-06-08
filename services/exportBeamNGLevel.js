@@ -5927,6 +5927,25 @@ export async function exportBeamNGLevel(terrainData, center, options = {}) {
       name: 'theForest',
       persistentId: generatePersistentId(),
       lodReflectScalar: 0,
+    }, {
+      // Global directional wind so placed forest items actually sway (Forest.md
+      // §ForestWindEmitter). Without an active emitter the trees are static —
+      // base levels always ship one. Mild, natural values; radialEmitter:false
+      // makes it level-wide so position is irrelevant.
+      __parent: 'vegetation',
+      class: 'ForestWindEmitter',
+      name: 'forest_wind',
+      persistentId: generatePersistentId(),
+      position: [0, 0, 0],
+      windEnabled: true,
+      radialEmitter: false,
+      strength: 1,
+      gustStrength: 0.5,
+      gustFrequency: 3,
+      gustYawAngle: 10,
+      gustYawFrequency: 4,
+      turbulenceStrength: 0.25,
+      turbulenceFrequency: 2,
     }] : []),
     ...groundCoverObjects,
   ];

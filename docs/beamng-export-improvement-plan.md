@@ -106,10 +106,12 @@ the source so users don't have to.
     - Action: never emit a textureless terrain material adjacent to roads;
       assign a real textured material (or drop the slot).
 
-13. **`ForestWindEmitter` not placed (🟢).** Trees don't react to wind because
-    MapNG doesn't emit a `ForestWindEmitter`; he adds one manually via Create
-    Object → Other classes.
-    - Action: emit a `ForestWindEmitter` in the scene tree when forest is included.
+13. **`ForestWindEmitter` not placed (🟢). ✅ DONE.** Trees don't react to wind
+    because MapNG didn't emit a `ForestWindEmitter`; he added one manually via
+    Create Object → Other classes.
+    - Done: emit a global directional `ForestWindEmitter` in `vegetation`
+      whenever forest is included (`exportBeamNGLevel.js`), covered by the
+      integration test.
 
 14. **Groundcover not lush + no wind (🟡).** He bumps grass `maxElements` hard
     and copies ECUSA wind settings to make grass lively. Even with our dynamic
