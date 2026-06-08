@@ -820,6 +820,15 @@ async function makeRoughnessBlob(roughness = 180, variance = 0, size = 256) {
   return new Promise(res => canvas.toBlob(res, 'image/png'));
 }
 
+async function makeSolidColorBlob(r, g, b, size = 64) {
+  const canvas = document.createElement('canvas');
+  canvas.width = size; canvas.height = size;
+  const ctx = canvas.getContext('2d');
+  ctx.fillStyle = `rgb(${r}, ${g}, ${b})`;
+  ctx.fillRect(0, 0, size, size);
+  return new Promise(res => canvas.toBlob(res, 'image/png'));
+}
+
 function cloneMaterialTemplate(template) {
   return structuredClone(template);
 }
@@ -900,6 +909,17 @@ export async function buildTerrainMaterials(terrainData, worldSize, exportLevelN
     { path: 'shared_r_sm.png',  blob: sharedRSm },
   );
 
+  // Dedicated dark base color for the asphalt material. Every other terrain
+  // material draws its dominant color from the shared per-export terrain base
+  // (satellite/OSM imagery), which is correct for the roads OSM already knows
+  // about — but means a user-painted *new* asphalt road takes on whatever color
+  // (often grass-green) the base shows there. Giving asphalt its own neutral
+  // dark base makes painted asphalt read as asphalt everywhere (the export-side
+  // version of the guide's "asphalt_colour.png" fix); the asphalt detail/macro
+  // slots still supply surface grain on top.
+  const asphaltBaseColor = await makeSolidColorBlob(63, 63, 66);
+  textureFiles.push({ path: 'asphalt_base_b.png', blob: asphaltBaseColor });
+
   // Helper: neutral slot fields used by DefaultMaterial and as fallbacks.
   function neutralSlots() {
     return {
@@ -930,7 +950,12 @@ export async function buildTerrainMaterials(terrainData, worldSize, exportLevelN
     materialDef.name = key;
     materialDef.persistentId = uuid;
     materialDef.internalName = refMaterial.internalName;
-    materialDef.baseColorBaseTex = satellitePath;
+    // Asphalt gets its own neutral-dark base so painted roads look like asphalt
+    // regardless of the underlying imagery; every other material shares the
+    // per-export terrain base for seamless blending.
+    materialDef.baseColorBaseTex = refMaterial.internalName === 'asphalt'
+      ? p('asphalt_base_b.png')
+      : satellitePath;
     materialDef.baseColorBaseTexSize = baseSize;
     materialDef.diffuseSize = baseSize;
     materialDef.aoBaseTex = p('shared_ao.png');

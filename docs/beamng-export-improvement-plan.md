@@ -91,14 +91,18 @@ written by a modder who uses MapNG regularly. These are the friction points he
 documents working *around* in the World Editor — each is a candidate to fix at
 the source so users don't have to.
 
-11. **Asphalt color won't match on user-added roads (🟡, biggest UX pain).**
-    All terrain materials share one base-color texture, so when a user paints
-    asphalt onto a *new* road in-editor the color doesn't change — he has to
-    either give asphalt an independent base color or bake the road into
-    `terrain.png` by hand (a multi-step Paint.NET workflow in his guide).
-    - Action: bake the asphalt mask into the base-color texture on export (we
-      already compute the road mask), or ship the asphalt material with its own
-      darker base color, so painted roads match out of the box.
+11. **Asphalt color won't match on user-added roads (🟡, biggest UX pain).
+    ✅ DONE (needs in-game eyes).** All terrain materials shared one base-color
+    texture, so painting asphalt onto a *new* road took on whatever color
+    (often grass-green) the base showed there — forcing his multi-step Paint.NET
+    workflow.
+    - Done: the asphalt terrain material now ships with its own neutral-dark
+      base color (`asphalt_base_b.png`, generated + bundled) instead of sharing
+      `terrain.png`; detail/macro slots still supply surface grain
+      (`osmTerrainMaterials.js`). Painted asphalt reads as asphalt everywhere.
+      Covered by the OSM/PBR integration test. **Verify in-game:** tune the base
+      RGB (currently 63,63,66) and confirm road edges still blend acceptably
+      (the guide flags blocky edges as this approach's known tradeoff).
 
 12. **Textureless "default" terrain material next to roads (🟡). ✅ DONE
     (needs in-game eyes).** He found a flat, untextured `default` material
