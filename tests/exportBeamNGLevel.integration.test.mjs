@@ -328,6 +328,15 @@ test('exportBeamNGLevel rewrites managed forest shape paths across road modes', 
       assert.ok(windEmitter, `Expected ForestWindEmitter in vegetation items for roadType=${roadType}`);
       assert.equal(windEmitter.windEnabled, true);
 
+      // Groundcover must carry a turbulence amplitude, not just a frequency, or
+      // the grass stands still (Improving Groundcover §wind).
+      const groundCover = vegetationItems.find((item) => item?.class === 'GroundCover');
+      assert.ok(groundCover, `Expected a GroundCover object for roadType=${roadType}`);
+      assert.ok(
+        Number(groundCover.windTurbulenceStrength) > 0,
+        `Groundcover should set windTurbulenceStrength > 0 for roadType=${roadType}`,
+      );
+
       const managedPath = 'levels/mapng_demo/art/forest/managedItemData.json';
       const managedFile = zip.file(managedPath);
       assert.ok(managedFile, `Missing ${managedPath} for roadType=${roadType}`);

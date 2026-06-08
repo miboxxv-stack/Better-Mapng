@@ -117,11 +117,14 @@ the source so users don't have to.
       whenever forest is included (`exportBeamNGLevel.js`), covered by the
       integration test.
 
-14. **Groundcover not lush + no wind (🟡).** He bumps grass `maxElements` hard
-    and copies ECUSA wind settings to make grass lively. Even with our dynamic
-    `maxElements`, the defaults read as sparse and static to a real user.
-    - Action: richer default groundcover density + ship grass wind settings on
-      `mapng_grass_cover` (tunable, dialed back from ECUSA's strong values).
+14. **Groundcover not lush + no wind (🟡). ✅ DONE.** He bumped grass
+    `maxElements` and copied ECUSA wind settings to make grass lively.
+    - Density was already addressed (dynamic `maxElements`, min 360k, 2× density
+      multiplier). The remaining gap was wind: `mapng_grass_cover`/`_field` set
+      `windTurbulenceFrequency` with no `windTurbulenceStrength` (and no
+      `windGustFrequency`), so turbulence had zero amplitude and grass stood
+      still. Added both fields (matched to the template-cover path); covered by
+      the integration test.
 
 15. **Decal-road node density at intersections (🟡).** Uneven node spacing
     causes texture stretching, and intersections need *denser* nodes to bend

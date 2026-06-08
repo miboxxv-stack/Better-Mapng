@@ -4706,7 +4706,12 @@ function buildGroundCoverObjects(terrainData, squareSize, includeTrees, biome) {
     maxElements: baseCoverMaxElements,
     windGustLength: 1.7,
     windGustStrength: 0.2,
+    // windGustFrequency drives gust recurrence and windTurbulenceStrength gives
+    // the turbulence an amplitude — without the latter, windTurbulenceFrequency
+    // alone produced no sway. Mild values matched to the template-cover path.
+    windGustFrequency: 0.1,
     windTurbulenceFrequency: 0.3,
+    windTurbulenceStrength: 0.1,
     seed: 11,
     Types: buildGrassTypes(1),
   }];
@@ -4781,7 +4786,9 @@ function buildGroundCoverObjects(terrainData, squareSize, includeTrees, biome) {
       maxElements: fieldMaxElements,
       windGustLength: 1.7,
       windGustStrength: 0.2,
+      windGustFrequency: 0.1,
       windTurbulenceFrequency: 0.3,
+      windTurbulenceStrength: 0.1,
       seed: 100 + areaObjectIndex,
       Types: buildGrassTypes(1.25),
     });
