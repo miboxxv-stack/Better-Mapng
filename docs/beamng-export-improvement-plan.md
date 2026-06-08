@@ -133,17 +133,24 @@ the source so users don't have to.
     - Action: densify nodes approaching intersections and ensure decal roads are
       split cleanly there. Overlaps with item 7 (navigation depth at junctions).
 
-16. **Decal-road length limit drops texture on big maps (🟢).** Past a length,
-    the decal stops rendering; his fix is raising `ImprovedSpline > Detail`
-    (0.2–0.5) or splitting the road.
-    - Action: pre-split long decal roads on export, or set `Detail` appropriately
-      so the limit isn't hit.
+16. **Decal-road length limit drops texture on big maps (🟢). ✅ ALREADY
+    MITIGATED.** Past a length the decal stops rendering; his fix was raising
+    `Detail` or splitting the road.
+    - Current code resamples road geometry to a uniform 2 m spacing (dfb9037)
+      and `chunkPolyline` caps each DecalRoad at ~50 nodes (~100 m), well under
+      the texture-drop length. `detail` is left at BeamNG's improved-spline
+      default, which is fine for ~100 m chunks. No change needed unless a real
+      level still shows the dropout — then set `detail`/split per-chunk.
 
-17. **Start/end fade at MapNG-split joins (🟢).** Where MapNG splits decal roads,
-    start/end fade makes them visibly fade at the join. Our layer comments claim
-    fade is applied only at true termini — worth verifying the split path doesn't
-    reintroduce it.
-    - Action: confirm chunk joins carry no fade (or fuse split roads on export).
+17. **Start/end fade at MapNG-split joins (🟢). ✅ ALREADY ADDRESSED.** Where
+    decal roads are split, start/end fade can make them fade at the join.
+    - Verified: fade is gated to `isRoadStart`/`isRoadEnd` (the road's true
+      termini) and never applied at internal chunk joins
+      (`getLayeredRoadDecals` / `generateDecalRoads`). One thing to confirm
+      in-game: adjacent segments meeting at an intersection each treat the shared
+      end as a terminus, so the asphalt base layer (`startEndFadeMag: 4`) may
+      fade slightly approaching intersections — fold this into item 15's
+      intersection work if it reads as a gap.
 
 18. **Backdrop is non-drivable with no edge protection (🟢).** He recommends
     placing signs/blockades at the terrain edge because the backdrop mesh isn't
