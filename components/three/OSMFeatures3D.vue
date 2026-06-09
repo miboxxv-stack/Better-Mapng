@@ -39,9 +39,11 @@ const buildPreviewOptions = (data) => {
   const veryDense = osmCount >= 18000 || (maxDim >= 8192 && osmCount >= 10000);
 
   return {
-    includeBuildings: props.featureVisibility?.buildings !== false,
-    includeVegetation: props.featureVisibility?.vegetation !== false,
-    includeBarriers: props.featureVisibility?.barriers !== false,
+    // Build every category once; the visibility checkboxes toggle mesh.visible
+    // below instead of triggering a full extrude/merge rebuild per click.
+    includeBuildings: true,
+    includeVegetation: true,
+    includeBarriers: true,
     includeStreetFurniture: !dense,
     maxBuildings: Number.POSITIVE_INFINITY,
     maxBarriers: veryDense ? 800 : dense ? 1800 : 5000,
@@ -54,6 +56,22 @@ const buildPreviewOptions = (data) => {
   };
 };
 
+// createOSMGroup names its merged meshes by category ('buildings',
+// 'vegetation', 'barriers'); flipping `visible` is free, while a rebuild
+// re-extrudes and re-merges every footprint (seconds of jank in dense areas).
+const applyVisibility = () => {
+  const grp = group.value;
+  if (!grp) return;
+  const vis = {
+    buildings: props.featureVisibility?.buildings !== false,
+    vegetation: props.featureVisibility?.vegetation !== false,
+    barriers: props.featureVisibility?.barriers !== false,
+  };
+  grp.traverse((child) => {
+    if (child.isMesh && child.name in vis) child.visible = vis[child.name];
+  });
+};
+
 const rebuildGroup = (data) => {
   if (group.value) {
     disposeGroup(group.value);
@@ -63,18 +81,23 @@ const rebuildGroup = (data) => {
   if (data) {
     const rawData = toRaw(data);
     group.value = createOSMGroup(rawData, buildPreviewOptions(rawData));
+    applyVisibility();
   }
 };
 
 watch(
+  () => props.terrainData,
+  (data) => rebuildGroup(data),
+  { immediate: true }
+);
+
+watch(
   [
-    () => props.terrainData,
     () => props.featureVisibility?.buildings,
     () => props.featureVisibility?.vegetation,
     () => props.featureVisibility?.barriers,
   ],
-  ([data]) => rebuildGroup(data),
-  { immediate: true }
+  () => applyVisibility()
 );
 
 onUnmounted(() => {
