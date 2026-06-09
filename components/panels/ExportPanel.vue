@@ -806,8 +806,8 @@ watch(
 );
 
 watch(
-  [hasOsmData, canUseGpxzBackdrop],
-  ([hasOsm, gpxzAllowed]) => {
+  [hasOsmData, isCustomUploadTerrain, canUseGpxzBackdrop],
+  ([hasOsm, isCustom, gpxzAllowed]) => {
     if (!hasOsm) {
       if (beamNGBaseTexture.value === 'osm') {
         beamNGBaseTexture.value = resolveBeamNGBaseTexture(props.terrainData, 'hybrid');
@@ -819,6 +819,12 @@ watch(
       beamNGIncludeWater.value = false;
       beamNGIncludeTrees.value = false;
       beamNGIncludeRocks.value = false;
+    }
+    // Custom elevation uploads default to the global 30 m backdrop rather than
+    // 'off', so an uploaded map gets surrounding terrain out of the box. Users
+    // can still switch it to USGS/GPXZ or turn it back off.
+    if (isCustom && beamNGBackdropSource.value === 'off') {
+      beamNGBackdropSource.value = 'global30m';
     }
     if (beamNGBackdropSource.value === 'gpxz' && !gpxzAllowed) {
       beamNGBackdropSource.value = 'global30m';
