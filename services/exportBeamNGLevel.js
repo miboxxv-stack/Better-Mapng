@@ -775,6 +775,54 @@ async function generateOSMBuildingsCollisionDAE(terrainData, worldSize) {
 }
 
 /**
+ * Build the terrain-backdrop material library (main.materials.json contents).
+ *
+ * Each surrounding tile mesh references a `backdrop_<pos>` material by name; the
+ * DAE carries only names, so every referenced material MUST be defined here or
+ * BeamNG renders the magenta "NO TEXTURE" placeholder on that tile. Tiles whose
+ * satellite imagery downloaded get a textured material; any referenced tile
+ * without a texture (e.g. a failed satellite fetch) gets a flat ground-colored
+ * material so it still blends in.
+ *
+ * @param {string} levelName
+ * @param {Array<{name:string, ext:string}>} textureFiles  exported tile textures
+ * @param {string[]} materialNames  every `backdrop_<pos>` the mesh references
+ * @returns {Object} material-name → material def
+ */
+export function buildBackdropMaterialDefs(levelName, textureFiles = [], materialNames = []) {
+  const defs = {};
+
+  for (const tex of textureFiles) {
+    defs[tex.name] = {
+      class: 'Material',
+      name: tex.name,
+      mapTo: tex.name,
+      annotation: 'TERRAIN',
+      Stages: [{
+        diffuseMap: `levels/${levelName}/map_assets/custom_assets/terrain_backdrop/Textures/${tex.name}.${tex.ext}`,
+        diffuseColor: [1, 1, 1, 1],
+      }],
+      translucentBlendOp: 'None',
+    };
+  }
+
+  const referenced = materialNames.length > 0 ? materialNames : ['backdrop_terrain'];
+  for (const matName of referenced) {
+    if (defs[matName]) continue;
+    defs[matName] = {
+      class: 'Material',
+      name: matName,
+      mapTo: matName,
+      annotation: 'TERRAIN',
+      Stages: [{ diffuseColor: [0.55, 0.5, 0.45, 1] }],
+      translucentBlendOp: 'None',
+    };
+  }
+
+  return defs;
+}
+
+/**
  * Generate a Collada (.dae) Blob containing the 8 surrounding terrain tiles
  * (NW, N, NE, W, E, SW, S, SE) textured with satellite imagery at zoom 15.
  *
@@ -822,12 +870,19 @@ async function generateTerrainBackdropDAE(terrainData, worldSize, options = {}) 
     0,  0,  0,  1,
   );
 
+  // Every backdrop mesh references a `backdrop_<pos>` material by name; the DAE
+  // carries only the name, so each one must have a matching def in the level's
+  // main.materials.json or BeamNG renders the "NO TEXTURE" placeholder. Collect
+  // the full set here so the writer can backfill a flat-color material for any
+  // tile whose satellite imagery failed to download/attach.
+  const materialNames = new Set();
   surroundingGroup.traverse(child => {
     if (!child.isMesh) return;
 
     // Derive tile position name from mesh name (e.g. "terrain_NW" → "NW").
     const pos = child.name.replace('terrain_', '') || 'tile';
     const matName = `backdrop_${pos}`;
+    materialNames.add(matName);
 
     // Name the material and its texture map for the ColladaExporter and for
     // BeamNG's material resolution via main.materials.json.
@@ -864,6 +919,7 @@ async function generateTerrainBackdropDAE(terrainData, worldSize, options = {}) 
   return {
     daeBlob: result.data,
     textureFiles: result.textures ?? [],
+    materialNames: [...materialNames],
     diagnostics: surroundingGroup.userData?.surroundingDiagnostics ?? null,
   };
 }
@@ -5163,6 +5219,7 @@ export async function exportBeamNGLevel(terrainData, center, options = {}) {
 
   let backdropDaeBlob = null;
   let backdropTextureFiles = [];
+  let backdropMaterialNames = [];
   let backdropDiagnostics = null;
   if (includeBackdrop) {
     beginStep('Fetching terrain backdrop mesh…', 82);
@@ -5173,6 +5230,7 @@ export async function exportBeamNGLevel(terrainData, center, options = {}) {
     });
     backdropDaeBlob = backdropResult?.daeBlob ?? null;
     backdropTextureFiles = backdropResult?.textureFiles ?? [];
+    backdropMaterialNames = backdropResult?.materialNames ?? [];
     backdropDiagnostics = backdropResult?.diagnostics ?? null;
   }
 
@@ -5575,7 +5633,6 @@ export async function exportBeamNGLevel(terrainData, center, options = {}) {
     if (backdropDaeData) {
       zip.folder(`${base}/map_assets/custom_assets/terrain_backdrop`);
       zip.file(`${base}/map_assets/custom_assets/terrain_backdrop/terrain_backdrop.dae`, backdropDaeData);
-      const shapeMaterials = {};
       if (backdropTextureFiles.length > 0) {
         zip.folder(`${base}/map_assets/custom_assets/terrain_backdrop/Textures`);
         for (const tex of backdropTextureFiles) {
@@ -5583,28 +5640,13 @@ export async function exportBeamNGLevel(terrainData, center, options = {}) {
             `${base}/map_assets/custom_assets/terrain_backdrop/Textures/${tex.name}.${tex.ext}`,
             await toZipBinary(tex.data),
           );
-          shapeMaterials[tex.name] = {
-            class: 'Material',
-            name: tex.name,
-            mapTo: tex.name,
-            annotation: 'TERRAIN',
-            Stages: [{
-              diffuseMap: `levels/${levelName}/map_assets/custom_assets/terrain_backdrop/Textures/${tex.name}.${tex.ext}`,
-              diffuseColor: [1, 1, 1, 1],
-            }],
-            translucentBlendOp: 'None',
-          };
         }
-      } else {
-        shapeMaterials.backdrop_terrain = {
-          class: 'Material',
-          name: 'backdrop_terrain',
-          mapTo: 'backdrop_terrain',
-          annotation: 'TERRAIN',
-          Stages: [{ diffuseColor: [0.55, 0.5, 0.45, 1] }],
-          translucentBlendOp: 'None',
-        };
       }
+
+      // Build the material library so every tile the DAE references is defined —
+      // textured where available, flat ground color where the satellite failed —
+      // so no tile falls back to BeamNG's "NO TEXTURE" placeholder.
+      const shapeMaterials = buildBackdropMaterialDefs(levelName, backdropTextureFiles, backdropMaterialNames);
       zip.file(`${base}/map_assets/custom_assets/terrain_backdrop/main.materials.json`, JSON.stringify(shapeMaterials, null, 2));
     }
     if (mapngFlagFiles.length > 0) {
