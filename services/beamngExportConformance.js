@@ -51,7 +51,6 @@ export function getRequiredLevelFiles(options = {}) {
     'main/MissionGroup/Water/items.level.json',
     'main/MissionGroup/AIWaypointsGroup/items.level.json',
     'main/MissionGroup/AIDecalWaypointsGroup/items.level.json',
-    'main.level.json',
   ];
 
   if (requiresVegetation) {

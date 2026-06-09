@@ -14,7 +14,9 @@ test('getRequiredLevelFiles returns core files', () => {
   assert.ok(required.includes('signals.json'));
   assert.ok(required.includes('art/terrains/terrain.ter'));
   assert.ok(required.includes('main/MissionGroup/items.level.json'));
-  assert.ok(required.includes('main.level.json'));
+  // The legacy monolithic entry point must NOT come back: official levels ship
+  // only the main/ folder tree, and the duplicated file drifted from it.
+  assert.equal(required.includes('main.level.json'), false);
   assert.equal(required.includes('main/MissionGroup/roads/items.level.json'), false);
 });
 
@@ -67,6 +69,6 @@ test('validateBeamNGZipStructure throws and includes missing file paths', () => 
 
   assert.throws(
     () => validateBeamNGZipStructure(zip, base),
-    /main\.level\.json/
+    /main\/MissionGroup\/items\.level\.json/
   );
 });

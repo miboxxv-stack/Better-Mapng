@@ -62,7 +62,6 @@ top-level content folder — `levels` — never a wrapper/mod-name folder.)
 ```
 levels/<levelId>/
 ├── info.json                         # level metadata (§2)
-├── main.level.json                   # legacy/compat monolithic entrypoint (§9)
 ├── terrain.terrain.json              # terrain metadata (§3)
 ├── map.json                          # navigation segments (§7)
 ├── signals.json                      # traffic signals (§7)
@@ -461,12 +460,14 @@ use fog to hide the far clip.
 
 ---
 
-## 9. `main.level.json` (compat entrypoint)
+## 9. Level entry point: `main/` folder tree only
 
-A single monolithic `SimGroup{name:"MissionGroup", childs:[…]}` mirroring the folder
-tree, with `__parent` stripped. The modern, preferred entrypoint is the `main/`
-folder tree (§1, §8); `main.level.json` is kept only as a fallback for loaders that
-expect it. (`Level-Metadata.md` describes `main/` as the current preferred format.)
+The export ships only the modern `main/` folder tree (§1, §8) — the entry point
+`Level-Metadata.md` describes as the current preferred format and the only one
+official levels use. The legacy monolithic `main.level.json` is intentionally NOT
+written: the duplicate drifted from the folder tree (it lacked `Decal_Roads`,
+`roads`, and `AIWaypointsGroup`), which risked a silently degraded level if a
+loader ever preferred it over `main/`.
 
 ---
 

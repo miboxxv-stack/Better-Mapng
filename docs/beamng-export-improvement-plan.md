@@ -66,7 +66,7 @@ long-term risk to conformance because it makes targeted change hard.
 8. **Split by artifact.** Extract cohesive modules behind small interfaces, each
    owning one guide section and its tests:
    - `export/terrain.js` (§3/§4 — .ter, terrain.json, TerrainBlock, materials)
-   - `export/sceneTree.js` (§8/§9 — MissionGroup tree + main.level.json)
+   - `export/sceneTree.js` (§8/§9 — MissionGroup tree)
    - `export/roads.js` (§7 — decal/architect/mesh + map.json + signals)
    - `export/vegetation.js` (§5)
    - `export/meta.js` (§2 — info.json, sites, previews)

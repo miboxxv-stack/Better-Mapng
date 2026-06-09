@@ -6050,68 +6050,12 @@ export async function exportBeamNGLevel(terrainData, center, options = {}) {
 
   zip.file(`${base}/main/MissionGroup/PlayerDropPoints/items.level.json`, toNDJSON(playerDropPointItems));
 
-  // Fallback monolithic entrypoint for loaders that expect /levels/<id>/main.level.json.
-  const toMainLevelObject = (obj) => {
-    const { __parent, ...rest } = obj;
-    return rest;
-  };
-  const mainLevelChilds = [
-    {
-      class: 'SimGroup',
-      name: 'sky_and_sun',
-      childs: rewrittenSkyAndSunItems.map(toMainLevelObject),
-    },
-    {
-      class: 'SimGroup',
-      name: 'level_objects',
-      childs: rewrittenLevelObjectItems.map(toMainLevelObject),
-    },
-    {
-      class: 'SimGroup',
-      name: 'PlayerDropPoints',
-      childs: playerDropPointItems.map(toMainLevelObject),
-    },
-    {
-      class: 'SimGroup',
-      name: 'Water',
-      childs: rewrittenWaterObjects.map(toMainLevelObject),
-    },
-    ...(vegetationItems.length > 0
-      ? [{
-          class: 'SimGroup',
-          name: 'vegetation',
-          childs: rewrittenVegetationItems.map(toMainLevelObject),
-        }]
-      : []),
-    ...(meshRoads.length > 0
-      ? [{
-          class: 'SimGroup',
-          name: 'Mesh_roads',
-          childs: meshRoads.map(toMainLevelObject),
-        }]
-      : []),
-    ...(barrierFolderItems.length > 0
-      ? [{
-          class: 'SimGroup',
-          name: 'barriers',
-          childs: barrierFolderItems.map(toMainLevelObject),
-        }]
-      : []),
-    ...(signObjects.length > 0
-      ? [{
-          class: 'SimGroup',
-          name: 'signs',
-          childs: rewrittenSignObjects.map(toMainLevelObject),
-        }]
-      : []),
-  ];
-
-  zip.file(`${base}/main.level.json`, JSON.stringify({
-    class: 'SimGroup',
-    name: 'MissionGroup',
-    enabled: '1',
-    childs: mainLevelChilds,
-  }, null, 2));
+  // NOTE: no main.level.json is written. The modern `main/` folder tree is the
+  // preferred level entry point (Level-Metadata.md §Level discovery); official
+  // levels ship only `main/`. The legacy monolithic file used to be emitted as a
+  // "fallback" but drifted from the folder tree (it lacked Decal_Roads, roads,
+  // and AIWaypointsGroup), risking a silently degraded level if a loader ever
+  // preferred it over `main/`.
 
   validateBeamNGZipStructure(zip, base, {
     requiresVegetation: vegetationItems.length > 0,
