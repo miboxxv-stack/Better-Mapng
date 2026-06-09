@@ -546,3 +546,56 @@ test('camera bookmarks: CameraBookmarks group ships valid editor viewpoints', as
       'CameraBookmarks SimGroup missing from MissionGroup');
   });
 });
+
+// ── DecalRoad batch builder safety — no degenerate node spacing ───────────────
+// Near-duplicate consecutive nodes make BeamNG's improvedSpline divide by a
+// ~zero-length segment; the engine then logs "packed position exceeded
+// supported local range … by inf m" and drops the batch in-game.
+test('road nodes: sanitizeRoadNodes collapses near-duplicates and keeps endpoints', async () => {
+  const { sanitizeRoadNodes } = await import('../services/exportBeamNGLevel.js');
+
+  // Near-duplicate after the first node and a near-duplicate terminus.
+  const nodes = [
+    [0, 0, 1, 2],
+    [0.001, 0, 1, 2],      // ~1 mm from previous → dropped
+    [2, 0, 1, 2],
+    [4, 0, 1, 2],
+    [4.0005, 0, 1, 2],     // terminus ~0.5 mm away → replaces previous node
+  ];
+  const clean = sanitizeRoadNodes(nodes);
+  assert.deepEqual(clean, [[0, 0, 1, 2], [2, 0, 1, 2], [4.0005, 0, 1, 2]]);
+
+  // Non-finite nodes are dropped entirely.
+  const withInf = sanitizeRoadNodes([[0, 0, 1, 2], [Infinity, 0, 1, 2], [3, 0, 1, 2]]);
+  assert.deepEqual(withInf, [[0, 0, 1, 2], [3, 0, 1, 2]]);
+
+  // Degenerate roads (everything inside minSpacing) vanish instead of glitching.
+  assert.deepEqual(sanitizeRoadNodes([[0, 0, 1, 2], [0.01, 0, 1, 2]]), []);
+});
+
+test('road nodes: exported DecalRoads contain no non-finite or near-duplicate nodes', async () => {
+  await withZip(async (zip) => {
+    let checked = 0;
+    for (const path of Object.keys(zip.files)) {
+      if (!/Decal_Roads\/[^/]+\/items\.level\.json$/.test(path)) continue;
+      const text = await zip.file(path).async('string');
+      if (!text.trim()) continue;
+      for (const obj of parseNDJSON(text)) {
+        if (obj.class !== 'DecalRoad') continue;
+        checked += 1;
+        for (let i = 0; i < obj.nodes.length; i++) {
+          for (const v of obj.nodes[i]) {
+            assert.ok(Number.isFinite(v), `non-finite node value in ${obj.name}`);
+          }
+          if (i === 0) continue;
+          const [ax, ay] = obj.nodes[i - 1];
+          const [bx, by] = obj.nodes[i];
+          const spacing = Math.hypot(bx - ax, by - ay);
+          assert.ok(spacing >= 0.05,
+            `${obj.name} nodes ${i - 1}/${i} are ${spacing.toFixed(4)} m apart (degenerate spacing)`);
+        }
+      }
+    }
+    assert.ok(checked > 0, 'expected at least one DecalRoad to verify');
+  });
+});

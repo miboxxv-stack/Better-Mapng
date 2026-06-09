@@ -1723,20 +1723,58 @@ function offsetNodes(nodes, offset, halfWidth) {
   return out;
 }
 
+// Minimum XY spacing between consecutive road nodes. Near-duplicate nodes
+// (clip points landing on an original vertex, the resampler's exact-endpoint
+// append, junction trim endpoints — all then rounded to mm) give BeamNG's
+// improvedSpline a ~zero-length segment; the tangent math divides by it and
+// the batch builder logs "packed position exceeded supported local range …
+// by inf m" and drops that batch. The community MapNG guide documents the
+// same glitch and fixes it in-editor by deleting the too-close node.
+const MIN_ROAD_NODE_SPACING_M = 0.15;
+
+/**
+ * Drop non-finite road nodes and collapse consecutive nodes closer than
+ * minSpacing in XY. The true endpoint is preserved: a too-close final node
+ * replaces the previously kept one instead of being dropped. Works for any
+ * node arity ([x,y,z,width] DecalRoads, 8-value MeshRoads). Returns [] when
+ * fewer than 2 usable nodes remain.
+ */
+export function sanitizeRoadNodes(nodes, minSpacing = MIN_ROAD_NODE_SPACING_M) {
+  if (!Array.isArray(nodes)) return [];
+  const finite = nodes.filter((n) => Array.isArray(n) && n.every((v) => Number.isFinite(v)));
+  if (finite.length < 2) return [];
+
+  const out = [finite[0]];
+  for (let i = 1; i < finite.length; i++) {
+    const node = finite[i];
+    const prev = out[out.length - 1];
+    const spacing = Math.hypot(node[0] - prev[0], node[1] - prev[1]);
+    if (spacing >= minSpacing) {
+      out.push(node);
+    } else if (i === finite.length - 1 && out.length >= 2) {
+      // Keep the road's real terminus; the previously kept node was within
+      // minSpacing of it and is the one that gets dropped.
+      out[out.length - 1] = node;
+    }
+  }
+  return out.length >= 2 ? out : [];
+}
+
 /**
  * Build one BeamNG DecalRoad object from prepared spline nodes and style props.
  */
 function makeRoadDecal(nodes, name, parentName, props, materialOverride) {
-  if (nodes.length < 2) return null;
+  const cleanNodes = sanitizeRoadNodes(nodes);
+  if (cleanNodes.length < 2) return null;
   const decal = {
     name,
     class: 'DecalRoad',
     persistentId: generatePersistentId(),
     __parent: parentName || 'Decal_roads',
-    position: [nodes[0][0], nodes[0][1], nodes[0][2]],
+    position: [cleanNodes[0][0], cleanNodes[0][1], cleanNodes[0][2]],
     improvedSpline: true,
     material: materialOverride || props.material,
-    nodes,
+    nodes: cleanNodes,
     breakAngle: props.breakAngle,
     renderPriority: props.renderPriority,
     textureLength: props.textureLength,
@@ -2728,9 +2766,11 @@ function generateMeshRoads(terrainData, squareSize) {
       }
 
       // Geometry was already resampled to ROAD_NODE_SPACING_M before world
-      // conversion, so nodes are uniformly spaced — no decimation needed.
-      if (rawNodes.length < 2) continue;
-      const nodes = rawNodes.map(n => [n[0], n[1], n[2], n[3], 0.5, 0, 0, 1]);
+      // conversion, but clip/chunk endpoints can still land within mm of a
+      // neighbor — collapse those like the DecalRoad path does.
+      const cleanRawNodes = sanitizeRoadNodes(rawNodes);
+      if (cleanRawNodes.length < 2) continue;
+      const nodes = cleanRawNodes.map(n => [n[0], n[1], n[2], n[3], 0.5, 0, 0, 1]);
 
       meshRoads.push({
         class: 'MeshRoad',
