@@ -10,7 +10,9 @@
       <p class="text-xs text-gray-500 max-w-xs">Your browser could not create a WebGL context. Try enabling GPU acceleration or opening the app in a different browser.</p>
     </div>
 
-    <TresCanvas v-else-if="!webGLRuntimeError" window-size :clear-color="textureType === 'none' ? '#87CEEB' : '#000000'" shadows :tone-mapping="THREE.ACESFilmicToneMapping" :tone-mapping-exposure="0.8" :renderer="{ logarithmicDepthBuffer: true }">
+    <!-- dpr caps rendering at 2x device pixels: on 3-4x mobile/hiDPI screens the
+         uncapped default more than doubles fragment work for no visible gain. -->
+    <TresCanvas v-else-if="!webGLRuntimeError" window-size :dpr="[1, 2]" :clear-color="textureType === 'none' ? '#87CEEB' : '#000000'" shadows :tone-mapping="THREE.ACESFilmicToneMapping" :tone-mapping-exposure="0.8" :renderer="{ logarithmicDepthBuffer: true }">
       <Suspense>
         <template #default>
           <TresGroup>
@@ -18,10 +20,13 @@
               :args="cameraArgs"
               :position="cameraPosition"
             />
+            <!-- 2048 per cascade: 4×4096² depth maps cost ~256 MB of GPU memory
+                 plus four full-res shadow passes per frame — far beyond what a
+                 100-unit preview scene needs. -->
             <CSMLight
               :light-direction="activeSunPreset.lightDirection"
               :cascades="4"
-              :shadow-map-size="4096"
+              :shadow-map-size="2048"
               :max-far="500"
               :light-intensity="activeSunPreset.lightIntensity"
               :ambient-intensity="activeSunPreset.ambientIntensity"

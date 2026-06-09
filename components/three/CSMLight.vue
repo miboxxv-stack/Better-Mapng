@@ -136,14 +136,40 @@ watch(
   }
 );
 
+// Sun presets change intensity too; without this watch the CSM lights kept
+// whatever intensity they were created with (direction/color updated, intensity
+// stayed stale).
+watch(
+  () => props.lightIntensity,
+  (intensity) => {
+    if (!csm.value || !Array.isArray(csm.value.lights)) return;
+    for (const light of csm.value.lights) {
+      if (!light) continue;
+      light.intensity = intensity;
+    }
+  }
+);
+
 // Hook into TresJS render loop
 const { onBeforeRender } = useLoop();
 
+// Material patching needs a full scene traversal — don't pay for it every
+// frame. Re-patch when the top-level scene graph changes (new terrain/OSM
+// group swapped in) and on a periodic fallback for materials created deeper
+// in the tree (e.g. the terrain material :key swap).
+let patchFrameCounter = 0;
+let lastSceneChildCount = -1;
+const PATCH_EVERY_N_FRAMES = 30;
+
 onBeforeRender(() => {
-  if (csm.value) {
+  if (!csm.value) return;
+  patchFrameCounter += 1;
+  const childCount = scene.value ? scene.value.children.length : 0;
+  if (childCount !== lastSceneChildCount || patchFrameCounter % PATCH_EVERY_N_FRAMES === 0) {
+    lastSceneChildCount = childCount;
     patchMaterials();
-    csm.value.update();
   }
+  csm.value.update();
 });
 
 onUnmounted(() => {
