@@ -465,10 +465,16 @@ async function generatePreviewBlob(terrainData) {
 }
 
 /**
- * Generate a grayscale heightmap PNG at the terrain's native resolution.
+ * Generate a 16-bit grayscale heightmap PNG at the terrain's native resolution.
  * Written as {terrainName}.terrainheightmap.png alongside the .ter file.
  * Referenced by terrain.terrain.json as "heightmapImage" — used by BeamNG's
  * terrain system internally (minimap display, editor visualization).
+ *
+ * 16-bit matters: Terrain-Files.md §Heightmap import reads R16 images directly
+ * as u16 height data, so we quantize with the SAME ceil-based scale as the .ter
+ * writer (exportTer.js) — re-importing this image in the World Editor restores
+ * the terrain losslessly. An 8-bit image would quantize a 500 m range to ~2 m
+ * steps and produce visibly terraced terrain on re-import.
  */
 async function generateHeightmapPng(terrainData, maxSize = Number.POSITIVE_INFINITY) {
   const { width, height, heightMap, minHeight, maxHeight } = terrainData;
@@ -477,29 +483,26 @@ async function generateHeightmapPng(terrainData, maxSize = Number.POSITIVE_INFIN
   const outH = Math.min(height, safeMaxSize);
   const scaleX = width  / outW;
   const scaleY = height / outH;
-  const range  = maxHeight - minHeight;
 
-  const canvas = document.createElement('canvas');
-  canvas.width  = outW;
-  canvas.height = outH;
-  const ctx     = canvas.getContext('2d');
-  const imgData = ctx.createImageData(outW, outH);
-  const d       = imgData.data;
+  // Same quantization as exportTer.js: stored = (h - min) × 65536 / ceil(range),
+  // matching the TerrainBlock decode stored × maxHeight / 65536.
+  const range = maxHeight - minHeight;
+  const blockMaxHeight = Math.max(1, Math.ceil(range));
+  const heightScale = 65536 / blockMaxHeight;
 
+  const data = new Uint16Array(outW * outH);
   for (let y = 0; y < outH; y++) {
     const srcY = Math.min(height - 1, Math.round(y * scaleY));
     for (let x = 0; x < outW; x++) {
       const srcX = Math.min(width - 1, Math.round(x * scaleX));
-      const h    = heightMap[srcY * width + srcX];
-      const v    = range > 0 ? Math.floor(((h - minHeight) / range) * 255) : 128;
-      const idx  = (y * outW + x) * 4;
-      d[idx] = d[idx + 1] = d[idx + 2] = v;
-      d[idx + 3] = 255;
+      let val = Math.floor((heightMap[srcY * width + srcX] - minHeight) * heightScale);
+      if (!Number.isFinite(val)) val = 0;
+      data[y * outW + x] = Math.max(0, Math.min(65535, val));
     }
   }
 
-  ctx.putImageData(imgData, 0, 0);
-  return new Promise(r => canvas.toBlob(r, 'image/png'));
+  const pngData = encode({ width: outW, height: outH, data, depth: 16, channels: 1 });
+  return new Blob([new Uint8Array(pngData)], { type: 'image/png' });
 }
 
 /**

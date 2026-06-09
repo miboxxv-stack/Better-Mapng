@@ -506,3 +506,22 @@ test('decal roads: drivable base layer carries oneWay/flipDirection/gatedRoad/la
     restore();
   }
 });
+
+// ── Terrain-Files.md §Heightmap import — terrainheightmap.png is true 16-bit ──
+test('terrain: terrainheightmap.png is 16-bit grayscale at terrain resolution', async () => {
+  await withZip(async (zip) => {
+    const png = new Uint8Array(
+      await zip.file(`${BASE}/art/terrains/terrain.terrainheightmap.png`).async('arraybuffer'),
+    );
+    // PNG signature + IHDR: width u32be @16, height u32be @20, bitDepth @24, colorType @25.
+    assert.deepEqual([...png.slice(0, 8)], [137, 80, 78, 71, 13, 10, 26, 10], 'must be a real PNG');
+    const view = new DataView(png.buffer, png.byteOffset, png.byteLength);
+    const width = view.getUint32(16);
+    const height = view.getUint32(20);
+    const meta = JSON.parse(await readText(zip, 'terrain.terrain.json'));
+    assert.equal(width, meta.size, 'heightmap width must match terrain size');
+    assert.equal(height, meta.size, 'heightmap height must match terrain size');
+    assert.equal(png[24], 16, 'bit depth must be 16 (R16 import reads u16 directly)');
+    assert.equal(png[25], 0, 'color type must be 0 (grayscale)');
+  });
+});
