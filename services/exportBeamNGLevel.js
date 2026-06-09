@@ -12,7 +12,7 @@ import { buildRoadNetwork, getEffectiveRoadLayer, mergeLinearRoadSegments } from
 import { createBeamNGLinkFileRegistry } from './beamngLinkFiles.js';
 import { getBiomeRuntimeMaterialDefs } from './beamngRuntimeMaterialCatalog.js';
 import { validateBeamNGZipStructure } from './beamngExportConformance.js';
-import { buildManualMapNavigationData } from './beamngMapNavigation.js';
+import { buildManualMapNavigationData, inferManualLaneData } from './beamngMapNavigation.js';
 import { buildBeamNGSignalExportBundle } from './beamngSignals.js';
 import {
   getBeamNGBiomeById,
@@ -1556,6 +1556,44 @@ function isOneWayRoad(tags = {}) {
 }
 
 /**
+ * Detect oneway=-1/reverse: travel runs against the OSM digitization order.
+ */
+function isReverseOneWayRoad(tags = {}) {
+  const value = String(tags.oneway ?? '').trim().toLowerCase();
+  return value === '-1' || value === 'reverse';
+}
+
+/**
+ * Build the DecalRoad AI/navigation metadata for one road corridor
+ * (DecalRoad.md §Navigation / AI pathfinding fields).
+ *
+ * Applied only to the drivable base layer; paint/edge layers stay visual-only.
+ * Mirrors the map.json segment logic in beamngMapNavigation.js so AI behavior
+ * is consistent across road modes:
+ *   - oneWay follows node order; flipDirection covers oneway=-1/reverse.
+ *   - manual lanes from lanes/lanes:forward/lanes:backward tags (autoLanes off).
+ *   - private/track roads are gated and hidden from the navigation display.
+ */
+function getDecalRoadNavMetadata(highway, tags = {}) {
+  const oneWay = isOneWayRoad(tags);
+  const meta = { ...inferManualLaneData(highway, tags, oneWay) };
+
+  if (oneWay) {
+    meta.oneWay = true;
+    if (isReverseOneWayRoad(tags)) meta.flipDirection = true;
+  }
+
+  const access = String(tags.access ?? '').trim().toLowerCase();
+  const service = String(tags.service ?? '').trim().toLowerCase();
+  if (access === 'private' || service === 'driveway' || highway === 'track') {
+    meta.gatedRoad = true;
+    meta.hiddenInNavi = true;
+  }
+
+  return meta;
+}
+
+/**
  * Parse a strictly positive integer, returning 0 when invalid.
  */
 function parsePositiveInt(value) {
@@ -1806,6 +1844,12 @@ function getLayeredRoadDecals(centerNodes, highway, tags, styleHalfWidth, parent
       drivability: layer.drivability,
     });
 
+    // Only the drivable base layer feeds the AI/navigation graph; attach the
+    // documented pathfinding fields there (oneWay, lanes, gatedRoad, …).
+    if (decal && Number.isFinite(layer.drivability) && layer.drivability > 0 && options.navMetadata) {
+      Object.assign(decal, options.navMetadata);
+    }
+
     if (decal) decals.push(decal);
   }
 
@@ -1942,6 +1986,7 @@ function generateDecalRoads(terrainData, squareSize) {
           endTrim: i === clippedSegments.length - 1 ? endTrimProfile : { center: 0, pos: 0, neg: 0 },
           isRoadStart: i === 0,
           isRoadEnd: i === clippedSegments.length - 1,
+          navMetadata: getDecalRoadNavMetadata(highway, renderTags),
         },
       );
 

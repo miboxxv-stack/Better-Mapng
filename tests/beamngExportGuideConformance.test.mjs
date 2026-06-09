@@ -422,3 +422,87 @@ test('terrain: .ter heights decode exactly against TerrainBlock.maxHeight (non-i
     restore();
   }
 });
+
+// ── DecalRoad.md §Navigation/AI pathfinding fields — drivable decals carry nav metadata ──
+test('decal roads: drivable base layer carries oneWay/flipDirection/gatedRoad/lane metadata', async () => {
+  const restore = installCanvasPolyfill();
+  try {
+    const td = makeTerrainData();
+    td.osmFeatures = [
+      { id: 'oneway_1', type: 'road',
+        tags: { highway: 'primary', oneway: 'yes', lanes: '2', name: 'oneway_ave' },
+        geometry: [{ lat: 0.8, lng: 0.2 }, { lat: 0.2, lng: 0.8 }] },
+      { id: 'reverse_1', type: 'road',
+        tags: { highway: 'secondary', oneway: '-1', name: 'reverse_st' },
+        geometry: [{ lat: 0.8, lng: 0.8 }, { lat: 0.2, lng: 0.2 }] },
+      { id: 'twoway_1', type: 'road',
+        tags: { highway: 'tertiary', lanes: '3', name: 'twoway_rd' },
+        geometry: [{ lat: 0.5, lng: 0.1 }, { lat: 0.5, lng: 0.9 }] },
+      { id: 'private_1', type: 'road',
+        tags: { highway: 'residential', access: 'private', name: 'private_ln' },
+        geometry: [{ lat: 0.3, lng: 0.1 }, { lat: 0.3, lng: 0.9 }] },
+    ];
+
+    const result = await exportBeamNGLevel(td, { lat: 0.5, lng: 0.5 }, {
+      roadType: 'decal', levelName: LEVEL_ID, biomeId: 'west_coast_usa',
+      baseTexture: 'none', pbrSource: 'none', includeBuildings: false,
+      applyFoundations: false, includeBackdrop: false, includeWater: false,
+      includeTrees: false, includeRocks: false, includeNativeBarriers: false,
+    });
+    const zip = await JSZip.loadAsync(await result.blob.arrayBuffer());
+
+    const decals = [];
+    for (const path of Object.keys(zip.files)) {
+      if (!/Decal_Roads\/[^/]+\/items\.level\.json$/.test(path)) continue;
+      const text = await zip.file(path).async('string');
+      if (text.trim()) decals.push(...parseNDJSON(text));
+    }
+    const baseOf = (group) => decals.filter((d) =>
+      d.class === 'DecalRoad' && d.drivability > 0 && d.name.startsWith(`dr_${group}`));
+    const paintOf = (group) => decals.filter((d) =>
+      d.class === 'DecalRoad' && !(d.drivability > 0) && d.name.startsWith(`dr_${group}`));
+
+    const onewayBase = baseOf('oneway_ave');
+    assert.ok(onewayBase.length > 0, 'expected drivable base decals for oneway_ave');
+    for (const d of onewayBase) {
+      assert.equal(d.oneWay, true, 'oneway=yes road must set oneWay');
+      assert.equal(d.flipDirection, undefined, 'forward oneway must not flip');
+      assert.equal(d.autoLanes, false);
+      assert.equal(d.lanesLeft, 2, 'lanes=2 oneway carries both lanes one side');
+      assert.equal(d.lanesRight, 0);
+      assert.equal(d.gatedRoad, undefined);
+    }
+
+    const reverseBase = baseOf('reverse_st');
+    assert.ok(reverseBase.length > 0, 'expected drivable base decals for reverse_st');
+    for (const d of reverseBase) {
+      assert.equal(d.oneWay, true, 'oneway=-1 road must set oneWay');
+      assert.equal(d.flipDirection, true, 'oneway=-1 travel runs against node order');
+    }
+
+    const twowayBase = baseOf('twoway_rd');
+    assert.ok(twowayBase.length > 0, 'expected drivable base decals for twoway_rd');
+    for (const d of twowayBase) {
+      assert.equal(d.oneWay, undefined, 'two-way road must not set oneWay');
+      assert.equal(d.lanesLeft + d.lanesRight, 3, 'lanes=3 split across sides');
+    }
+
+    const privateBase = baseOf('private_ln');
+    assert.ok(privateBase.length > 0, 'expected drivable base decals for private_ln');
+    for (const d of privateBase) {
+      assert.equal(d.gatedRoad, true, 'access=private road must be gated');
+      assert.equal(d.hiddenInNavi, true, 'access=private road hidden from nav display');
+    }
+
+    // Paint/edge layers stay visual-only: no nav metadata leaks onto them.
+    for (const group of ['oneway_ave', 'reverse_st', 'twoway_rd', 'private_ln']) {
+      for (const d of paintOf(group)) {
+        assert.equal(d.oneWay, undefined, `paint layer ${d.name} must not carry oneWay`);
+        assert.equal(d.lanesLeft, undefined, `paint layer ${d.name} must not carry lanes`);
+        assert.equal(d.gatedRoad, undefined, `paint layer ${d.name} must not carry gatedRoad`);
+      }
+    }
+  } finally {
+    restore();
+  }
+});

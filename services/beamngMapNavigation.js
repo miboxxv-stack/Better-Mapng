@@ -149,7 +149,10 @@ function getDefaultLaneCount(highway, isOneWay) {
   return isOneWay ? 1 : 2;
 }
 
-function inferManualLaneData(highway, tags = {}, isOneWay = false) {
+// Exported: DecalRoad nav metadata (exportBeamNGLevel) uses the same manual
+// lane inference as map.json segments so AI lane data stays consistent across
+// road modes (DecalRoad.md and Navigation-Map.md document the same fields).
+export function inferManualLaneData(highway, tags = {}, isOneWay = false) {
   const forward = parsePositiveInt(tags['lanes:forward']);
   const backward = parsePositiveInt(tags['lanes:backward']);
   const total = parsePositiveInt(tags.lanes);
