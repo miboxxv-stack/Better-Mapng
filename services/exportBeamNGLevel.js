@@ -4363,11 +4363,18 @@ function makeForestPlacement(type, point, terrainData, squareSize, seed, scaleMi
   };
 }
 
-const BEAMNG_TREE_DENSITY_MULTIPLIER = 2.5;
-const BEAMNG_GRASS_DENSITY_MULTIPLIER = 2.0;
+// Density multipliers were 2.5 (trees) / 2.0 (grass); together with the
+// near-world-sized grass render radius below they made dense vegetation areas
+// GPU-bound. 1.5/1.0 keeps coverage convincing at a fraction of the cost.
+const BEAMNG_TREE_DENSITY_MULTIPLIER = 1.5;
+const BEAMNG_GRASS_DENSITY_MULTIPLIER = 1.0;
 const BEAMNG_MAX_FOREST_PLACEMENTS_PER_TYPE = 12000;
 const BEAMNG_MAX_GROUNDCOVER_ELEMENTS = 650000;
 const BEAMNG_MAX_GROUNDCOVER_OBJECTS = 48;
+// Grass billboards are camera-relative: GroundCover generates elements out to
+// `radius` meters from the viewer. Official levels keep this around 80–160 m;
+// grass beyond that is invisible anyway and is pure overdraw.
+const BEAMNG_GROUNDCOVER_MAX_RADIUS = 160;
 
 // A GroundCover object spreads `maxElements` across a gridSize×gridSize grid of
 // cells, so per-cell density is maxElements / gridSize². BeamNG warns
@@ -4666,7 +4673,13 @@ function buildGroundCoverObjects(terrainData, squareSize, includeTrees, biome) {
   const grassClumpScale = Math.max(1, Math.sqrt(BEAMNG_GRASS_DENSITY_MULTIPLIER));
   const widthMeters = terrainData.width * squareSize;
   const heightMeters = terrainData.height * squareSize;
-  const mapRadius = Math.max(60, roundTo(Math.min(widthMeters, heightMeters) * 0.85, 3));
+  // Cap the camera-relative render radius: 0.85× the world size (the old value)
+  // drew grass billboards out to ~870 m on a 1 km map — the single biggest
+  // vegetation GPU cost. ~160 m matches official-level groundcover ranges.
+  const mapRadius = Math.max(60, Math.min(
+    BEAMNG_GROUNDCOVER_MAX_RADIUS,
+    roundTo(Math.min(widthMeters, heightMeters) * 0.85, 3),
+  ));
   const centerHeight = getTerrainHeightWorld(
     (terrainData.bounds.north + terrainData.bounds.south) * 0.5,
     (terrainData.bounds.east + terrainData.bounds.west) * 0.5,
@@ -4843,7 +4856,7 @@ function buildGroundCoverObjects(terrainData, squareSize, includeTrees, biome) {
   const baseCoverMaxElements = Math.min(
     BEAMNG_MAX_GROUNDCOVER_ELEMENTS,
     Math.max(
-      360000,
+      180000,
       Math.round(((widthMeters * heightMeters) / 3.2) * BEAMNG_GRASS_DENSITY_MULTIPLIER),
     ),
   );
@@ -4916,7 +4929,7 @@ function buildGroundCoverObjects(terrainData, squareSize, includeTrees, biome) {
     const approxRadius = Math.max(
       14,
       Math.min(
-        400,
+        BEAMNG_GROUNDCOVER_MAX_RADIUS,
         Math.max(
           Math.sqrt(areaSqM / Math.PI) * 1.3,
           Math.max(maxX - minX, maxY - minY) * 0.6,
