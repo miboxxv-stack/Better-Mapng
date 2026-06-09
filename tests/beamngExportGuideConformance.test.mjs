@@ -525,3 +525,24 @@ test('terrain: terrainheightmap.png is 16-bit grayscale at terrain resolution', 
     assert.equal(png[25], 0, 'color type must be 0 (grayscale)');
   });
 });
+
+// ── CameraBookmark.md — editor bookmarks ship like official levels ────────────
+test('camera bookmarks: CameraBookmarks group ships valid editor viewpoints', async () => {
+  await withZip(async (zip) => {
+    const items = parseNDJSON(await readText(zip, 'main/MissionGroup/CameraBookmarks/items.level.json'));
+    const bookmarks = items.filter((o) => o.class === 'CameraBookmark');
+    assert.ok(bookmarks.length >= 2, 'expected map overview + spawn bookmarks');
+    for (const bm of bookmarks) {
+      assert.equal(bm.dataBlock, 'CameraBookmarkMarker');
+      assert.equal(bm.position.length, 3);
+      assert.equal(bm.rotationMatrix.length, 9);
+      for (const v of [...bm.position, ...bm.rotationMatrix]) {
+        assert.ok(Number.isFinite(v), `non-finite transform value in ${bm.name}`);
+      }
+    }
+    // The group must be registered in the MissionGroup tree (recursive loading).
+    const mission = parseNDJSON(await readText(zip, 'main/MissionGroup/items.level.json'));
+    assert.ok(mission.some((o) => o.class === 'SimGroup' && o.name === 'CameraBookmarks'),
+      'CameraBookmarks SimGroup missing from MissionGroup');
+  });
+});

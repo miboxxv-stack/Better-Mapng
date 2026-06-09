@@ -5329,6 +5329,7 @@ export async function exportBeamNGLevel(terrainData, center, options = {}) {
   zip.folder(`${base}/main/MissionGroup/AIWaypointsGroup`);
   zip.folder(`${base}/main/MissionGroup/AIDecalWaypointsGroup`);
   zip.folder(`${base}/main/MissionGroup/PlayerDropPoints`);
+  zip.folder(`${base}/main/MissionGroup/CameraBookmarks`);
   zip.folder(`${base}/main/MissionGroup/Water`);
   if (barrierFolderItems.length > 0) {
     zip.folder(`${base}/main/MissionGroup/barriers`);
@@ -5803,6 +5804,7 @@ export async function exportBeamNGLevel(terrainData, center, options = {}) {
     { __parent: 'MissionGroup', class: 'SimGroup', name: 'PlayerDropPoints', persistentId: generatePersistentId() },
     { __parent: 'MissionGroup', class: 'SimGroup', name: 'AIWaypointsGroup', persistentId: generatePersistentId() },
     { __parent: 'MissionGroup', class: 'SimGroup', name: 'AIDecalWaypointsGroup', persistentId: generatePersistentId() },
+    { __parent: 'MissionGroup', class: 'SimGroup', name: 'CameraBookmarks', persistentId: generatePersistentId() },
     { __parent: 'MissionGroup', class: 'SimGroup', name: 'Water', persistentId: generatePersistentId() },
     ...((forestFiles.length > 0 || groundCoverObjects.length > 0) ? [{
       __parent: 'MissionGroup',
@@ -6101,6 +6103,42 @@ export async function exportBeamNGLevel(terrainData, center, options = {}) {
     }];
 
   zip.file(`${base}/main/MissionGroup/PlayerDropPoints/items.level.json`, toNDJSON(playerDropPointItems));
+
+  // ── main/MissionGroup/CameraBookmarks/items.level.json ─────────────────────
+  // Editor camera bookmarks (CameraBookmark.md; every official level ships a
+  // CameraBookmarks group). One bookmark frames the whole map from the south,
+  // one frames the spawn area — useful starting viewpoints for first-time
+  // editing and screenshot workflows. Matrices: row0=right, row1=forward,
+  // row2=up; forward tilted down toward +Y (north).
+  const PITCH_DOWN_45 = [1, 0, 0, 0, 0.707107, -0.707107, 0, 0.707107, 0.707107];
+  const PITCH_DOWN_30 = [1, 0, 0, 0, 0.866025, -0.5, 0, 0.5, 0.866025];
+  const cameraBookmarkItems = [
+    {
+      __parent: 'CameraBookmarks',
+      class: 'CameraBookmark',
+      dataBlock: 'CameraBookmarkMarker',
+      name: 'map_overview',
+      internalName: 'map_overview',
+      persistentId: generatePersistentId(),
+      position: [0, roundTo(-worldSize * 0.35, 1), roundTo(maxHeight + worldSize * 0.35, 1)],
+      rotationMatrix: PITCH_DOWN_45,
+    },
+    {
+      __parent: 'CameraBookmarks',
+      class: 'CameraBookmark',
+      dataBlock: 'CameraBookmarkMarker',
+      name: 'spawn_area',
+      internalName: 'spawn_area',
+      persistentId: generatePersistentId(),
+      position: [
+        spawnPosition[0],
+        roundTo(spawnPosition[1] - 25, 1),
+        roundTo(spawnPosition[2] + 15, 1),
+      ],
+      rotationMatrix: PITCH_DOWN_30,
+    },
+  ];
+  zip.file(`${base}/main/MissionGroup/CameraBookmarks/items.level.json`, toNDJSON(cameraBookmarkItems));
 
   // NOTE: no main.level.json is written. The modern `main/` folder tree is the
   // preferred level entry point (Level-Metadata.md §Level discovery); official

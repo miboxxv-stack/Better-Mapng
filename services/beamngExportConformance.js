@@ -46,6 +46,7 @@ export function getRequiredLevelFiles(options = {}) {
     'main/items.level.json',
     'main/MissionGroup/items.level.json',
     'main/MissionGroup/PlayerDropPoints/items.level.json',
+    'main/MissionGroup/CameraBookmarks/items.level.json',
     'main/MissionGroup/sky_and_sun/items.level.json',
     'main/MissionGroup/level_objects/items.level.json',
     'main/MissionGroup/Water/items.level.json',
