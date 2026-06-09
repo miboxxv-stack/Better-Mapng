@@ -4803,7 +4803,7 @@ function buildGroundCoverObjects(terrainData, squareSize, includeTrees, biome) {
         probability: 1,
         sizeMax: 0.7,
         sizeMin: 0.42,
-        windScale: 0.2,
+        windScale: 0.08,
       },
       {
         billboardUVs: [0, 0, 0.507812023, 0.488281012],
@@ -4813,7 +4813,7 @@ function buildGroundCoverObjects(terrainData, squareSize, includeTrees, biome) {
         probability: 0.7,
         sizeMax: 0.65,
         sizeMin: 0.38,
-        windScale: 0.2,
+        windScale: 0.08,
       },
       {
         billboardUVs: [0, 0.50781101, 0.5, 0.49218899],
@@ -4823,7 +4823,7 @@ function buildGroundCoverObjects(terrainData, squareSize, includeTrees, biome) {
         probability: 0.55,
         sizeMax: 0.58,
         sizeMin: 0.34,
-        windScale: 0.2,
+        windScale: 0.08,
       },
       {
         billboardUVs: [0.5, 0.503906012, 0.5, 0.496093988],
@@ -4834,7 +4834,7 @@ function buildGroundCoverObjects(terrainData, squareSize, includeTrees, biome) {
         probability: 0.45,
         sizeMax: 0.52,
         sizeMin: 0.32,
-        windScale: 0.2,
+        windScale: 0.08,
       },
       {}, {}, {}, {},
     ];
@@ -4863,13 +4863,14 @@ function buildGroundCoverObjects(terrainData, squareSize, includeTrees, biome) {
     maxBillboardTiltAngle: 40,
     maxElements: baseCoverMaxElements,
     windGustLength: 1.7,
-    windGustStrength: 0.2,
+    windGustStrength: 0.1,
     // windGustFrequency drives gust recurrence and windTurbulenceStrength gives
     // the turbulence an amplitude — without the latter, windTurbulenceFrequency
-    // alone produced no sway. Mild values matched to the template-cover path.
+    // alone produced no sway. Gentle values matched to the template-cover path;
+    // stronger sway noticeably loads the GPU near dense grass.
     windGustFrequency: 0.1,
-    windTurbulenceFrequency: 0.3,
-    windTurbulenceStrength: 0.1,
+    windTurbulenceFrequency: 0.2,
+    windTurbulenceStrength: 0.05,
     seed: 11,
     Types: buildGrassTypes(1),
   }];
@@ -4943,10 +4944,10 @@ function buildGroundCoverObjects(terrainData, squareSize, includeTrees, biome) {
       maxBillboardTiltAngle: 40,
       maxElements: fieldMaxElements,
       windGustLength: 1.7,
-      windGustStrength: 0.2,
+      windGustStrength: 0.1,
       windGustFrequency: 0.1,
-      windTurbulenceFrequency: 0.3,
-      windTurbulenceStrength: 0.1,
+      windTurbulenceFrequency: 0.2,
+      windTurbulenceStrength: 0.05,
       seed: 100 + areaObjectIndex,
       Types: buildGrassTypes(1.25),
     });
@@ -6087,8 +6088,11 @@ export async function exportBeamNGLevel(terrainData, center, options = {}) {
     }, {
       // Global directional wind so placed forest items actually sway (Forest.md
       // §ForestWindEmitter). Without an active emitter the trees are static —
-      // base levels always ship one. Mild, natural values; radialEmitter:false
-      // makes it level-wide so position is irrelevant.
+      // base levels always ship one. radialEmitter:false makes it level-wide so
+      // position is irrelevant. Values are deliberately gentle: the wind sim
+      // runs every frame for every visible forest item, and the original
+      // strength-1 / gustFrequency-3 / turbulenceFrequency-2 combination kept
+      // GPUs/CPUs working hard near dense tree coverage.
       __parent: 'vegetation',
       class: 'ForestWindEmitter',
       name: 'forest_wind',
@@ -6096,13 +6100,13 @@ export async function exportBeamNGLevel(terrainData, center, options = {}) {
       position: [0, 0, 0],
       windEnabled: true,
       radialEmitter: false,
-      strength: 1,
-      gustStrength: 0.5,
-      gustFrequency: 3,
-      gustYawAngle: 10,
-      gustYawFrequency: 4,
-      turbulenceStrength: 0.25,
-      turbulenceFrequency: 2,
+      strength: 0.3,
+      gustStrength: 0.15,
+      gustFrequency: 0.5,
+      gustYawAngle: 5,
+      gustYawFrequency: 1,
+      turbulenceStrength: 0.1,
+      turbulenceFrequency: 0.5,
     }] : []),
     ...groundCoverObjects,
   ];
