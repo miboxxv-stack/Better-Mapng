@@ -414,19 +414,20 @@ test('exportBeamNGLevel gives DefaultMaterial real surface detail + non-asphalt 
       'DefaultMaterial should no longer use asphalt physics for unclassified land',
     );
 
-    // The asphalt material must use its own dedicated base color (not the shared
-    // terrain.png) so user-painted new roads read as asphalt, and that texture
-    // must be bundled.
+    // The asphalt material shares the per-export terrain base (satellite/OSM
+    // imagery) so its painted edge blends smoothly with the surrounding terrain.
+    // An independent dark base made the jagged layer-map boundary high-contrast
+    // ("ink-blot" road edges), so it must NOT use a dedicated base texture.
     const asphaltDef = Object.values(defs).find((d) => d?.internalName === 'asphalt');
     assert.ok(asphaltDef, 'Expected an asphalt terrain material');
     assert.match(
       String(asphaltDef.baseColorBaseTex),
-      /asphalt_base_b\.png$/,
-      `Asphalt should use its own base color, got "${asphaltDef.baseColorBaseTex}"`,
+      /art\/terrains\/terrain\.png$/,
+      `Asphalt should share the terrain base, got "${asphaltDef.baseColorBaseTex}"`,
     );
     assert.ok(
-      zip.file('levels/mapng_demo/art/terrains/asphalt_base_b.png'),
-      'Missing bundled asphalt_base_b.png',
+      !zip.file('levels/mapng_demo/art/terrains/asphalt_base_b.png'),
+      'asphalt_base_b.png should not be bundled',
     );
   } finally {
     restorePolyfills();

@@ -92,17 +92,22 @@ documents working *around* in the World Editor — each is a candidate to fix at
 the source so users don't have to.
 
 11. **Asphalt color won't match on user-added roads (🟡, biggest UX pain).
-    ✅ DONE (needs in-game eyes).** All terrain materials shared one base-color
-    texture, so painting asphalt onto a *new* road took on whatever color
-    (often grass-green) the base showed there — forcing his multi-step Paint.NET
-    workflow.
-    - Done: the asphalt terrain material now ships with its own neutral-dark
-      base color (`asphalt_base_b.png`, generated + bundled) instead of sharing
-      `terrain.png`; detail/macro slots still supply surface grain
-      (`osmTerrainMaterials.js`). Painted asphalt reads as asphalt everywhere.
-      Covered by the OSM/PBR integration test. **Verify in-game:** tune the base
-      RGB (currently 63,63,66) and confirm road edges still blend acceptably
-      (the guide flags blocky edges as this approach's known tradeoff).
+    ⛔ REVERTED — needs a different approach.** All terrain materials share one
+    base-color texture, so painting asphalt onto a *new* road takes on whatever
+    color (often grass-green) the base shows there.
+    - First attempt gave the asphalt material its own dark base
+      (`asphalt_base_b.png`). Two problems killed it: (a) the texture was 64² but
+      the `TerrainMaterialTextureSet` requires 2048², so BeamNG mis-rendered the
+      material; (b) even sized right, a solid dark independent base made the
+      jagged per-pixel layer-map boundary high-contrast against the surroundings
+      — "ink-blot" road edges. Reverted to sharing the terrain base.
+    - Reassessment: MapNG's roads are **decal roads** (`DefaultDecalRoadMaterial`)
+      drawn on top, which are already asphalt-colored regardless of terrain. The
+      terrain asphalt material only shows where a user manually paints it without
+      a decal — a narrow case not worth a road-wide visual regression.
+    - If revisited: prefer the guide's Method 2 (bake the known OSM road mask into
+      `terrain.png` darker) so existing roads' terrain color is right *and* edges
+      keep blending, rather than an independent base. Lower priority.
 
 12. **Textureless "default" terrain material next to roads (🟡). ✅ DONE
     (needs in-game eyes).** He found a flat, untextured `default` material
