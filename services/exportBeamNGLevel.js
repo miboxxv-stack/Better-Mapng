@@ -4969,7 +4969,8 @@ function buildGroundCoverObjects(terrainData, squareSize, includeTrees, biome) {
  *   'image' is accepted for backward compatibility and falls back to OSM inference, 'none' disables PBR materials.
  *   Legacy boolean option `generatePbrMaterials` is still accepted for backward compatibility.
  * @param {number}  [options.seaLevelOffset=0]              — offset in meters applied to exported sea-level WaterPlane Z
- * @param {boolean} [options.useMeshRoads=false]            — export roads as 3D MeshRoad geometry instead of flat DecalRoad decals
+ * @param {'decal'|'architect'|'mesh'|'none'} [options.roadType='decal'] — road system: layered DecalRoads (recommended),
+ *   a Road Architect session, 3D MeshRoad geometry, or no generated roads
  */
 export async function exportBeamNGLevel(terrainData, center, options = {}) {
   const {
@@ -4984,7 +4985,10 @@ export async function exportBeamNGLevel(terrainData, center, options = {}) {
     includeRocks = false,
     backdropElevationSource = 'global30m',
     backdropGpxzApiKey = '',
-    roadType = 'architect',
+    // DecalRoads are the recommended road system: the community MapNG guide
+    // calls Road Architect unstable for serious editing, and the single-tile UI
+    // already defaults to 'decal'. Keep all entry points aligned on that.
+    roadType = 'decal',
     biomeId,
     levelName: requestedLevelName = '',
     country,

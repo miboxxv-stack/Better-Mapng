@@ -1151,7 +1151,7 @@ const DEFAULT_COMBINED_LEVEL_OPTIONS = {
   levelName: '',
   baseTexture: 'hybrid',
   pbrSource: 'osm',
-  roadType: 'architect',
+  roadType: 'decal',
   biomeId: '',
   backdropSource: 'off',
   includeBuildings: true,
