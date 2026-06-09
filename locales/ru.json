@@ -198,6 +198,8 @@
     "qualityLow": "Низкий полигон",
     "qualityBalanced": "Сбалансированно",
     "qualityMaxSafe": "Макс. безопасная детализация",
+    "qualityFull": "Полная детализация",
+    "qualityFullHint": "Отрисовывает нативную сетку рельефа — выше нагрузка на GPU и память.",
     "environment": "Окружение",
     "sunPositioning": "Положение солнца",
     "textureMode": "Режим текстуры",

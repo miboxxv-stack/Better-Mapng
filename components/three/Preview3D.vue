@@ -60,7 +60,7 @@
             <SurroundingTerrain3D
               :terrain-data="terrainData"
               :visible="showSurroundings"
-              :quality="meshQuality"
+              :quality="surroundingQuality"
               :texture-mode="surroundingTextureType"
               @loading-state="handleSurroundingsLoadingState"
             />
@@ -133,6 +133,22 @@
         >
           <option v-for="s in sunPositionOptions" :key="s" :value="s">{{ s }}</option>
         </select>
+      </div>
+
+      <!-- Terrain Mesh Quality -->
+      <div class="space-y-2 mb-4">
+        <label class="text-xs text-gray-500 dark:text-gray-400 flex items-center gap-1">
+          <Layers :size="12" /> {{ t('preview.meshQuality') }}
+        </label>
+        <select
+          v-model="meshQuality"
+          :class="[SELECT_SM, 'appearance-none hover:bg-gray-50 dark:hover:bg-gray-700']"
+        >
+          <option v-for="q in meshQualityOptions" :key="q.value" :value="q.value">{{ t(q.labelKey) }}</option>
+        </select>
+        <p v-if="meshQuality === 'full'" class="text-[10px] text-gray-400 dark:text-gray-500">
+          {{ t('preview.qualityFullHint') }}
+        </p>
       </div>
 
       <!-- Overlays -->
@@ -433,7 +449,18 @@ const SUN_PRESETS = {
   },
 };
 
-const meshQuality = 'medium';
+// 'full' renders the native heightmap grid (capped at 2048 mesh; the
+// full-resolution normal map carries detail beyond that) — heavier on GPU/RAM,
+// so it is opt-in and not persisted.
+const meshQuality = ref('medium');
+const meshQualityOptions = [
+  { value: 'medium', labelKey: 'preview.qualityBalanced' },
+  { value: 'high', labelKey: 'preview.qualityMaxSafe' },
+  { value: 'full', labelKey: 'preview.qualityFull' },
+];
+// SurroundingTerrain3D has its own low/medium/high fetch profiles; 'full'
+// center-tile detail doesn't warrant re-downloading surrounding tiles.
+const surroundingQuality = computed(() => (meshQuality.value === 'full' ? 'high' : meshQuality.value));
 const preset = ref("Kloofendal Pure Sky");
 const sunPosition = ref("Mid Morning");
 const textureType = ref("hybrid");

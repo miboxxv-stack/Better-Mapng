@@ -24,6 +24,7 @@ const WATER_REFLECTION_RESOLUTION_BY_QUALITY = {
   low: 64,
   medium: 96,
   high: 128,
+  full: 128,
 };
 const WATER_REFLECTION_UPDATE_EVERY_N_FRAMES = 2;
 const WATER_REFLECTION_FAR = 600;
@@ -212,21 +213,114 @@ onBeforeRender(() => {
   lastReflectionCameraQuaternion.copy(activeCamera.quaternion);
 });
 
+// ── Full-resolution normal map ───────────────────────────────────────────────
+// Lighting detail decoupled from vertex density: a normal map computed from the
+// SOURCE heightmap gives per-pixel shading of the real data even where the mesh
+// is stride-decimated. A 4096² normal map is a ~67 MB one-shot texture; the
+// equivalent geometric detail would be 16.7M vertices (~1 GB of buffers — the
+// memory wall previous attempts hit, see dbd2fa2/5541222).
+const NORMAL_MAP_SIZE_BY_QUALITY = {
+  low: 1024,
+  medium: 2048,
+  high: 2048,
+  full: 4096,
+};
+
+const terrainNormalTexture = shallowRef(null);
+const terrainNormalScale = markRaw(new THREE.Vector2(1, 1));
+
+const buildTerrainNormalTexture = (data, targetSize, meshStride) => {
+  const w = Number(data.width || 0);
+  const h = Number(data.height || 0);
+  if (w < 3 || h < 3 || !data.heightMap || !data.bounds) return null;
+  // At stride 1 the mesh already carries every sample — no residual detail.
+  if (!(meshStride > 1)) return null;
+
+  const latRad = ((data.bounds.north + data.bounds.south) / 2) * Math.PI / 180;
+  const realWidthMeters = (data.bounds.east - data.bounds.west) * 111320 * Math.cos(latRad);
+  if (!Number.isFinite(realWidthMeters) || realWidthMeters <= 0) return null;
+  const metersPerPixel = realWidthMeters / Math.max(1, w - 1);
+
+  const outW = Math.min(targetSize, w);
+  const outH = Math.min(targetSize, h);
+  const minHeight = Number(data.minHeight) || 0;
+  const hm = data.heightMap;
+  const sample = (x, y) => {
+    const v = hm[y * w + x];
+    return v < -10000 ? minHeight : v;
+  };
+
+  // Slope helper: central difference over ±span pixels, in meters.
+  const slopeX = (sx, sy, span) => {
+    const xL = Math.max(0, sx - span);
+    const xR = Math.min(w - 1, sx + span);
+    return (sample(xR, sy) - sample(xL, sy)) / Math.max(1e-6, (xR - xL) * metersPerPixel);
+  };
+  const slopeY = (sx, sy, span) => {
+    const yU = Math.max(0, sy - span);
+    const yD = Math.min(h - 1, sy + span);
+    return (sample(sx, yD) - sample(sx, yU)) / Math.max(1e-6, (yD - yU) * metersPerPixel);
+  };
+
+  const pixels = new Uint8Array(outW * outH * 4);
+  for (let oy = 0; oy < outH; oy++) {
+    const sy = Math.min(h - 1, Math.round((oy * (h - 1)) / Math.max(1, outH - 1)));
+    for (let ox = 0; ox < outW; ox++) {
+      const sx = Math.min(w - 1, Math.round((ox * (w - 1)) / Math.max(1, outW - 1)));
+
+      // Encode only the RESIDUAL slope the decimated mesh cannot represent:
+      // full-resolution slope minus the slope at the mesh's vertex stride.
+      // The mesh's interpolated vertex normals already light the low-frequency
+      // component; adding the full slope again would double-count hillside
+      // tilt and exaggerate shading on large slopes.
+      const dhdx = slopeX(sx, sy, 1) - slopeX(sx, sy, meshStride);
+      const dhdy = slopeY(sx, sy, 1) - slopeY(sx, sy, meshStride);
+
+      // Tangent space follows the mesh UVs (+u = east, +v = south); same sign
+      // convention as the water normal generator on this plane orientation.
+      const nx = -dhdx;
+      const ny = -dhdy;
+      const invLen = 1 / Math.hypot(nx, ny, 1);
+
+      const i = (oy * outW + ox) * 4;
+      pixels[i] = Math.round((nx * invLen * 0.5 + 0.5) * 255);
+      pixels[i + 1] = Math.round((ny * invLen * 0.5 + 0.5) * 255);
+      pixels[i + 2] = Math.round((invLen * 0.5 + 0.5) * 255);
+      pixels[i + 3] = 255;
+    }
+  }
+
+  const tex = new THREE.DataTexture(pixels, outW, outH, THREE.RGBAFormat);
+  tex.colorSpace = THREE.NoColorSpace;
+  tex.wrapS = THREE.ClampToEdgeWrapping;
+  tex.wrapT = THREE.ClampToEdgeWrapping;
+  tex.generateMipmaps = true;
+  tex.minFilter = THREE.LinearMipmapLinearFilter;
+  tex.magFilter = THREE.LinearFilter;
+  tex.anisotropy = 8;
+  tex.needsUpdate = true;
+  return markRaw(tex);
+};
+
 // Generate terrain geometry
 watch([() => props.terrainData?.heightMap, () => props.quality], () => {
   const data = toRaw(props.terrainData);
   if (!data) return;
 
+  // 'full' renders the native heightmap grid up to a hard 2048 cap: a 2049²
+  // mesh is ~4.2M vertices (~230 MB transient CPU buffers, freed after GPU
+  // upload below). Beyond that cap the full-res normal map carries the detail
+  // — naive full geometry at 8192² would be 67M vertices / ~1 GB of buffers.
   const maxDim = Math.max(Number(data.width || 0), Number(data.height || 0));
   let MAX_MESH_RESOLUTION = 2048;
   if (maxDim >= 8192) {
-    MAX_MESH_RESOLUTION = props.quality === 'high' ? 768 : props.quality === 'medium' ? 640 : 512;
+    MAX_MESH_RESOLUTION = props.quality === 'full' ? 1024 : props.quality === 'high' ? 768 : props.quality === 'medium' ? 640 : 512;
   } else if (maxDim >= 4096) {
-    MAX_MESH_RESOLUTION = props.quality === 'high' ? 1280 : props.quality === 'medium' ? 1024 : 768;
+    MAX_MESH_RESOLUTION = props.quality === 'full' ? 2048 : props.quality === 'high' ? 1280 : props.quality === 'medium' ? 1024 : 768;
   }
 
   const baseStride = Math.ceil(Math.max(data.width, data.height) / MAX_MESH_RESOLUTION);
-  const qualityMultiplier = props.quality === 'high' ? 1 : props.quality === 'medium' ? 2 : 4;
+  const qualityMultiplier = (props.quality === 'high' || props.quality === 'full') ? 1 : props.quality === 'medium' ? 2 : 4;
   const stride = Math.max(1, baseStride * qualityMultiplier);
 
   const widthSteps = Math.ceil((data.width - 1) / stride);
@@ -278,16 +372,25 @@ watch([() => props.terrainData?.heightMap, () => props.quality], () => {
 
   geometry.value = markRaw(geo);
 
+  // Full-resolution lighting detail for the decimated mesh (see above).
+  // Built from the residual against this exact stride, so it must rebuild
+  // together with the geometry.
+  if (terrainNormalTexture.value) terrainNormalTexture.value.dispose();
+  const normalMapSize = NORMAL_MAP_SIZE_BY_QUALITY[props.quality] ?? NORMAL_MAP_SIZE_BY_QUALITY.medium;
+  terrainNormalTexture.value = buildTerrainNormalTexture(data, normalMapSize, stride);
+
   // After 2 frames the WebGL renderer has uploaded the buffer to GPU.
   // Null the CPU-side TypedArrays to free the ArrayBuffer (~50-130 MB at
-  // max mesh resolution). The GPU retains the data; dispose() on unmount
-  // still correctly deletes the WebGL buffers.
+  // max mesh resolution, plus up to ~100 MB of Uint32 index at 'full').
+  // The GPU retains the data; dispose() on unmount still correctly deletes
+  // the WebGL buffers.
   requestAnimationFrame(() => requestAnimationFrame(() => {
     const g = toRaw(geometry.value);
     if (g === geo) { // only if this geometry is still active
       if (g.attributes.position) g.attributes.position.array = null;
       if (g.attributes.normal)   g.attributes.normal.array   = null;
       if (g.attributes.uv)       g.attributes.uv.array       = null;
+      if (g.index)               g.index.array               = null;
     }
   }));
 }, { immediate: true });
@@ -414,6 +517,10 @@ onUnmounted(() => {
     waterNormalTexture.value.dispose();
     waterNormalTexture.value = null;
   }
+  if (terrainNormalTexture.value) {
+    terrainNormalTexture.value.dispose();
+    terrainNormalTexture.value = null;
+  }
   disposeWaterReflection();
 });
 </script>
@@ -455,9 +562,13 @@ onUnmounted(() => {
       receive-shadow
       :geometry="geometry"
     >
+      <!-- key includes normal-map presence: toggling USE_NORMALMAP needs a
+           shader recompile, which Three only does on a fresh material. -->
       <TresMeshStandardMaterial
-        :key="texture ? 'tex' : 'clay'"
+        :key="`${texture ? 'tex' : 'clay'}-${terrainNormalTexture ? 'nm' : 'flat'}`"
         :map="texture"
+        :normal-map="terrainNormalTexture"
+        :normal-scale="terrainNormalScale"
         :color="texture ? 0xffffff : 0xb0a898"
         :roughness="texture ? 1 : 0.5"
         :metalness="texture ? 0 : 0.5"

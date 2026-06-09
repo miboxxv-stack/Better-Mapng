@@ -198,6 +198,8 @@
     "qualityLow": "Faible poly",
     "qualityBalanced": "Equilibre",
     "qualityMaxSafe": "Detail max securise",
+    "qualityFull": "Detail complet",
+    "qualityFullHint": "Affiche le maillage natif du relief — plus lourd pour le GPU et la memoire.",
     "environment": "Environnement",
     "sunPositioning": "Position du soleil",
     "textureMode": "Mode de texture",

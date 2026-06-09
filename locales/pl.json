@@ -198,6 +198,8 @@
     "qualityLow": "Niska liczba wielokątów",
     "qualityBalanced": "Zrównoważone",
     "qualityMaxSafe": "Maksymalny bezpieczny szczegół",
+    "qualityFull": "Pełny szczegół",
+    "qualityFullHint": "Renderuje natywną siatkę terenu — większe obciążenie GPU i pamięci.",
     "environment": "Środowisko",
     "sunPositioning": "Pozycjonowanie słońca",
     "textureMode": "Tryb tekstury",

@@ -218,6 +218,8 @@
     "qualityLow": "Low poly",
     "qualityBalanced": "Balanced",
     "qualityMaxSafe": "Max Safe Detail",
+    "qualityFull": "Full Detail",
+    "qualityFullHint": "Renders the native heightmap mesh — heavier on GPU and memory.",
     "environment": "Environment",
     "sunPositioning": "Sun Positioning",
     "textureMode": "Texture Mode",

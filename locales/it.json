@@ -198,6 +198,8 @@
     "qualityLow": "Poly basso",
     "qualityBalanced": "Equilibrato",
     "qualityMaxSafe": "Dettaglio Massimo Sicuro",
+    "qualityFull": "Dettaglio completo",
+    "qualityFullHint": "Renderizza la mesh nativa del terreno — più pesante per GPU e memoria.",
     "environment": "Ambiente",
     "sunPositioning": "Posizionamento Sole",
     "textureMode": "Modalità Texture",

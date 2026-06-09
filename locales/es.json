@@ -198,6 +198,8 @@
     "qualityLow": "Bajo poligono",
     "qualityBalanced": "Balanceado",
     "qualityMaxSafe": "Detalle maximo seguro",
+    "qualityFull": "Detalle completo",
+    "qualityFullHint": "Renderiza la malla nativa del terreno — mayor carga de GPU y memoria.",
     "environment": "Entorno",
     "sunPositioning": "Posicion del sol",
     "textureMode": "Modo de textura",

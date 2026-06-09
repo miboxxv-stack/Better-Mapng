@@ -198,6 +198,8 @@
     "qualityLow": "Wenig Polygone",
     "qualityBalanced": "Ausgewogen",
     "qualityMaxSafe": "Maximal sichere Details",
+    "qualityFull": "Volle Details",
+    "qualityFullHint": "Rendert das native Höhenraster — höhere GPU- und Speicherlast.",
     "environment": "Umgebung",
     "sunPositioning": "Sonnenposition",
     "textureMode": "Texturmodus",
