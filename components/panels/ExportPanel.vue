@@ -98,7 +98,6 @@
             <span class="text-[10px] text-gray-500 dark:text-gray-400 shrink-0">{{ t('exportPanel.includeBackdrop') }}</span>
             <select
               v-model="beamNGBackdropSource"
-              :disabled="isCustomUploadTerrain"
               :class="SELECT_XS"
             >
               <option value="off">Off</option>
@@ -807,8 +806,8 @@ watch(
 );
 
 watch(
-  [hasOsmData, isCustomUploadTerrain, canUseGpxzBackdrop],
-  ([hasOsm, isCustom, gpxzAllowed]) => {
+  [hasOsmData, canUseGpxzBackdrop],
+  ([hasOsm, gpxzAllowed]) => {
     if (!hasOsm) {
       if (beamNGBaseTexture.value === 'osm') {
         beamNGBaseTexture.value = resolveBeamNGBaseTexture(props.terrainData, 'hybrid');
@@ -820,9 +819,6 @@ watch(
       beamNGIncludeWater.value = false;
       beamNGIncludeTrees.value = false;
       beamNGIncludeRocks.value = false;
-    }
-    if (isCustom) {
-      beamNGBackdropSource.value = 'off';
     }
     if (beamNGBackdropSource.value === 'gpxz' && !gpxzAllowed) {
       beamNGBackdropSource.value = 'global30m';
@@ -1416,11 +1412,13 @@ const handleBeamNGLevelExport = async () => {
         : resolveBeamNGBaseTexture(td, 'hybrid'));
     const effectivePbrSource = hasOsmData.value ? beamNGPbrSource.value : 'none';
     const effectiveRoadType = hasOsmData.value ? beamNGRoadType.value : 'none';
-    const effectiveBackdropSource = isCustomUploadTerrain.value
-      ? 'off'
-      : (beamNGBackdropSource.value === 'gpxz' && !canUseGpxzBackdrop.value
-        ? 'global30m'
-        : beamNGBackdropSource.value);
+    // Custom elevation uploads can now include the surrounding backdrop too: it
+    // is fetched from the chosen external source (global 30 m / USGS 1 m / GPXZ)
+    // around the upload's geographic bounds and scaled by the processing
+    // resolution, exactly like a standard export.
+    const effectiveBackdropSource = beamNGBackdropSource.value === 'gpxz' && !canUseGpxzBackdrop.value
+      ? 'global30m'
+      : beamNGBackdropSource.value;
     const effectiveIncludeBackdrop = effectiveBackdropSource !== 'off';
     const effectiveIncludeBuildings = hasOsmData.value ? beamNGIncludeBuildings.value : false;
     const effectiveApplyFoundations = hasOsmData.value ? beamNGApplyFoundations.value : false;

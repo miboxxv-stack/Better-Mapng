@@ -179,9 +179,9 @@ function parseNDJSON(text) {
     .map((line) => JSON.parse(line));
 }
 
-async function runExportForRoadType(roadType, { includeTrees = false, pbrSource = 'none' } = {}) {
+async function runExportForRoadType(roadType, { includeTrees = false, pbrSource = 'none', terrainOverrides = {} } = {}) {
   const result = await exportBeamNGLevel(
-    makeTerrainData(),
+    { ...makeTerrainData(), ...terrainOverrides },
     { lat: 0.5, lng: 0.5 },
     {
       roadType,
@@ -428,6 +428,24 @@ test('exportBeamNGLevel gives DefaultMaterial real surface detail + non-asphalt 
       zip.file('levels/mapng_demo/art/terrains/asphalt_base_b.png'),
       'Missing bundled asphalt_base_b.png',
     );
+  } finally {
+    restorePolyfills();
+  }
+});
+
+test('exportBeamNGLevel ties TerrainBlock squareSize to processingMetersPerPixel (custom upload)', async () => {
+  const restorePolyfills = installCanvasPolyfill();
+
+  try {
+    // Custom elevation uploads carry processingMetersPerPixel (the resampled
+    // resolution) instead of metersPerPixel. The BeamNG square size — and thus
+    // worldSize, which scales the surrounding backdrop — must follow it.
+    const zip = await runExportForRoadType('decal', { terrainOverrides: { processingMetersPerPixel: 2 } });
+    const itemsPath = 'levels/mapng_demo/main/MissionGroup/level_objects/items.level.json';
+    const items = parseNDJSON(await zip.file(itemsPath).async('string'));
+    const terrain = items.find((i) => i?.class === 'TerrainBlock');
+    assert.ok(terrain, 'Expected a TerrainBlock');
+    assert.equal(terrain.squareSize, 2, 'TerrainBlock squareSize should equal processingMetersPerPixel');
   } finally {
     restorePolyfills();
   }

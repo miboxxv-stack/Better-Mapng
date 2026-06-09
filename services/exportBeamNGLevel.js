@@ -88,8 +88,17 @@ function filterOSMFeaturesToBounds(features, bounds) {
  * Compute terrain square size (meters per grid square) from bounds.
  */
 function computeSquareSize(terrainData) {
-  if (Number.isFinite(terrainData?.metersPerPixel) && terrainData.metersPerPixel > 0) {
-    return Math.round(terrainData.metersPerPixel * 100) / 100;
+  // Prefer an explicit per-pixel ground resolution. Standard exports carry
+  // `metersPerPixel`; custom elevation uploads carry `processingMetersPerPixel`
+  // (the resolution the heightmap was resampled to). Either one ties the BeamNG
+  // square size — and therefore the surrounding-backdrop scale, which is derived
+  // from worldSize = size · squareSize — directly to the processing resolution.
+  // Only when neither is present do we fall back to deriving it from bounds.
+  const explicitMpp = [terrainData?.metersPerPixel, terrainData?.processingMetersPerPixel]
+    .map(Number)
+    .find((v) => Number.isFinite(v) && v > 0);
+  if (explicitMpp != null) {
+    return Math.round(explicitMpp * 100) / 100;
   }
 
   const { bounds, width } = terrainData;
