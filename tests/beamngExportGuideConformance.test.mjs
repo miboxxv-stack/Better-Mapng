@@ -599,3 +599,28 @@ test('road nodes: exported DecalRoads contain no non-finite or near-duplicate no
     assert.ok(checked > 0, 'expected at least one DecalRoad to verify');
   });
 });
+
+test('road nodes: sanitizeRoadNodes removes ~180-degree hairpin spikes', async () => {
+  const { sanitizeRoadNodes } = await import('../services/exportBeamNGLevel.js');
+  // Straight road with a degenerate doubling-back node in the middle.
+  const nodes = [
+    [0, 0, 1, 2],
+    [2, 0, 1, 2],
+    [4, 0, 1, 2],
+    [1, 0.001, 1, 2], // path reverses ~180° onto itself
+    [6, 0, 1, 2],
+    [8, 0, 1, 2],
+  ];
+  const clean = sanitizeRoadNodes(nodes);
+  for (let i = 2; i < clean.length; i++) {
+    const [ax, ay] = clean[i - 2];
+    const [bx, by] = clean[i - 1];
+    const [cx, cy] = clean[i];
+    const dot = ((bx - ax) * (cx - bx) + (by - ay) * (cy - by)) /
+      ((Math.hypot(bx - ax, by - ay) * Math.hypot(cx - bx, cy - by)) || 1);
+    assert.ok(dot > -0.99, `hairpin survived sanitization (dot=${dot.toFixed(4)})`);
+  }
+  assert.ok(clean.length >= 2);
+  assert.deepEqual(clean[0], [0, 0, 1, 2]);
+  assert.deepEqual(clean[clean.length - 1], [8, 0, 1, 2]);
+});

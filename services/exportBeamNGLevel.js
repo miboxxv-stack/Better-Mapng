@@ -1739,23 +1739,63 @@ const MIN_ROAD_NODE_SPACING_M = 0.15;
  * node arity ([x,y,z,width] DecalRoads, 8-value MeshRoads). Returns [] when
  * fewer than 2 usable nodes remain.
  */
-export function sanitizeRoadNodes(nodes, minSpacing = MIN_ROAD_NODE_SPACING_M) {
-  if (!Array.isArray(nodes)) return [];
-  const finite = nodes.filter((n) => Array.isArray(n) && n.every((v) => Number.isFinite(v)));
-  if (finite.length < 2) return [];
+// A node where the path reverses onto itself (≈180° hairpin) is never a real
+// 2 m-spaced roadway — it is degenerate data, and improvedSpline's normal math
+// collapses on it the same way it does on zero-length segments.
+const SPIKE_REVERSAL_DOT = -0.99;
 
-  const out = [finite[0]];
-  for (let i = 1; i < finite.length; i++) {
-    const node = finite[i];
+function collapseCloseNodes(nodes, minSpacing) {
+  const out = [nodes[0]];
+  for (let i = 1; i < nodes.length; i++) {
+    const node = nodes[i];
     const prev = out[out.length - 1];
     const spacing = Math.hypot(node[0] - prev[0], node[1] - prev[1]);
     if (spacing >= minSpacing) {
       out.push(node);
-    } else if (i === finite.length - 1 && out.length >= 2) {
+    } else if (i === nodes.length - 1 && out.length >= 2) {
       // Keep the road's real terminus; the previously kept node was within
       // minSpacing of it and is the one that gets dropped.
       out[out.length - 1] = node;
     }
+  }
+  return out;
+}
+
+function removeSpikeNodes(nodes) {
+  if (nodes.length <= 2) return nodes;
+  const out = [nodes[0]];
+  for (let i = 1; i < nodes.length - 1; i++) {
+    const prev = out[out.length - 1];
+    const curr = nodes[i];
+    const next = nodes[i + 1];
+    const inX = curr[0] - prev[0];
+    const inY = curr[1] - prev[1];
+    const outX = next[0] - curr[0];
+    const outY = next[1] - curr[1];
+    const lenIn = Math.hypot(inX, inY);
+    const lenOut = Math.hypot(outX, outY);
+    if (lenIn > 1e-9 && lenOut > 1e-9) {
+      const dot = (inX * outX + inY * outY) / (lenIn * lenOut);
+      if (dot <= SPIKE_REVERSAL_DOT) continue; // drop the hairpin node
+    }
+    out.push(curr);
+  }
+  out.push(nodes[nodes.length - 1]);
+  return out;
+}
+
+export function sanitizeRoadNodes(nodes, minSpacing = MIN_ROAD_NODE_SPACING_M) {
+  if (!Array.isArray(nodes)) return [];
+  let out = nodes.filter((n) => Array.isArray(n) && n.every((v) => Number.isFinite(v)));
+
+  // Removing a spike can leave its neighbors inside minSpacing and vice versa,
+  // so alternate the two passes until stable (bounded — each pass only drops).
+  for (let pass = 0; pass < 5 && out.length >= 2; pass++) {
+    const collapsed = collapseCloseNodes(out, minSpacing);
+    const despiked = removeSpikeNodes(collapsed);
+    const stable = despiked.length === out.length;
+    out = despiked;
+    if (stable) break;
   }
   return out.length >= 2 ? out : [];
 }

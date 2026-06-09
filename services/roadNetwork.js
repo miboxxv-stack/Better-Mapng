@@ -197,6 +197,38 @@ function orientSegmentTowardNode(segment, nodeKey) {
   return null;
 }
 
+// Reject merge continuations that double back on themselves. Dual carriageways
+// are mapped in OSM as two parallel ways sharing the same name/ref/oneway, and
+// they meet at the nodes where the road splits/merges — exactly the
+// "two segments, same style key" case the merger stitches. Concatenating them
+// produces a polyline with a ~180° hairpin at the join; BeamNG's improvedSpline
+// then emits inf positions and drops the DecalRoad batch ("packed position
+// exceeded supported local range … by inf m"). cos(120°): anything turning
+// sharper than 120° at a join is not a continuation of the same roadway.
+const MERGE_REVERSAL_DOT = -0.5;
+
+function joinDirection(geometry, fromEnd) {
+  if (!Array.isArray(geometry) || geometry.length < 2) return null;
+  // Direction of travel: into the final point (fromEnd) or out of the first.
+  const a = fromEnd ? geometry[geometry.length - 2] : geometry[0];
+  const b = fromEnd ? geometry[geometry.length - 1] : geometry[1];
+  const avgLatRad = (((a.lat || 0) + (b.lat || 0)) * 0.5 * Math.PI) / 180;
+  const vx = ((b.lng || 0) - (a.lng || 0)) * Math.cos(avgLatRad);
+  const vy = (b.lat || 0) - (a.lat || 0);
+  const len = Math.hypot(vx, vy);
+  if (len < 1e-12) return null;
+  return { x: vx / len, y: vy / len };
+}
+
+function continuationKeepsDirection(currentGeometry, nextGeometry, atTail) {
+  // Tail extension: current END direction vs next START direction.
+  // Head extension: next END direction vs current START direction.
+  const into = atTail ? joinDirection(currentGeometry, true) : joinDirection(nextGeometry, true);
+  const outOf = atTail ? joinDirection(nextGeometry, false) : joinDirection(currentGeometry, false);
+  if (!into || !outOf) return true;
+  return (into.x * outOf.x + into.y * outOf.y) > MERGE_REVERSAL_DOT;
+}
+
 export function mergeLinearRoadSegments(segments = [], intersections = new Map(), options = {}) {
   if (!Array.isArray(segments) || segments.length === 0) return [];
 
@@ -243,6 +275,7 @@ export function mergeLinearRoadSegments(segments = [], intersections = new Map()
       if (!next) break;
       const oriented = orientSegmentFromNode(next, tailNode);
       if (!oriented) break;
+      if (!continuationKeepsDirection(geometry, oriented.geometry, true)) break;
       geometry = geometry.concat(oriented.geometry.slice(1));
       members.push(next);
       tailNode = oriented.nextNodeKey;
@@ -258,6 +291,7 @@ export function mergeLinearRoadSegments(segments = [], intersections = new Map()
       if (!next) break;
       const oriented = orientSegmentTowardNode(next, headNode);
       if (!oriented) break;
+      if (!continuationKeepsDirection(geometry, oriented.geometry, false)) break;
       geometry = oriented.geometry.slice(0, -1).concat(geometry);
       members.unshift(next);
       headNode = oriented.nextNodeKey;
