@@ -381,3 +381,44 @@ test('guide §7: groundModels file is valid and keeps the asphalt alias', async 
     }
   });
 });
+
+// ── Terrain-Files.md §Height scale — TerrainBlock.maxHeight ↔ .ter quantization ──
+// BeamNG decodes heightMeters = stored × (TerrainBlock.maxHeight / 65536), so the
+// .ter writer must quantize against the SAME maxHeight the TerrainBlock declares
+// (max(1, ceil(range))). With a non-integer elevation range, scaling against the
+// raw float range instead exaggerates terrain height by up to ~1 m relative to
+// every object placed at real heights.
+test('terrain: .ter heights decode exactly against TerrainBlock.maxHeight (non-integer range)', async () => {
+  const restore = installCanvasPolyfill();
+  try {
+    const td = makeTerrainData();
+    td.minHeight = 0;
+    td.maxHeight = 50.4;
+    td.heightMap = new Float32Array(64).map((_, i) => (50.4 * i) / 63);
+
+    const result = await exportBeamNGLevel(td, { lat: 0.5, lng: 0.5 }, {
+      roadType: 'decal', levelName: LEVEL_ID, biomeId: 'west_coast_usa',
+      baseTexture: 'none', pbrSource: 'none', includeBuildings: false,
+      applyFoundations: false, includeBackdrop: false, includeWater: false,
+      includeTrees: false, includeRocks: false, includeNativeBarriers: false,
+    });
+    const zip = await JSZip.loadAsync(await result.blob.arrayBuffer());
+
+    const objs = parseNDJSON(await readText(zip, 'main/MissionGroup/level_objects/items.level.json'));
+    const tb = objs.find((o) => o.class === 'TerrainBlock');
+    assert.equal(tb.maxHeight, 51, 'TerrainBlock.maxHeight must be max(1, ceil(range))');
+
+    const terBuf = new Uint8Array(await zip.file(`${BASE}/art/terrains/terrain.ter`).async('arraybuffer'));
+    const view = new DataView(terBuf.buffer, terBuf.byteOffset, terBuf.byteLength);
+    const size = view.getUint32(1, true);
+    let peakStored = 0;
+    for (let i = 0; i < size * size; i++) {
+      peakStored = Math.max(peakStored, view.getUint16(5 + i * 2, true));
+    }
+    const decodedPeak = peakStored * (tb.maxHeight / 65536);
+    assert.ok(Math.abs(decodedPeak - 50.4) < 0.01,
+      `peak terrain height must decode to ≈50.4 m via TerrainBlock.maxHeight, got ${decodedPeak}`);
+  } finally {
+    restore();
+  }
+});

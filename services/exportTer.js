@@ -28,7 +28,15 @@ export async function exportTer(terrainData, {
     });
   }
 
-  const materialNames = customMaterialNames ?? ['DefaultMaterial'];
+  // Terrain-Files.md: the layer map is u8 with 255 reserved for holes, so the
+  // loader supports at most 254 terrain materials — extras are ignored.
+  let materialNames = customMaterialNames ?? ['DefaultMaterial'];
+  if (materialNames.length > 254) {
+    console.warn('[exportTer] Truncating terrain material list to the BeamNG 254-entry limit', {
+      requested: materialNames.length,
+    });
+    materialNames = materialNames.slice(0, 254);
+  }
 
   const encoder = new TextEncoder();
 
@@ -59,13 +67,22 @@ export async function exportTer(terrainData, {
   // ── Heightmap ──────────────────────────────────────────────────────────
   // Row-major, first row = bottom of terrain (south edge) — Y is flipped
   // relative to the heightMap array (which has row 0 at the top/north).
+  //
+  // Quantization must mirror BeamNG's decode (Terrain-Files.md §Height scale):
+  //   heightMeters = storedHeight × (TerrainBlock.maxHeight / 65536)
+  // exportBeamNGLevel writes TerrainBlock.maxHeight = max(1, ceil(range)), so
+  // we scale against that same value here. Scaling against the raw float range
+  // (the old behavior) made the terrain decode up to ~1 m taller than every
+  // object placed at real heights whenever the range wasn't an integer.
   const range = maxHeight - minHeight;
+  const blockMaxHeight = Math.max(1, Math.ceil(range));
+  const heightScale = 65536 / blockMaxHeight;
   for (let y = size - 1; y >= 0; y--) {
     for (let x = 0; x < size; x++) {
       const srcIdx = y * width + x;
       const h = heightMap[srcIdx];
-      let val = 0;
-      if (range > 0) val = Math.floor(((h - minHeight) / range) * 65535);
+      let val = Math.floor((h - minHeight) * heightScale);
+      if (!Number.isFinite(val)) val = 0;
       val = Math.max(0, Math.min(65535, val));
       view.setUint16(offset, val, true);
       offset += 2;
