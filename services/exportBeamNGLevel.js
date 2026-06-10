@@ -2037,7 +2037,10 @@ function generateDecalRoads(terrainData, squareSize) {
       const segment = clippedSegments[i];
       const rawNodes = [];
       for (const pt of segment) {
-        const [wx, wy, wz] = geoToWorld(pt.lat, pt.lng, terrainData, squareSize, 0.1);
+        // geoToWorldPoint, not geoToWorld: the latter quantizes X/Y/Z to 0.1 m,
+        // which at 2 m node spacing puts visible lateral jitter into the spline
+        // (and its painted lines). Road nodes are mm-rounded below instead.
+        const [wx, wy, wz] = geoToWorldPoint(pt.lat, pt.lng, terrainData, squareSize, 0.1);
         // Defense in depth: a non-finite node becomes an inf DecalRoad position
         // that BeamNG rejects at batch build, taking the whole road down. Source
         // geometry is already sanitized in buildRoadNetwork; skip here too so no
@@ -2793,7 +2796,9 @@ function generateMeshRoads(terrainData, squareSize) {
     for (const segment of clippedSegments) {
       const rawNodes = [];
       for (const pt of segment) {
-        const [wx, wy, wz] = geoToWorld(pt.lat, pt.lng, terrainData, squareSize, 0.1);
+        // geoToWorldPoint avoids geoToWorld's 0.1 m grid quantization (see
+        // generateDecalRoads); nodes are mm-rounded below.
+        const [wx, wy, wz] = geoToWorldPoint(pt.lat, pt.lng, terrainData, squareSize, 0.1);
         // MeshRoad node: [x, y, z, fullWidth, depth, normalX, normalY, normalZ]
         rawNodes.push([
           Math.round(wx * 1000) / 1000,

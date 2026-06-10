@@ -342,6 +342,7 @@
     "configurationSession": "Configuration & Session",
     "enhanceRoads": "Smooth Roads",
     "enhanceRoadsHint": "Smooths bumps along the road. Skips bridges.",
+    "smoothingAccurateSourceHint": "This elevation source is already high-accuracy — smoothing is usually unnecessary and may soften real road grades.",
     "levelRoads": "Level Roads (Pathing)",
     "levelRoadsHint": "Forces roads to have zero transverse tilt (flat side-to-side).",
     "roadsDisabledFlat": "Unavailable with Flat elevation — the terrain is already level."

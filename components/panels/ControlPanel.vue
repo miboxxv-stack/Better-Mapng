@@ -143,6 +143,9 @@
         <p class="mt-1 ml-6 text-[10px] text-gray-500 dark:text-gray-400 leading-tight">
           {{ isFlat ? t('controlPanel.roadsDisabledFlat') : t('controlPanel.enhanceRoadsHint') }}
         </p>
+        <p v-if="!isFlat && isAccurateElevation && enhanceRoads" class="mt-1 ml-6 text-[10px] text-amber-600 dark:text-amber-400 leading-tight">
+          {{ t('controlPanel.smoothingAccurateSourceHint') }}
+        </p>
       </div>
 
       <!-- Road Pathing Toggle -->
@@ -380,6 +383,13 @@ watch(elevationSource, (newVal) => {
 // (which carve/raise elevation under roads) are meaningless — disable + force
 // them off while flat is selected.
 const isFlat = computed(() => elevationSource.value === 'none');
+
+// High-accuracy sources (1 m DEMs, GPXZ) don't have the quantization
+// stair-steps the smoothing exists to hide — smoothing them mostly adds
+// artifacts, so surface a hint when one is selected.
+const isAccurateElevation = computed(() =>
+  ['usgs', 'gpxz', 'kron86'].includes(elevationSource.value)
+);
 watch(isFlat, (flat) => {
   if (flat) {
     enhanceRoads.value = false;
