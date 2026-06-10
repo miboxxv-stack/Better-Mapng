@@ -68,7 +68,7 @@
             <OrbitControls
               ref="controlsRef"
               make-default
-              :min-distance="1"
+              :min-distance="0.1"
               :max-distance="1000"
               :min-polar-angle="0"
               :max-polar-angle="Math.PI * 0.48"
@@ -508,6 +508,20 @@ const presets = Object.keys(hdrPresets);
 const sunPositionOptions = Object.keys(SUN_PRESETS);
 const currentHdrFile = computed(() => `/hdr/${hdrPresets[preset.value]}`);
 const activeSunPreset = computed(() => SUN_PRESETS[sunPosition.value] || SUN_PRESETS.Noon);
+
+// Blender-style "infinite zoom": stock OrbitControls dollies a fraction of the
+// remaining distance to a FIXED target each scroll, so zoom asymptotes and, on
+// large maps, stalls long before you reach terrain away from the map center.
+// zoomToCursor dollies along the cursor ray and slides the orbit target with
+// the camera, so every scroll step stays useful and you can keep zooming
+// through the scene. The cientos wrapper doesn't expose this as a prop, so set
+// it on the underlying three.js controls instance once it mounts.
+watch(controlsRef, (ctrl) => {
+  const controls = ctrl?.instance || ctrl;
+  if (controls && 'zoomToCursor' in controls) {
+    controls.zoomToCursor = true;
+  }
+}, { immediate: true });
 
 const resetCamera = () => {
   if (controlsRef.value) {
