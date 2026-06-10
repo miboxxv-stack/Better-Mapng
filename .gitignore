@@ -24,5 +24,7 @@ dist-ssr
 *.sw?
 references/
 refs/
+scratch/
+tmp_unzip/
 .codex
 BASE_LEVEL.zip

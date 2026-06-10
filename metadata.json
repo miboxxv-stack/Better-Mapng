@@ -1,7 +1,0 @@
-{
-  "name": "MapNG",
-  "description": "A real-world terrain toolkit for BeamNG.drive with 16-bit heightmaps, texture exports, 3D models, and advanced batch workflows.",
-  "requestFramePermissions": [
-    "geolocation"
-  ]
-}

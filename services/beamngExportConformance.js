@@ -3,7 +3,8 @@
  *
  * This module is intentionally narrow: it validates files that every current
  * MapNG export should contain, while documenting additional official artifacts
- * as optional/roadmap items in docs/beamng-export-conformance-matrix.md.
+ * as optional/roadmap items in refs/docs/beamng-export-conformance-matrix.md
+ * (untracked local reference docs).
  */
 
 /**

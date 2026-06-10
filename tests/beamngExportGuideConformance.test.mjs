@@ -1,5 +1,6 @@
 /**
- * Executable conformance suite for docs/beamng-level-export-guide.md §10.
+ * Executable conformance suite for refs/docs/beamng-level-export-guide.md §10
+ * (untracked local reference docs).
  *
  * Each test maps to a numbered invariant in the guide's "Invariants checklist".
  * When the guide changes, update these assertions; when these fail, the export

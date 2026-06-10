@@ -7,7 +7,7 @@ BeamNG 0.37 moved most shared textures from per-level folders into a central
 redirects to the new /assets/ location. Those .link files ARE the authoritative
 old→new mapping. This script harvests them from every level zip and writes:
 
-  - docs/asset-map.json         full ground-truth map (every .link redirect)
+  - refs/docs/asset-map.json    full ground-truth map (every .link redirect; refs/ is untracked)
   - reports the subset our exporter actually references (for the migration)
 
 Run from the repo root with a game install present under refs/beamng:
@@ -27,7 +27,7 @@ from collections import Counter
 REPO = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 LEVELS_DIR = os.path.join(REPO, "refs/beamng/content/levels")
 ASSETS_DIR = os.path.join(REPO, "refs/beamng/content/assets")
-OUT_MAP = os.path.join(REPO, "docs/asset-map.json")
+OUT_MAP = os.path.join(REPO, "refs/docs/asset-map.json")
 
 # Source files that may reference level-scoped textures.
 EXPORTER_SOURCES = [
