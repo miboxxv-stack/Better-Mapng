@@ -65,7 +65,9 @@ const COLORS = {
   road: "#404040",
   path: "#7a7a7a",
   track: "#73685a", // Light brown dirt color
-  sidewalk: "#e3e1db", // Bright off-white concrete color
+  // Concrete, but muted — at #e3e1db the dense suburban-US sidewalk grid drew a
+  // bright halo around every street and parking lot in the baked texture.
+  sidewalk: "#cbc8c1",
   barrier: "#76624f",
   bridgeInfra: "#56585c",
   coastline: "#5f7680",
@@ -775,7 +777,10 @@ const getLaneLayout = (tags) => {
   // Width estimation (following OSM2World's defaults)
   if (layout.totalWidth === 0) {
     if (highway === "service") {
-      layout.totalWidth = Math.max(lanesT * defaultLaneWidth, 4.0);
+      const subtype = String(tags.service ?? "").trim().toLowerCase();
+      // Driveways and drive-throughs are single-car paths, not streets.
+      const minWidth = subtype === "driveway" || subtype === "drive-through" ? 3.0 : 4.0;
+      layout.totalWidth = Math.max(lanesT * defaultLaneWidth, minWidth);
     } else {
       layout.totalWidth = lanesT * defaultLaneWidth;
     }
@@ -935,6 +940,22 @@ const buildStableTextureWidthMap = (roads) => {
   return stableWidths;
 };
 
+/**
+ * Pavement colour per road. Parking aisles and drive-throughs read as part
+ * of the lot they sit in, not as streets — painting them full road colour
+ * (#404040) over the much lighter parking fill (#8e8b87) turns every lot
+ * into high-contrast spaghetti. Driveways stay road-like but softer.
+ */
+const getRoadPavementColor = (road) => {
+  const tags = road?.tags || {};
+  if (tags.highway === 'service') {
+    const subtype = String(tags.service ?? '').trim().toLowerCase();
+    if (subtype === 'parking_aisle' || subtype === 'drive-through') return '#7f7c78';
+    if (subtype === 'driveway') return '#56534f';
+  }
+  return COLORS.road;
+};
+
 const getStableTextureRoadWidth = (road, stableWidthMap = null) => {
   const layout = getLaneLayout(road.tags || {});
   const baseWidth = layout.totalWidth;
@@ -987,8 +1008,10 @@ const buildJunctionCap = (junction, toPixel, SCALE_FACTOR, stableWidthMap) => {
   const arms = [];
   let maxHalfW = 0;
 
+  let capColor = COLORS.road;
   junction.roads.forEach(({ road, isStart }) => {
     const halfW = (getStableTextureRoadWidth(road, stableWidthMap) / 2) * SCALE_FACTOR;
+    if (halfW > maxHalfW) capColor = getRoadPavementColor(road);
     maxHalfW = Math.max(maxHalfW, halfW);
     const geom = road.geometry;
     if (geom.length < 2) return;
@@ -1061,6 +1084,7 @@ const buildJunctionCap = (junction, toPixel, SCALE_FACTOR, stableWidthMap) => {
   return {
     center,
     centerRadius: maxHalfW * 0.28,
+    color: capColor,
     commands,
   };
 };
@@ -1091,7 +1115,7 @@ const renderJunctions = (ctx, junctionCaps) => {
       else if (command.type === 'quad') ctx.quadraticCurveTo(command.cx, command.cy, command.x, command.y);
     }
     ctx.closePath();
-    ctx.fillStyle = COLORS.road;
+    ctx.fillStyle = cap.color || COLORS.road;
     ctx.fill();
 
     ctx.beginPath();
@@ -1656,12 +1680,15 @@ const renderFeaturesToCanvas = (
       drawPathData(ctx, pts);
       if (f.tags?.footway === "sidewalk" || f.tags?.surface === "concrete") {
         ctx.strokeStyle = COLORS.sidewalk;
+        // Real sidewalks are ~1.2 m; wider strokes outline every street.
+        ctx.lineWidth = 1.2 * SCALE_FACTOR;
       } else if (["footway", "path", "track"].includes(highway)) {
         ctx.strokeStyle = COLORS.track;
+        ctx.lineWidth = 1.5 * SCALE_FACTOR;
       } else {
         ctx.strokeStyle = COLORS.path;
+        ctx.lineWidth = 1.5 * SCALE_FACTOR;
       }
-      ctx.lineWidth = 1.5 * SCALE_FACTOR;
       ctx.stroke();
     }
   });
@@ -1674,7 +1701,7 @@ const renderFeaturesToCanvas = (
 
     ctx.beginPath();
     drawPathData(ctx, centerPoints);
-    ctx.strokeStyle = COLORS.road;
+    ctx.strokeStyle = getRoadPavementColor(f);
     ctx.lineWidth = getStableTextureRoadWidth(f, stableWidthMap) * SCALE_FACTOR;
     ctx.lineCap = "round";
     ctx.lineJoin = "round";

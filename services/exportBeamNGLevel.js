@@ -8,7 +8,7 @@ import { createOSMGroup, createSurroundingMeshes, SCENE_SIZE } from './export3d.
 import { prepareCroppedTerrainData } from './cropTerrain.js';
 import { applyBuildingFoundations } from './buildingFoundations.js';
 import { ColladaExporter } from './ColladaExporter.js';
-import { buildRoadNetwork, getEffectiveRoadLayer, mergeLinearRoadSegments } from './roadNetwork.js';
+import { buildRoadNetwork, getEffectiveRoadLayer, makeRoadNodeKey, mergeLinearRoadSegments } from './roadNetwork.js';
 import { createBeamNGLinkFileRegistry } from './beamngLinkFiles.js';
 import { getBiomeRuntimeMaterialDefs } from './beamngRuntimeMaterialCatalog.js';
 import { validateBeamNGZipStructure } from './beamngExportConformance.js';
@@ -1209,6 +1209,9 @@ const EDGE_BLEND = (width) => ([
     renderPriority: 9, textureLength: 8, breakAngle: 1, startEndFadeMag: 1 },
 ]);
 
+// Line markings (center/edge/lane-separator paint) are NOT part of the static
+// templates — they depend on oneway/lanes tags and are built per corridor by
+// buildLineMarkingLayers().
 const ROAD_TEMPLATES = {
   default: [
     ASPHALT_BASE,
@@ -1217,24 +1220,34 @@ const ROAD_TEMPLATES = {
   major: [
     ASPHALT_BASE,
     ...EDGE_BLEND(2.5),
-    { name: 'line_center', material: GLOBAL_DECAL_MATERIALS.lineYellowDouble, width: 0.4, offset: 0,
-      renderPriority: 2, textureLength: 6.4, breakAngle: 1 },
-    { name: 'line_left', material: GLOBAL_DECAL_MATERIALS.lineWhite, width: 0.2, offset: -0.9, isEdgeRelative: true,
-      renderPriority: 1, textureLength: 6.4, breakAngle: 1 },
-    { name: 'line_right', material: GLOBAL_DECAL_MATERIALS.lineWhite, width: 0.2, offset: 0.9, isEdgeRelative: true,
-      renderPriority: 1, textureLength: 6.4, breakAngle: 1 },
   ],
   minor: [
     ASPHALT_BASE,
     ...EDGE_BLEND(2.0),
-    { name: 'line_center', material: GLOBAL_DECAL_MATERIALS.lineWhiteDashed, width: 0.2, offset: 0,
-      renderPriority: 2, textureLength: 6.4, breakAngle: 1 },
   ],
   unpaved: [
     { name: 'dirt', material: GLOBAL_DECAL_MATERIALS.dirtRoad, widthScale: 2.2, offset: 0,
       renderPriority: 14, textureLength: 10, breakAngle: 1, startEndFadeMag: 3, drivability: 1 },
   ],
 };
+
+// Base (asphalt/dirt) surface render priority per highway class. LOWER renders
+// ON TOP, so major roads (13) paint over the minor/service roads (15-16) they
+// overlap at junctions and parking-lot mouths, instead of an arbitrary winner.
+const SURFACE_RENDER_PRIORITY = {
+  motorway: 13, motorway_link: 13,
+  trunk: 13, trunk_link: 13,
+  primary: 13, primary_link: 13,
+  secondary: 14, secondary_link: 14,
+  tertiary: 14, tertiary_link: 14,
+  residential: 14, living_street: 14, unclassified: 14, road: 14, busway: 14,
+  raceway: 14,
+  service: 15, track: 15,
+};
+
+function getSurfaceRenderPriority(highway) {
+  return SURFACE_RENDER_PRIORITY[highway] ?? 14;
+}
 
 // OSM highway type → generated decal styling.
 // width: half-width in metres (total road width = 2 × value).
@@ -1832,6 +1845,110 @@ function maybeReverseDecalNodes(nodes, layer) {
   return [...nodes].reverse();
 }
 
+// Sanity cap on painted lane separators per roadway — bad OSM lane counts
+// (lanes=12 typos) shouldn't bury a road in paint.
+const MAX_PAINTED_LANE_SEPARATORS = 6;
+
+const LINE_LAYER_BASE = { textureLength: 6.4, breakAngle: 1 };
+
+/**
+ * Build line-marking decal layers (center line, edge lines, lane separators)
+ * for one road corridor from its OSM tags.
+ *
+ * Geometry/sign conventions (see offsetNodes): a POSITIVE offset places the
+ * line on the LEFT of the node-order direction. oneway=yes ways are digitized
+ * in the travel direction (routing requires it); oneway=-1 runs against it,
+ * flipping which side is travel-left.
+ *
+ * One-way roads get no center line: white dashed separators between lanes,
+ * and on major classes a solid yellow travel-left edge + white right edge
+ * (US divided-highway convention). Two-way roads get the center divider at
+ * the forward/backward lane boundary (offset 0 when symmetric) — yellow
+ * double on major classes, white dashed on minor — plus dashed separators
+ * for any additional lanes per direction.
+ *
+ * Caveat: when lanes:forward/backward are asymmetric AND the corridor merger
+ * reversed the seed geometry, the painted layout mirrors. Symmetric layouts
+ * (the overwhelmingly common case) are unaffected.
+ */
+export function buildLineMarkingLayers(highway, tags = {}, styleHalfWidth = 3.5) {
+  const majorRoad = MAJOR_ROAD_MARKINGS.has(highway);
+  const edgeOffset = 0.9 * styleHalfWidth;
+  const layers = [];
+
+  const totalTag = parsePositiveInt(tags.lanes);
+  const fwdTag = parsePositiveInt(tags['lanes:forward']);
+  const backTag = parsePositiveInt(tags['lanes:backward']);
+
+  const pushSeparator = (k, lanes) => {
+    const offset = -edgeOffset + (2 * edgeOffset * k) / lanes;
+    layers.push({
+      name: `line_sep_${k}`, material: GLOBAL_DECAL_MATERIALS.lineWhiteDashed,
+      width: 0.15, offset, renderPriority: 2, ...LINE_LAYER_BASE,
+    });
+  };
+
+  if (isOneWayRoad(tags)) {
+    const lanes = Math.max(1, totalTag || (fwdTag + backTag) || getDefaultLaneCount(highway, true));
+    const sepCount = Math.min(lanes - 1, MAX_PAINTED_LANE_SEPARATORS);
+    for (let k = 1; k <= sepCount; k++) pushSeparator(k, lanes);
+
+    if (majorRoad) {
+      const leftSign = isReverseOneWayRoad(tags) ? -1 : 1;
+      layers.push({
+        name: leftSign > 0 ? 'line_right' : 'line_left', material: GLOBAL_DECAL_MATERIALS.lineYellowSingle,
+        width: 0.2, offset: leftSign * edgeOffset, renderPriority: 1, ...LINE_LAYER_BASE,
+      });
+      layers.push({
+        name: leftSign > 0 ? 'line_left' : 'line_right', material: GLOBAL_DECAL_MATERIALS.lineWhite,
+        width: 0.2, offset: -leftSign * edgeOffset, renderPriority: 1, ...LINE_LAYER_BASE,
+      });
+    }
+    return layers;
+  }
+
+  // Two-way: resolve per-direction lane counts.
+  let lanes = totalTag || (fwdTag && backTag ? fwdTag + backTag : 0) || getDefaultLaneCount(highway, false);
+  let nF = fwdTag;
+  let nB = backTag;
+  if (!nF && !nB) {
+    nF = Math.max(1, Math.floor(lanes / 2));
+    nB = Math.max(1, lanes - nF);
+  } else {
+    nF = nF || Math.max(1, lanes - nB);
+    nB = nB || Math.max(1, lanes - nF);
+  }
+  lanes = nF + nB;
+
+  // Center divider sits at the forward/backward boundary. Forward travel
+  // follows node order, so its lanes occupy the negative-offset (right) side.
+  const centerOffset = -edgeOffset + (2 * edgeOffset * nF) / lanes;
+  layers.push({
+    name: 'line_center',
+    material: majorRoad ? GLOBAL_DECAL_MATERIALS.lineYellowDouble : GLOBAL_DECAL_MATERIALS.lineWhiteDashed,
+    width: majorRoad ? 0.4 : 0.2, offset: centerOffset, renderPriority: 2, ...LINE_LAYER_BASE,
+  });
+
+  let seps = 0;
+  for (let k = 1; k < lanes && seps < MAX_PAINTED_LANE_SEPARATORS; k++) {
+    if (k === nF) continue; // that boundary is the center divider
+    seps++;
+    pushSeparator(k, lanes);
+  }
+
+  if (majorRoad) {
+    layers.push({
+      name: 'line_left', material: GLOBAL_DECAL_MATERIALS.lineWhite,
+      width: 0.2, offset: -edgeOffset, renderPriority: 1, ...LINE_LAYER_BASE,
+    });
+    layers.push({
+      name: 'line_right', material: GLOBAL_DECAL_MATERIALS.lineWhite,
+      width: 0.2, offset: edgeOffset, renderPriority: 1, ...LINE_LAYER_BASE,
+    });
+  }
+  return layers;
+}
+
 function getLayeredRoadDecals(centerNodes, highway, tags, styleHalfWidth, parentName, options = {}) {
   const isUnpaved = UNPAVED_SURFACES.has(tags.surface) || highway === 'track';
   const laneMarkingsEnabled = shouldUseLaneMarkings(highway, tags);
@@ -1847,9 +1964,11 @@ function getLayeredRoadDecals(centerNodes, highway, tags, styleHalfWidth, parent
 
   const layers = (ROAD_TEMPLATES[templateKey] || ROAD_TEMPLATES.default).filter((layer) => {
     if (layer.name.startsWith('edge_')) return grassEdgeBlendEnabled;
-    if (layer.name.startsWith('line_')) return laneMarkingsEnabled;
     return true;
   });
+  if (!isUnpaved && laneMarkingsEnabled) {
+    layers.push(...buildLineMarkingLayers(highway, tags, styleHalfWidth));
+  }
   const decals = [];
 
   for (const layer of layers) {
@@ -1915,9 +2034,10 @@ function getLayeredRoadDecals(centerNodes, highway, tags, styleHalfWidth, parent
       startEndFade = [s, e];
     }
 
+    const isBaseSurface = layer.name === 'asphalt' || layer.name === 'dirt';
     const decal = makeRoadDecal(layeredNodes, levelName, parentName, {
       material: layer.material,
-      renderPriority: layer.renderPriority,
+      renderPriority: isBaseSurface ? getSurfaceRenderPriority(highway, tags) : layer.renderPriority,
       breakAngle: Number.isFinite(layer.breakAngle) ? layer.breakAngle : 1,
       textureLength: Number.isFinite(layer.textureLength) ? layer.textureLength : 8,
       startEndFade,
@@ -2089,7 +2209,221 @@ function generateDecalRoads(terrainData, squareSize) {
     }
   }
 
-  return Array.from(roadSplinesByName.values()).filter((g) => g.__items.length > 0);
+  const groups = Array.from(roadSplinesByName.values()).filter((g) => g.__items.length > 0);
+
+  const junctionMarkings = generateJunctionMarkingDecals(terrainData, squareSize);
+  if (junctionMarkings.length > 0) {
+    groups.push({
+      class: 'SimGroup',
+      name: 'junction_markings',
+      persistentId: generatePersistentId(),
+      __parent: 'Decal_Roads',
+      __items: junctionMarkings,
+    });
+  }
+
+  return groups;
+}
+
+// ── Junction markings: stop lines + crosswalks ───────────────────────────────
+// OSM maps stop positions (highway=stop), signal stop positions
+// (highway=traffic_signals) and pedestrian crossings (highway=crossing) as
+// NODES that are vertices of the road way itself, so each marking can be
+// placed exactly on the roadway with the road's own tangent.
+const STOP_BAR_THICKNESS_M = 0.45;        // MUTCD stop bars are 12-24 in
+const CROSSWALK_LINE_WIDTH_M = 0.3;
+const CROSSWALK_LINE_GAP_HALF_M = 1.2;    // transverse pair, 2.4 m apart
+// Painted span stays inside the edge lines (0.9 × halfWidth).
+const JUNCTION_MARK_SPAN_FACTOR = 0.88;
+
+function shouldPaintCrossing(tags = {}) {
+  const crossing = String(tags.crossing ?? '').trim().toLowerCase();
+  if (['unmarked', 'informal', 'no'].includes(crossing)) return false;
+  if (String(tags['crossing:markings'] ?? '').trim().toLowerCase() === 'no') return false;
+  return true;
+}
+
+/**
+ * Build stop-line and crosswalk DecalRoads from OSM point features.
+ *
+ * Returns an array of DecalRoad objects (no group wrapper).
+ */
+export function generateJunctionMarkingDecals(terrainData, squareSize) {
+  const features = terrainData.osmFeatures || [];
+  if (!features.length) return [];
+
+  const roads = features.filter((f) =>
+    f?.type === 'road' &&
+    Array.isArray(f.geometry) && f.geometry.length >= 2 &&
+    f.tags?.highway && !ROAD_SKIP.has(f.tags.highway),
+  );
+  if (roads.length === 0) return [];
+
+  // Index every road vertex by the shared node-key convention so point
+  // features can be matched to the way they sit on.
+  const vertexIndex = new Map();
+  for (const road of roads) {
+    road.geometry.forEach((pt, index) => {
+      if (!Number.isFinite(pt?.lat) || !Number.isFinite(pt?.lng)) return;
+      const key = makeRoadNodeKey(pt);
+      const entries = vertexIndex.get(key) || [];
+      entries.push({ road, index });
+      vertexIndex.set(key, entries);
+    });
+  }
+
+  const { bounds } = terrainData;
+  const margin = ROAD_EDGE_MARGIN + 0.005;
+  const insideMargin = (pt) => {
+    const u = (pt.lng - bounds.west) / (bounds.east - bounds.west);
+    const v = (bounds.north - pt.lat) / (bounds.north - bounds.south);
+    return u >= margin && u <= 1 - margin && v >= margin && v <= 1 - margin;
+  };
+
+  // Road tangent (unit, world XY) at vertex `index`, central difference.
+  const tangentAt = (road, index) => {
+    const geom = road.geometry;
+    const a = geom[Math.max(0, index - 1)];
+    const b = geom[Math.min(geom.length - 1, index + 1)];
+    const [ax, ay] = geoToWorldPoint(a.lat, a.lng, terrainData, squareSize, 0);
+    const [bx, by] = geoToWorldPoint(b.lat, b.lng, terrainData, squareSize, 0);
+    const len = Math.hypot(bx - ax, by - ay);
+    if (len < 1e-6) return null;
+    return [(bx - ax) / len, (by - ay) / len];
+  };
+
+  const nodeAt = (x, y, width) => [
+    Math.round(x * 1000) / 1000,
+    Math.round(y * 1000) / 1000,
+    Math.round((getTerrainHeightAtWorldXY(x, y, terrainData, squareSize) + 0.1) * 1000) / 1000,
+    width,
+  ];
+
+  const decals = [];
+  const pushLine = (baseName, cx, cy, dirX, dirY, fromM, toM, lineWidth) => {
+    const nodes = [
+      nodeAt(cx + dirX * fromM, cy + dirY * fromM, lineWidth),
+      nodeAt(cx + dirX * toM, cy + dirY * toM, lineWidth),
+    ];
+    const name = sanitizeBeamNGObjectName(`${baseName}_${decals.length + 1}`);
+    const decal = makeRoadDecal(nodes, name, 'junction_markings', {
+      material: GLOBAL_DECAL_MATERIALS.lineWhite,
+      renderPriority: 1, breakAngle: 1, textureLength: 6.4,
+    });
+    if (decal) decals.push(decal);
+  };
+
+  let stopCount = 0;
+  let crossingCount = 0;
+  const paintedCrossingKeys = new Set();
+
+  const roadMetricsAt = (road, index, pt) => {
+    const roadTags = road.tags || {};
+    const highway = roadTags.highway;
+    const tangent = tangentAt(road, index);
+    if (!tangent) return null;
+    const oneWay = isOneWayRoad(roadTags);
+    const style = HIGHWAY_STYLE[highway] ?? DEFAULT_ROAD_STYLE;
+    const halfW = JUNCTION_MARK_SPAN_FACTOR *
+      estimateRoadHalfWidth(roadTags, highway, oneWay, style.width);
+    const [px, py] = geoToWorldPoint(pt.lat, pt.lng, terrainData, squareSize, 0);
+    return { roadTags, tangent, oneWay, halfW, px, py };
+  };
+
+  // Transverse crosswalk: two full-width lines straddling the crossing point.
+  const paintCrosswalk = (road, index, pt) => {
+    const key = makeRoadNodeKey(pt);
+    if (paintedCrossingKeys.has(key)) return;
+    const m = roadMetricsAt(road, index, pt);
+    if (!m) return;
+    paintedCrossingKeys.add(key);
+    const perp = [-m.tangent[1], m.tangent[0]];
+    for (const side of [-1, 1]) {
+      pushLine(
+        'jm_crosswalk',
+        m.px + m.tangent[0] * CROSSWALK_LINE_GAP_HALF_M * side,
+        m.py + m.tangent[1] * CROSSWALK_LINE_GAP_HALF_M * side,
+        perp[0], perp[1], -m.halfW, m.halfW, CROSSWALK_LINE_WIDTH_M,
+      );
+    }
+    crossingCount++;
+  };
+
+  // Crossings mapped as WAYS (footway/cycleway with *=crossing): the way
+  // shares a vertex with each vehicle road it crosses — paint there. This is
+  // how most US suburbs are mapped; crossing NODES are handled below.
+  for (const feature of features) {
+    const tags = feature.tags || {};
+    const isCrossingWay =
+      tags.footway === 'crossing' || tags.cycleway === 'crossing' || tags.path === 'crossing';
+    if (!isCrossingWay || !shouldPaintCrossing(tags)) continue;
+    if (!Array.isArray(feature.geometry) || feature.geometry.length < 2) continue;
+
+    for (const pt of feature.geometry) {
+      if (!Number.isFinite(pt?.lat) || !Number.isFinite(pt?.lng) || !insideMargin(pt)) continue;
+      const entries = vertexIndex.get(makeRoadNodeKey(pt)) || [];
+      for (const { road, index } of entries) {
+        paintCrosswalk(road, index, pt);
+      }
+    }
+  }
+
+  for (const feature of features) {
+    if (!Array.isArray(feature?.geometry) || feature.geometry.length !== 1) continue;
+    const tags = feature.tags || {};
+    const kind = tags.highway;
+    if (kind !== 'stop' && kind !== 'traffic_signals' && kind !== 'crossing') continue;
+    if (kind === 'crossing' && !shouldPaintCrossing(tags)) continue;
+
+    const pt = feature.geometry[0];
+    if (!Number.isFinite(pt?.lat) || !Number.isFinite(pt?.lng) || !insideMargin(pt)) continue;
+
+    const entries = vertexIndex.get(makeRoadNodeKey(pt));
+    if (!entries || entries.length === 0) continue;
+    // A node shared by several distinct roads is the junction node itself
+    // (common for older traffic_signals mapping) — a bar there would sit in
+    // the middle of the intersection.
+    const distinctRoads = new Set(entries.map((e) => e.road));
+    if (distinctRoads.size > 1) continue;
+
+    const { road, index } = entries[0];
+
+    if (kind === 'crossing') {
+      paintCrosswalk(road, index, pt);
+      continue;
+    }
+
+    const m = roadMetricsAt(road, index, pt);
+    if (!m) continue;
+    const { roadTags, tangent, oneWay, halfW, px, py } = m;
+
+    // Stop bar (highway=stop / highway=traffic_signals): spans only the
+    // approaching lanes. Travel direction comes from the way orientation,
+    // corrected by the node's direction tag; on two-way roads without one,
+    // assume the bar sits just before the junction and orient toward the
+    // nearer way end.
+    let approach = tangent;
+    const dirTag = String(tags['traffic_signals:direction'] ?? tags.direction ?? '').trim().toLowerCase();
+    if (oneWay) {
+      if (isReverseOneWayRoad(roadTags)) approach = [-tangent[0], -tangent[1]];
+    } else if (dirTag === 'backward') {
+      approach = [-tangent[0], -tangent[1]];
+    } else if (dirTag !== 'forward') {
+      const nearerStart = index < road.geometry.length - 1 - index;
+      if (nearerStart) approach = [-tangent[0], -tangent[1]];
+    }
+    const right = [approach[1], -approach[0]];
+    // One-way: bar across the full roadway. Two-way: approach half only,
+    // with a small gap at the center line.
+    const fromM = oneWay ? -halfW : 0.25;
+    pushLine('jm_stopline', px, py, right[0], right[1], fromM, halfW, STOP_BAR_THICKNESS_M);
+    stopCount++;
+  }
+
+  if (decals.length > 0) {
+    console.log(`[BeamNG Export] Junction markings: ${stopCount} stop bars, ${crossingCount} crosswalks`);
+  }
+  return decals;
 }
 
 /**
