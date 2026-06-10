@@ -516,10 +516,20 @@ const activeSunPreset = computed(() => SUN_PRESETS[sunPosition.value] || SUN_PRE
 // the camera, so every scroll step stays useful and you can keep zooming
 // through the scene. The cientos wrapper doesn't expose this as a prop, so set
 // it on the underlying three.js controls instance once it mounts.
+//
+// screenSpacePanning must be OFF with zoomToCursor: screen-space panning moves
+// the orbit target in the camera plane, leaving it floating mid-air after a
+// pan; cursor zoom then collapses the camera→target radius to minDistance
+// while still far above the terrain, freezing both zoom and pan (pan speed is
+// proportional to the radius). With it off, panning slides the target along
+// the horizontal ground plane and cursor zoom re-anchors it by ray-plane
+// intersection (MapControls behavior), so the radius always tracks real
+// geometry.
 watch(controlsRef, (ctrl) => {
   const controls = ctrl?.instance || ctrl;
   if (controls && 'zoomToCursor' in controls) {
     controls.zoomToCursor = true;
+    controls.screenSpacePanning = false;
   }
 }, { immediate: true });
 
