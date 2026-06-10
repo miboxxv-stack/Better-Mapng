@@ -334,14 +334,45 @@ watch([() => props.terrainData?.heightMap, () => props.quality], () => {
   const upm = unitsPerMeter.value;
   const EXAGGERATION = 1.0;
 
+  // Box-filter each vertex over its stride footprint instead of point-sampling
+  // one heightmap pixel. Point sampling aliases features narrower than the
+  // stride — most visibly roads: a ~6 m smoothed terrace sampled every
+  // stride·mpp metres lands at a random phase across the road each row, so the
+  // embankment silhouette bulges and wobbles in the preview even though the
+  // exported heightmap (and the game) is smooth. Tap count is capped so large
+  // strides stay cheap; taps spread evenly across the footprint.
+  const sampleFootprintHeight = (mapCol, mapRow) => {
+    if (stride <= 1) {
+      const v = data.heightMap[mapRow * data.width + mapCol];
+      return v < -10000 ? data.minHeight : v;
+    }
+    const half = stride / 2;
+    const taps = Math.min(stride + 1, 8);
+    let sum = 0;
+    let count = 0;
+    for (let ty = 0; ty < taps; ty++) {
+      const sy = Math.round(mapRow - half + (ty * stride) / (taps - 1));
+      if (sy < 0 || sy >= data.height) continue;
+      for (let tx = 0; tx < taps; tx++) {
+        const sx = Math.round(mapCol - half + (tx * stride) / (taps - 1));
+        if (sx < 0 || sx >= data.width) continue;
+        const v = data.heightMap[sy * data.width + sx];
+        if (v < -10000) continue; // NO_DATA
+        sum += v;
+        count++;
+      }
+    }
+    if (count > 0) return sum / count;
+    const v = data.heightMap[mapRow * data.width + mapCol];
+    return v < -10000 ? data.minHeight : v;
+  };
+
   for (let i = 0; i < vertices.length / 3; i++) {
     const colIndex = i % (widthSteps + 1);
     const rowIndex = Math.floor(i / (widthSteps + 1));
 
     const mapCol = Math.min(colIndex * stride, data.width - 1);
     const mapRow = Math.min(rowIndex * stride, data.height - 1);
-    
-    const dataIndex = mapRow * data.width + mapCol;
 
     const u = mapCol / (data.width - 1);
     const v = mapRow / (data.height - 1);
@@ -349,11 +380,7 @@ watch([() => props.terrainData?.heightMap, () => props.quality], () => {
     const globalX = (u * SCENE_SIZE) - (SCENE_SIZE / 2);
     const globalZ = (v * SCENE_SIZE) - (SCENE_SIZE / 2);
 
-    let h = data.heightMap[dataIndex];
-    // Handle NO_DATA_VALUE (-99999) by clamping to minHeight to avoid deep spikes
-    if (h < -10000) {
-      h = data.minHeight;
-    }
+    const h = sampleFootprintHeight(mapCol, mapRow);
 
     vertices[i * 3] = globalX;
     vertices[i * 3 + 1] = -(globalZ);
