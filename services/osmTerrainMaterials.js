@@ -15,8 +15,8 @@ import {
 } from './beamngBiomeCatalog.js';
 
 // ── Material names ─────────────────────────────────────────────────────────
-// Index 0 = DefaultMaterial (satellite base), 1–7 = BeamNG-referenced materials.
-const MATERIAL_NAMES_LIST = ['DefaultMaterial', 'Grass', 'Dirt', 'BeachSand', 'ROCK', 'asphalt', 'GRAVEL', 'Concrete'];
+// Index 0 = DefaultMaterial (satellite base), 1–8 = BeamNG-referenced materials.
+const MATERIAL_NAMES_LIST = ['DefaultMaterial', 'Grass', 'Dirt', 'BeachSand', 'ROCK', 'asphalt', 'GRAVEL', 'Concrete', 'DirtGrass'];
 
 // Ordered name list for the .ter material slot array and external consumers.
 export const MATERIAL_NAMES = MATERIAL_NAMES_LIST;
@@ -110,6 +110,55 @@ const REFERENCE_MATERIALS = [
       roughnessDetailTex: '/levels/gridmap_v2/art/terrains/t_dirt_loose_r.png',
       roughnessMacroStrength: [0.200000003, 0.699999988],
       roughnessMacroTex: '/assets/materials/terrain/rock/macro_rocky/t_macro_rocky_r.png',
+    },
+  },
+  {
+    // Dry, patchy grass-over-soil — used for OSM scrub/heath/shrubbery so they
+    // stop reading as manicured lawn. Mirrors east_coast_usa's 'dirt_grass'
+    // (detail/macro textures are core /assets paths; base slots are rewritten
+    // at export like every other slot).
+    internalName: 'DirtGrass',
+    template: {
+      class: 'TerrainMaterial',
+      annotation: 'GRASS',
+      aoBaseTex: '/levels/east_coast_usa/art/terrains/t_terrain_base_ao.png',
+      aoBaseTexSize: 2048,
+      aoDetailTex: '/assets/materials/terrain/soil/t_dirt_dry_grassy/t_dirt_dry_grassy_ao.png',
+      aoMacroTex: '/assets/materials/terrain/grass/t_macro_grass/t_macro_grass_ao.png',
+      aoMacroTexSize: 50,
+      baseColorBaseTex: '/levels/east_coast_usa/art/terrains/t_terrain_base_b.png',
+      baseColorBaseTexSize: 2048,
+      baseColorDetailStrength: [0.200000003, 0],
+      baseColorDetailTex: '/assets/materials/terrain/soil/t_dirt_dry_grassy/t_dirt_dry_grassy_b.png',
+      baseColorMacroStrength: [0.150000006, 0.150000006],
+      baseColorMacroTex: '/assets/materials/terrain/grass/t_macro_grass/t_macro_grass_b.png',
+      baseColorMacroTexSize: 50,
+      detailDistAtten: [0, 0.899999976],
+      detailDistances: [0, 0, 30, 60],
+      groundmodelName: 'GRASS',
+      heightBaseTex: '/levels/east_coast_usa/art/terrains/t_terrain_base_h.png',
+      heightBaseTexSize: 2048,
+      heightDetailStrength: [1, 0],
+      heightDetailTex: '/assets/materials/terrain/soil/t_dirt_dry_grassy/t_dirt_dry_grassy_h.png',
+      heightMacroStrength: [0, 1],
+      heightMacroTex: '/assets/materials/terrain/grass/t_macro_grass/t_macro_grass_h.png',
+      heightMacroTexSize: 50,
+      macroDistAtten: [0.349999994, 1],
+      macroDistances: [0, 0, 400, 3000],
+      normalBaseTex: '/levels/east_coast_usa/art/terrains/t_terrain_base_nm.png',
+      normalBaseTexSize: 2048,
+      normalDetailStrength: [0.600000024, 0],
+      normalDetailTex: '/assets/materials/terrain/soil/t_dirt_dry_grassy/t_dirt_dry_grassy_nm.png',
+      normalMacroStrength: [0.400000006, 0.600000024],
+      normalMacroTex: '/assets/materials/terrain/grass/t_macro_grass/t_macro_grass_nm.png',
+      normalMacroTexSize: 50,
+      roughnessBaseTex: '/levels/east_coast_usa/art/terrains/t_terrain_base_r.png',
+      roughnessBaseTexSize: 2048,
+      roughnessDetailStrength: [0.899999976, 0],
+      roughnessDetailTex: '/assets/materials/terrain/soil/t_dirt_dry_grassy/t_dirt_dry_grassy_r.png',
+      roughnessMacroStrength: [0.200000003, 0.5],
+      roughnessMacroTex: '/assets/materials/terrain/grass/t_macro_grass/t_macro_grass_r.png',
+      roughnessMacroTexSize: 50,
     },
   },
   {
@@ -556,9 +605,11 @@ function areaMatIndex(feature) {
   const t = feature.tags || {};
   const nat = t.natural, lu = t.landuse, lei = t.leisure, am = t.amenity, sur = t.surface;
 
-  if (nat === 'grass' || nat === 'meadow' || nat === 'heath') return 1;
-  if (nat === 'grassland' || nat === 'shrub') return 1;
-  if (nat === 'wood' || nat === 'scrub' || nat === 'shrubbery') return 1;
+  if (nat === 'grass' || nat === 'meadow') return 1;
+  if (nat === 'grassland') return 1;
+  if (nat === 'wood') return 1;
+  // Scrub-like cover gets the dry dirt_grass paint (+ its own groundcover).
+  if (nat === 'scrub' || nat === 'heath' || nat === 'shrubbery' || nat === 'shrub') return 8;
   if (nat === 'sand' || nat === 'beach' || nat === 'dune') return 3;
   if (nat === 'bare_rock' || nat === 'rock' || nat === 'scree' || nat === 'cliff') return 4;
   if (nat === 'shingle') return 4;

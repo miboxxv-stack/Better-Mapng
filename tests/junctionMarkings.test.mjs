@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
 
-import { generateJunctionMarkingDecals } from '../services/exportBeamNGLevel.js';
+import { generateJunctionMarkingDecals, generateTurnArrowDecals } from '../services/exportBeamNGLevel.js';
 
 const W = 256;
 const SQUARE_SIZE = 2; // 512 m world
@@ -88,11 +88,54 @@ test('markings at shared junction nodes and unmarked crossings are skipped', () 
   assert.equal(decals.length, 0);
 });
 
-// Smoke test against the real West Positano Avenue OSM snapshot when present
-// (refs/ is gitignored, so skip cleanly elsewhere).
-const GEOJSON = new URL('../refs/mapng_exports/osm_features_29.9573_-81.4904.geojson', import.meta.url);
-test('real-world OSM snapshot produces plausible junction markings', { skip: !fs.existsSync(GEOJSON) }, () => {
-  const g = JSON.parse(fs.readFileSync(GEOJSON, 'utf8'));
+test('turn:lanes places one arrow per lane, ordered left-to-right across travel', () => {
+  const lat = CENTER_LAT;
+  const dLng = 0.001;
+  // West→east one-way approach ending at a junction with a cross road.
+  const approach = {
+    id: 'w1', type: 'road',
+    tags: { highway: 'primary', oneway: 'yes', lanes: '3', 'turn:lanes': 'left|through|right' },
+    geometry: [-2, -1, 0].map((k) => ({ lat, lng: CENTER_LNG + k * dLng })),
+  };
+  const cross = {
+    id: 'w2', type: 'road', tags: { highway: 'residential' },
+    geometry: [{ lat: lat - 0.001, lng: CENTER_LNG }, { lat, lng: CENTER_LNG }, { lat: lat + 0.001, lng: CENTER_LNG }],
+  };
+
+  const arrows = generateTurnArrowDecals(makeTerrainData([approach, cross]), SQUARE_SIZE);
+  assert.equal(arrows.length, 3);
+
+  // Travel is +x; driver-right is -y (south). Leftmost lane (left arrow)
+  // sits at the largest y.
+  const sorted = [...arrows].sort((a, b) => b[4] - a[4]); // by world Y desc
+  assert.deepEqual(sorted.map((a) => a[0]), [0, 2, 1], 'left, through, right across the roadway');
+  // All set back from the junction end (junction at x=0).
+  assert.ok(arrows.every((a) => a[3] < -2), 'arrows sit before the junction');
+  // Tangent = driver-right = -y.
+  assert.ok(arrows.every((a) => a[10] < -0.99), 'tangent points driver-right');
+
+  // No arrows when the tagged end is a dead end.
+  const deadEnd = { ...approach, id: 'w3', geometry: approach.geometry.map((p) => ({ ...p, lat: p.lat + 0.01 })) };
+  assert.equal(generateTurnArrowDecals(makeTerrainData([deadEnd]), SQUARE_SIZE).length, 0);
+});
+
+// Smoke test against whatever real OSM snapshot is parked in
+// refs/mapng_exports (gitignored — the fixture rotates as the user tests new
+// areas; skip cleanly when absent).
+const FIXTURE_DIR = new URL('../refs/mapng_exports/', import.meta.url);
+const fixtureFile = (() => {
+  try {
+    const name = fs.readdirSync(FIXTURE_DIR)
+      .filter((f) => f.startsWith('osm_features_') && f.endsWith('.geojson'))
+      .sort()
+      .pop();
+    return name ? new URL(name, FIXTURE_DIR) : null;
+  } catch {
+    return null;
+  }
+})();
+test('real-world OSM snapshot produces plausible junction markings + turn arrows', { skip: !fixtureFile }, () => {
+  const g = JSON.parse(fs.readFileSync(fixtureFile, 'utf8'));
   const features = [];
   for (const f of g.features) {
     const p = f.properties || {};
@@ -129,12 +172,16 @@ test('real-world OSM snapshot produces plausible junction markings', { skip: !fs
   const decals = generateJunctionMarkingDecals(terrainData, 8);
   const bars = decals.filter((d) => d.name.startsWith('jm_stopline')).length;
   const cwLines = decals.filter((d) => d.name.startsWith('jm_crosswalk')).length;
-  console.log(`  west positano snapshot: ${bars} stop bars, ${cwLines / 2} crosswalks`);
-  // 103 stop + 17 signal nodes and 192 crossing-ish features in the snapshot;
-  // a healthy fraction must land on road vertices and produce decals.
-  assert.ok(bars > 40, `expected >40 stop bars, got ${bars}`);
-  assert.ok(cwLines >= 2, `expected some crosswalk lines, got ${cwLines}`);
+  const arrows = generateTurnArrowDecals(terrainData, 8);
+  console.log(`  ${String(fixtureFile).split('/').pop()}: ${bars} stop bars, ${cwLines / 2} crosswalks, ${arrows.length} turn arrows`);
+  assert.ok(bars + cwLines > 0, 'expected some junction markings from a real urban snapshot');
   for (const d of decals) {
     assert.ok(d.nodes.every((n) => n.every(Number.isFinite)), 'all nodes finite');
+  }
+  for (const a of arrows) {
+    assert.equal(a.length, 13, 'decal instance arity');
+    assert.ok(a.every(Number.isFinite), 'all instance fields finite');
+    assert.ok([0, 1, 2].includes(a[0]), 'rect index is an arrow frame');
+    assert.ok(Math.abs(Math.hypot(a[9], a[10], a[11]) - 1) < 0.01, 'tangent is unit length');
   }
 });

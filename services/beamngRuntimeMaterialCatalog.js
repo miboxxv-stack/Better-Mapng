@@ -1298,11 +1298,85 @@ const BIOME_RUNTIME_MATERIAL_DEFS = {
   automation_test_track: AUTOMATION_TEST_TRACK_RUNTIME_MATERIAL_DEFS,
 };
 
+// Groundcover variety materials used by the GroundCover objects MapNG emits
+// for every biome. All textures are CORE game assets (verified: same paths
+// east_coast_usa resolves through its .link files / GC_* template materials),
+// so the defs are self-contained in any export.
+const SHARED_GROUNDCOVER_MATERIAL_DEFS = {
+  // Mixed undergrowth atlas: weeds, ferns, daisies, buttercups, purple
+  // flowers — the same sheet east_coast_usa's 'Groundcover_spring' uses.
+  mapng_gc_undergrowth: {
+    name: 'mapng_gc_undergrowth',
+    mapTo: 'unmapped_mat',
+    class: 'Material',
+    persistentId: '5f1d2a44-7c3b-4e09-9d20-0a8e62d41b01',
+    Stages: [{
+      baseColorMap: '/assets/materials/foliage/groundcover/t_forest_vegetation/t_undergrowth_01_b.color.png',
+      baseColorFactor: [0.762239993, 0.762239993, 0.762239993, 1],
+      normalMap: '/assets/materials/foliage/groundcover/t_forest_vegetation/t_undergrowth_01_nm.normal.png',
+      normalMapStrength: 2,
+      opacityMap: '/assets/materials/foliage/groundcover/t_forest_vegetation/t_undergrowth_01_o.data.png',
+      ambientOcclusionMap: '/assets/materials/foliage/groundcover/t_forest_vegetation/t_undergrowth_01_ao.data.png',
+      pixelSpecular: true,
+    }, {}, {}, {}],
+    alphaRef: 80,
+    alphaTest: true,
+    annotation: 'NATURE',
+    doubleSided: true,
+    translucentBlendOp: 'None',
+  },
+  // Long green meadow grass (east_coast_usa's 'm_grass_green_long_01').
+  mapng_gc_grass_long: {
+    name: 'mapng_gc_grass_long',
+    mapTo: 'unmapped_mat',
+    class: 'Material',
+    persistentId: '5f1d2a44-7c3b-4e09-9d20-0a8e62d41b02',
+    Stages: [{
+      ambientOcclusionMap: '/assets/materials/foliage/grass/t_grass_green_long_01/t_grass_green_long_01_ao.data.png',
+      baseColorMap: '/assets/materials/foliage/grass/t_grass_green_long_01/t_grass_green_long_01_b.color.png',
+      normalMap: '/assets/materials/foliage/grass/t_grass_green_long_01/t_grass_green_long_01_nm.normal.png',
+      opacityMap: '/assets/materials/foliage/grass/t_grass_green_long_01/t_grass_green_long_01_o.data.png',
+      roughnessMap: '/assets/materials/foliage/grass/t_grass_green_long_01/t_grass_green_long_01_r.data.png',
+    }, {}, {}, {}],
+    alphaRef: 25,
+    alphaTest: true,
+    annotation: 'NATURE',
+    doubleSided: true,
+    subSurface: true,
+    subSurfaceIntensity: 1,
+    translucentBlendOp: 'None',
+  },
+  // Short grass with a dry yellow tint for scrub/dirt-grass areas
+  // (east_coast_usa's 'm_grass_green_short_01' + the GC_Grass_close_3-style
+  // dry diffuse tint).
+  mapng_gc_grass_dry: {
+    name: 'mapng_gc_grass_dry',
+    mapTo: 'unmapped_mat',
+    class: 'Material',
+    persistentId: '5f1d2a44-7c3b-4e09-9d20-0a8e62d41b03',
+    Stages: [{
+      ambientOcclusionMap: '/assets/materials/foliage/grass/t_grass_green_short_01/t_grass_green_short_01_ao.data.png',
+      baseColorMap: '/assets/materials/foliage/grass/t_grass_green_short_01/t_grass_green_short_01_b.color.png',
+      diffuseColor: [1, 0.936376989, 0.696434975, 1],
+      normalMap: '/assets/materials/foliage/grass/t_grass_green_short_01/t_grass_green_short_01_nm.normal.png',
+      opacityMap: '/assets/materials/foliage/grass/t_grass_green_short_01/t_grass_green_short_01_o.data.png',
+      roughnessMap: '/assets/materials/foliage/grass/t_grass_green_short_01/t_grass_green_short_01_r.data.png',
+    }, {}, {}, {}],
+    alphaRef: 35,
+    alphaTest: true,
+    annotation: 'NATURE',
+    doubleSided: true,
+    subSurface: true,
+    subSurfaceIntensity: 1,
+    translucentBlendOp: 'None',
+  },
+};
+
 export function getBiomeRuntimeMaterialDefs(biome) {
   const levelName = typeof biome === 'string' ? biome : biome?.levelName;
   const biomeDefs = BIOME_RUNTIME_MATERIAL_DEFS[levelName] ?? {};
   // Shared barrier/object materials apply to every biome (the meshes that use
   // them are emitted from OSM data regardless of biome selection), so they are
   // always included. A biome may still override them.
-  return { ...SHARED_BARRIER_MATERIAL_DEFS, ...biomeDefs };
+  return { ...SHARED_BARRIER_MATERIAL_DEFS, ...SHARED_GROUNDCOVER_MATERIAL_DEFS, ...biomeDefs };
 }

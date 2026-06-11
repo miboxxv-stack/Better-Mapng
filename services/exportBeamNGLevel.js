@@ -2426,6 +2426,226 @@ export function generateJunctionMarkingDecals(terrainData, squareSize) {
   return decals;
 }
 
+// ── Turn-lane arrow decals ────────────────────────────────────────────────────
+// Painted from OSM turn:lanes data using BeamNG's core road-markings atlas
+// (/assets/materials/decalroad/lines/roadmarkings1, the same one
+// west_coast_usa's decal_roadmarkings1 uses). 4×4 atlas; rect 0 = left arrow,
+// 1 = right arrow, 2 = straight arrow (3 = STOP text, 4.. = ONLY/BUS/etc.).
+// Decal instance format (main.decals.json, documented in its header):
+// [rectIdx, size, renderPriority, pos.xyz, normal.xyz, tangent.xyz, uid].
+// Tangent is the ACROSS-LANE (driver-right) axis — verified empirically:
+// adjacent-lane arrow pairs in west_coast_usa separate parallel to their
+// tangent in 152/156 cases.
+export const ROAD_ARROW_MATERIAL = {
+  name: 'mapng_roadmarkings',
+  mapTo: 'mapng_roadmarkings',
+  class: 'Material',
+  persistentId: '7c1f5a90-44a1-4b62-9c11-0a8e62d41a01',
+  Stages: [{
+    ambientOcclusionMap: '/assets/materials/decalroad/lines/roadmarkings1/t_decal_roadmarkings_ao.data.png',
+    baseColorMap: '/assets/materials/decalroad/lines/roadmarkings1/t_decal_roadmarkings_b.color.png',
+    metallicFactor: 0.5,
+    metallicMap: '/assets/materials/decalroad/lines/roadmarkings1/t_decal_roadmarkings_m.data.png',
+    normalMap: '/assets/materials/decalroad/lines/roadmarkings1/t_decal_roadmarkings_nm.normal.png',
+    opacityMap: '/assets/materials/decalroad/lines/roadmarkings1/t_decal_roadmarkings_o.data.png',
+    roughnessMap: '/assets/materials/decalroad/lines/roadmarkings1/t_decal_roadmarkings_r.data.png',
+  }, {}, {}, {}],
+  alphaRef: 8,
+  alphaTest: true,
+  annotation: 'DRIVING_INSTRUCTIONS',
+  castShadows: false,
+  materialTag0: 'decal',
+  materialTag1: 'road',
+  materialTag2: 'beamng',
+  translucent: true,
+  translucentZWrite: true,
+  version: 1.5,
+};
+
+export const ROAD_ARROW_DECAL_DATA = {
+  name: 'mapng_road_arrows',
+  class: 'DecalData',
+  persistentId: 'b8e24c11-93d0-4f7a-8a55-0a8e62d41a02',
+  fadeEndPixelSize: 20,
+  fadeStartPixelSize: 40,
+  material: 'mapng_roadmarkings',
+  renderPriority: 6,
+  texCols: 4,
+  texRows: 4,
+  textureCoordCount: 15,
+  textureCoords: Array.from({ length: 16 }, (_, i) => [
+    (i % 4) * 0.25, Math.floor(i / 4) * 0.25, 0.25, 0.25,
+  ]),
+};
+
+const TURN_ARROW_RECT = { left: 0, right: 1, through: 2 };
+const TURN_ARROW_SIZE = { left: 4.5, right: 3.7, through: 3.4 }; // WCU medians
+const TURN_ARROW_SETBACK_M = 8;
+
+/**
+ * Collapse one turn:lanes lane value to a paintable arrow, or null.
+ * Combined directives ('left;through') paint the turn — it carries the
+ * information a driver needs; the atlas has no combo stencils.
+ */
+function parseTurnDirective(value) {
+  const v = String(value ?? '').trim().toLowerCase();
+  if (!v || v === 'none') return null;
+  if (v.includes('merge')) return null;
+  if (v.includes('left') || v.includes('reverse')) return 'left';
+  if (v.includes('right')) return 'right';
+  if (v.includes('through')) return 'through';
+  return null;
+}
+
+/**
+ * Walk back `setbackM` metres from one end of a road geometry.
+ * Returns { x, y, dir } where dir is the unit travel direction TOWARD that
+ * end, or null for degenerate geometry.
+ */
+function walkBackFromEnd(geometry, fromEnd, setbackM, terrainData, squareSize) {
+  const pts = fromEnd ? [...geometry].reverse() : geometry;
+  const world = pts.map((pt) => geoToWorldPoint(pt.lat, pt.lng, terrainData, squareSize, 0));
+  let total = 0;
+  for (let i = 1; i < world.length; i++) {
+    total += Math.hypot(world[i][0] - world[i - 1][0], world[i][1] - world[i - 1][1]);
+  }
+  if (total < 2) return null;
+  const target = Math.min(setbackM, total / 2);
+
+  let walked = 0;
+  for (let i = 1; i < world.length; i++) {
+    const [ax, ay] = world[i - 1];
+    const [bx, by] = world[i];
+    const seg = Math.hypot(bx - ax, by - ay);
+    if (seg < 1e-9) continue;
+    if (walked + seg >= target) {
+      const t = (target - walked) / seg;
+      const x = ax + (bx - ax) * t;
+      const y = ay + (by - ay) * t;
+      // Travel direction toward the junction end = back along the walk.
+      const dir = [(ax - bx) / seg, (ay - by) / seg];
+      return { x, y, dir };
+    }
+    walked += seg;
+  }
+  return null;
+}
+
+/**
+ * Build turn-arrow decal instances from OSM turn:lanes tags.
+ *
+ * Arrows are placed per lane, TURN_ARROW_SETBACK_M back from the way end that
+ * meets a junction; ways whose tagged end doesn't touch another road are
+ * skipped (turn:lanes ways are almost always short junction-approach
+ * segments).
+ */
+export function generateTurnArrowDecals(terrainData, squareSize) {
+  const features = terrainData.osmFeatures || [];
+  if (!features.length) return [];
+
+  const roads = features.filter((f) =>
+    f?.type === 'road' &&
+    Array.isArray(f.geometry) && f.geometry.length >= 2 &&
+    f.tags?.highway && !ROAD_SKIP.has(f.tags.highway),
+  );
+  if (roads.length === 0) return [];
+
+  // A turn-lane way's tagged end must touch another road to count as a
+  // junction approach. T-junction ends land on the other road's MID vertex,
+  // so count distinct roads across ALL vertices, not just endpoints.
+  const roadsAtNode = new Map();
+  for (const road of roads) {
+    for (const pt of road.geometry) {
+      if (!Number.isFinite(pt?.lat) || !Number.isFinite(pt?.lng)) continue;
+      const key = makeRoadNodeKey(pt);
+      const set = roadsAtNode.get(key) || new Set();
+      set.add(road);
+      roadsAtNode.set(key, set);
+    }
+  }
+
+  const { bounds } = terrainData;
+  const margin = ROAD_EDGE_MARGIN + 0.005;
+  const insideMargin = (x, y) => {
+    const worldSize = terrainData.width * squareSize;
+    const u = x / worldSize + 0.5;
+    const v = 0.5 - y / worldSize;
+    return u >= margin && u <= 1 - margin && v >= margin && v <= 1 - margin;
+  };
+
+  const instances = [];
+
+  for (const road of roads) {
+    const tags = road.tags || {};
+    const highway = tags.highway;
+    const oneWay = isOneWayRoad(tags);
+    const reversed = isReverseOneWayRoad(tags);
+
+    // Per-direction lane specs. Plain turn:lanes on a two-way road is
+    // ambiguous per the wiki — skip it there.
+    const specs = [];
+    const fwdSpec = tags['turn:lanes:forward'] || ((oneWay && !reversed) ? tags['turn:lanes'] : null);
+    const backSpec = tags['turn:lanes:backward'] || ((oneWay && reversed) ? tags['turn:lanes'] : null);
+    if (fwdSpec) specs.push({ spec: fwdSpec, towardEnd: true });
+    if (backSpec) specs.push({ spec: backSpec, towardEnd: false });
+    if (specs.length === 0) continue;
+
+    const style = HIGHWAY_STYLE[highway] ?? DEFAULT_ROAD_STYLE;
+    const halfW = estimateRoadHalfWidth(tags, highway, oneWay, style.width);
+    const drivableHalf = 0.9 * halfW;
+
+    for (const { spec, towardEnd } of specs) {
+      const laneValues = String(spec).split('|');
+      const nDir = laneValues.length;
+      if (nDir === 0) continue;
+
+      // Opposing-direction lane count shares the same drivable width.
+      let nOpp = 0;
+      if (!oneWay) {
+        const totalTag = parsePositiveInt(tags.lanes);
+        const oppTag = parsePositiveInt(tags[towardEnd ? 'lanes:backward' : 'lanes:forward']);
+        nOpp = oppTag || (totalTag ? Math.max(1, totalTag - nDir) : nDir);
+      }
+      const laneWidth = (2 * drivableHalf) / (nDir + nOpp);
+
+      const endPt = towardEnd ? road.geometry[road.geometry.length - 1] : road.geometry[0];
+      if (!Number.isFinite(endPt?.lat) || !Number.isFinite(endPt?.lng)) continue;
+      if ((roadsAtNode.get(makeRoadNodeKey(endPt))?.size || 0) < 2) continue;
+
+      const placed = walkBackFromEnd(road.geometry, towardEnd, TURN_ARROW_SETBACK_M, terrainData, squareSize);
+      if (!placed || !insideMargin(placed.x, placed.y)) continue;
+
+      const [dx, dy] = placed.dir;
+      const right = [dy, -dx]; // driver-right in the travel frame
+
+      for (let k = 0; k < nDir; k++) {
+        const directive = parseTurnDirective(laneValues[k]);
+        if (!directive) continue;
+        // Lanes are listed left-to-right in the travel direction; opposing
+        // lanes occupy the driver-left part of the roadway.
+        const offset = -drivableHalf + (nOpp + k + 0.5) * laneWidth;
+        const x = placed.x + right[0] * offset;
+        const y = placed.y + right[1] * offset;
+        if (!insideMargin(x, y)) continue;
+        const z = getTerrainHeightAtWorldXY(x, y, terrainData, squareSize) + 0.1;
+        const size = Math.min(TURN_ARROW_SIZE[directive], laneWidth * 1.35);
+
+        instances.push([
+          TURN_ARROW_RECT[directive],
+          roundTo(size, 2),
+          0,
+          roundTo(x, 3), roundTo(y, 3), roundTo(z, 3),
+          0, 0, 1,
+          roundTo(right[0], 6), roundTo(right[1], 6), 0,
+          hashString(`${road.id}:${towardEnd ? 'f' : 'b'}:${k}`),
+        ]);
+      }
+    }
+  }
+
+  return instances;
+}
+
 /**
  * Create the default Road Architect profile object used by generated roads.
  *
@@ -5267,6 +5487,114 @@ function buildGroundCoverObjects(terrainData, squareSize, includeTrees, biome) {
     Types: buildGrassTypes(1),
   }];
 
+  // ── Variety covers (east_coast_usa recipe) ─────────────────────────────────
+  // Official levels layer several billboard covers with different atlases and
+  // terrain-layer bindings instead of one uniform grass sheet. The UV rects
+  // below are lifted from east_coast_usa's GroundCover objects (Weed2,
+  // Forest_weed, Daisies, buttercups, small_grass_*); materials are the shared
+  // core-asset defs from beamngRuntimeMaterialCatalog. Bindings:
+  //  - 'Grass'     gets sparse weeds + occasional flowers on top of the grass.
+  //  - 'DirtGrass' (OSM scrub/heath) gets dense weed clumps + dry short grass
+  //    instead of lawn billboards.
+  const varietyRadius = Math.max(60, Math.min(100, mapRadius));
+  const varietyWind = {
+    windGustLength: 1.7, windGustStrength: 0.1, windGustFrequency: 0.1,
+    windTurbulenceFrequency: 0.2, windTurbulenceStrength: 0.05,
+  };
+  const weedElements = Math.min(220000, Math.max(60000, Math.round(baseCoverMaxElements * 0.5)));
+  groundCoverObjects.push({
+    __parent: 'vegetation',
+    class: 'GroundCover',
+    name: 'mapng_weed_cover',
+    persistentId: generatePersistentId(),
+    position: [0, 0, roundTo(centerHeight, 3)],
+    material: 'mapng_gc_undergrowth',
+    gridSize: gridSizeForElements(weedElements),
+    radius: varietyRadius,
+    dissolveRadius: Math.max(50, roundTo(varietyRadius * 0.88, 3)),
+    shapeCullRadius: varietyRadius,
+    maxBillboardTiltAngle: 40,
+    maxElements: weedElements,
+    seed: 23,
+    ...varietyWind,
+    Types: [
+      { billboardUVs: [0.40625, 0.707032025, 0.144529998, 0.128904998], layer: 'Grass',
+        clumpExponent: -0.2, maxClumpCount: 4, minClumpCount: 2, probability: 0.45,
+        sizeMax: 0.4, sizeMin: 0.2, windScale: 0.05 },
+      { billboardUVs: [0.421875, 0.835937977, 0.140625998, 0.136718005], layer: 'Grass',
+        clumpExponent: -0.2, maxClumpCount: 4, minClumpCount: 2, probability: 0.35,
+        sizeMax: 0.4, sizeMin: 0.2, windScale: 0.05 },
+      { billboardUVs: [0.410156012, 0.703125, 0.144530997, 0.128905997], layer: 'DirtGrass',
+        clumpRadius: 3, maxClumpCount: 6, minClumpCount: 3, probability: 1,
+        sizeMax: 0.6, sizeMin: 0.3, windScale: 0.05 },
+      { billboardUVs: [0.417968005, 0.839843988, 0.148438007, 0.160155997], layer: 'DirtGrass',
+        clumpExponent: -0.1, maxClumpCount: 5, minClumpCount: 2, probability: 1,
+        sizeMax: 0.6, sizeMin: 0.3, windScale: 0.05 },
+      {}, {}, {}, {},
+    ],
+  });
+
+  const flowerElements = 40000;
+  groundCoverObjects.push({
+    __parent: 'vegetation',
+    class: 'GroundCover',
+    name: 'mapng_flower_cover',
+    persistentId: generatePersistentId(),
+    position: [0, 0, roundTo(centerHeight, 3)],
+    material: 'mapng_gc_undergrowth',
+    gridSize: gridSizeForElements(flowerElements),
+    radius: varietyRadius,
+    dissolveRadius: Math.max(50, roundTo(varietyRadius * 0.88, 3)),
+    shapeCullRadius: varietyRadius,
+    maxBillboardTiltAngle: 40,
+    maxElements: flowerElements,
+    seed: 29,
+    ...varietyWind,
+    Types: [
+      // Daisies + buttercups, kept rare so fields read green with accents.
+      { billboardUVs: [0.199219003, 0.359376013, 0.140625, 0.128905997], layer: 'Grass',
+        clumpExponent: 3, clumpRadius: 0.5, maxClumpCount: 4, minClumpCount: 2, probability: 1,
+        sizeMax: 0.5, sizeMin: 0.3, windScale: 0.05 },
+      { billboardUVs: [0.808593988, 0.398436993, 0.191405997, 0.226560995], layer: 'Grass',
+        clumpRadius: 0.5, maxClumpCount: 4, minClumpCount: 2, probability: 0.5,
+        sizeMax: 0.5, sizeMin: 0.4, windScale: 0.2 },
+      { billboardUVs: [0.644531012, 0.402345002, 0.203124002, 0.218749002], layer: 'Grass',
+        clumpRadius: 0.5, maxClumpCount: 4, minClumpCount: 2, probability: 0.35,
+        sizeMax: 0.5, sizeMin: 0.4, windScale: 0.2 },
+      {}, {}, {}, {}, {},
+    ],
+  });
+
+  const dryGrassElements = Math.min(180000, Math.max(50000, Math.round(baseCoverMaxElements * 0.4)));
+  groundCoverObjects.push({
+    __parent: 'vegetation',
+    class: 'GroundCover',
+    name: 'mapng_dry_grass_cover',
+    persistentId: generatePersistentId(),
+    position: [0, 0, roundTo(centerHeight, 3)],
+    material: 'mapng_gc_grass_dry',
+    gridSize: gridSizeForElements(dryGrassElements),
+    radius: varietyRadius,
+    dissolveRadius: Math.max(50, roundTo(varietyRadius * 0.88, 3)),
+    shapeCullRadius: varietyRadius,
+    maxBillboardTiltAngle: 40,
+    maxElements: dryGrassElements,
+    seed: 31,
+    ...varietyWind,
+    Types: [
+      { billboardUVs: [0, 0.0078125, 1, 0.464843988], layer: 'DirtGrass',
+        clumpRadius: 2, maxClumpCount: 6, minClumpCount: 2, probability: 1,
+        sizeMax: 0.45, sizeMin: 0.22, windScale: 0.1 },
+      { billboardUVs: [0, 0.505124986, 1, 0.472656012], layer: 'DirtGrass',
+        clumpExponent: -0.5, maxClumpCount: 4, minClumpCount: 2, probability: 0.8,
+        sizeMax: 0.4, sizeMin: 0.2, windScale: 0.1 },
+      { billboardUVs: [0, 0.507812977, 0.5, 0.390625], layer: 'Dirt',
+        clumpExponent: -0.5, maxClumpCount: 4, minClumpCount: 2, probability: 0.4,
+        sizeMax: 0.4, sizeMin: 0.25, windScale: 0.2 },
+      {}, {}, {}, {}, {},
+    ],
+  });
+
   // Add dense per-area grass cover for OSM polygons tagged as grass-like fields.
   let areaObjectIndex = 0;
   for (const feature of grassFeatures) {
@@ -5847,19 +6175,31 @@ export async function exportBeamNGLevel(terrainData, center, options = {}) {
     zip.file(`${base}/signalControllerDefinitions.json`, JSON.stringify(signalControllerDefinitions, null, 2));
   }
 
-  // ── art/decals/managedDecalData.json ─────────────────────────────────────
-  // Keep a canonical location for decal definitions even when no custom decals
-  // are authored by the generator.
-  zip.file(`${base}/art/decals/managedDecalData.json`, JSON.stringify({}, null, 2));
-
-  // ── editor helper files ───────────────────────────────────────────────────
+  // ── art/decals + main.decals.json: turn-lane arrows ───────────────────────
+  // Painted from OSM turn:lanes via the core road-markings atlas.
+  const turnArrowInstances = roadType === 'decal'
+    ? generateTurnArrowDecals(exportTerrainData, squareSize)
+    : [];
+  zip.file(`${base}/art/decals/managedDecalData.json`, JSON.stringify(
+    turnArrowInstances.length > 0
+      ? { [ROAD_ARROW_DECAL_DATA.name]: ROAD_ARROW_DECAL_DATA }
+      : {},
+    null, 2,
+  ));
+  if (turnArrowInstances.length > 0) {
+    zip.file(`${base}/art/decals/main.materials.json`, JSON.stringify({
+      [ROAD_ARROW_MATERIAL.name]: ROAD_ARROW_MATERIAL,
+    }, null, 2));
+  }
   zip.file(`${base}/main.decals.json`, JSON.stringify({
     header: {
       name: 'DecalData File',
       comments: '// Instances format: rectIdx, size, renderPriority, position.x, position.y, position.z, normal.x, normal.y, normal.z, tangent.x, tangent.y, tangent.z, uid',
       version: 2,
     },
-    instances: {},
+    instances: turnArrowInstances.length > 0
+      ? { [ROAD_ARROW_DECAL_DATA.name]: turnArrowInstances }
+      : {},
   }, null, 2));
 
   // Forest brush palette: emit one ForestBrush/ForestBrushElement per placed

@@ -1,5 +1,7 @@
 const DEFAULT_TERRAIN_CANDIDATES = {
   Grass: ['Grass', 'Grass2', 'Grass3', 'Grass4', 'dirt_grass'],
+  // Scrub/heath paint: dry patchy grass-over-soil, NOT lawn.
+  DirtGrass: ['dirt_grass', 'dirt_loose_dusty', 'RockyDirt', 'dirt_loose', 'Dirt'],
   Dirt: ['Dirt', 'dirt_loose', 'dirt_grass', 'RockyDirt', 'dirt_loose_dusty'],
   BeachSand: ['BeachSand', 'sand', 'dirt_sandy'],
   ROCK: ['ROCK', 'Rock', 'Rock_cliff', 'dirt_rocky', 'dirt_rocky_large', 'rockydirt', 'rocks_large'],
