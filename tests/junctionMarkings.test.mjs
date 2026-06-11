@@ -111,8 +111,9 @@ test('turn:lanes places one arrow per lane, ordered left-to-right across travel'
   assert.deepEqual(sorted.map((a) => a[0]), [0, 2, 1], 'left, through, right across the roadway');
   // All set back from the junction end (junction at x=0).
   assert.ok(arrows.every((a) => a[3] < -2), 'arrows sit before the junction');
-  // Tangent = driver-right = -y.
-  assert.ok(arrows.every((a) => a[10] < -0.99), 'tangent points driver-right');
+  // Tangent = driver-LEFT = +y (the stencil renders its "up" along
+  // −(normal × tangent); driver-right tangents drew arrows 180° rotated).
+  assert.ok(arrows.every((a) => a[10] > 0.99), 'tangent points driver-left');
 
   // No arrows when the tagged end is a dead end.
   const deadEnd = { ...approach, id: 'w3', geometry: approach.geometry.map((p) => ({ ...p, lat: p.lat + 0.01 })) };

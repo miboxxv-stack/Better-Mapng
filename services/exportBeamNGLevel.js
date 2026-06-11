@@ -2433,9 +2433,11 @@ export function generateJunctionMarkingDecals(terrainData, squareSize) {
 // 1 = right arrow, 2 = straight arrow (3 = STOP text, 4.. = ONLY/BUS/etc.).
 // Decal instance format (main.decals.json, documented in its header):
 // [rectIdx, size, renderPriority, pos.xyz, normal.xyz, tangent.xyz, uid].
-// Tangent is the ACROSS-LANE (driver-right) axis — verified empirically:
-// adjacent-lane arrow pairs in west_coast_usa separate parallel to their
-// tangent in 152/156 cases.
+// Tangent is the ACROSS-LANE axis — verified empirically: adjacent-lane arrow
+// pairs in west_coast_usa separate parallel to their tangent in 152/156
+// cases. Its sign matters: the stencil's "up" renders along −(normal ×
+// tangent), so the tangent must point driver-LEFT for arrows to face the
+// direction of travel (in-game verified 2026-06-10).
 export const ROAD_ARROW_MATERIAL = {
   name: 'mapng_roadmarkings',
   mapTo: 'mapng_roadmarkings',
@@ -2636,7 +2638,10 @@ export function generateTurnArrowDecals(terrainData, squareSize) {
           0,
           roundTo(x, 3), roundTo(y, 3), roundTo(z, 3),
           0, 0, 1,
-          roundTo(right[0], 6), roundTo(right[1], 6), 0,
+          // Tangent must be driver-LEFT: the engine lays the stencil's "up"
+          // along −(normal × tangent), so a driver-right tangent rendered
+          // every arrow 180° rotated (verified in-game 2026-06-10).
+          roundTo(-right[0], 6), roundTo(-right[1], 6), 0,
           hashString(`${road.id}:${towardEnd ? 'f' : 'b'}:${k}`),
         ]);
       }
