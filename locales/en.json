@@ -51,7 +51,7 @@
     "elevationDataSource": "Elevation Data Source",
     "standard30m": "Standard (30m Global)",
     "standardDescription": "Amazon Terrarium (SRTM). Reliable global coverage. Good for general terrain.",
-    "flatNone": "Flat (No Elevation)",
+    "flatNone": "None (Flat)",
     "flatNoneDescription": "Perfectly flat terrain — skips elevation entirely. Use with OSM for roads, buildings, and trees on level ground.",
     "usgs1m": "USGS 1m DEM (USA Only)",
     "online": "ONLINE",

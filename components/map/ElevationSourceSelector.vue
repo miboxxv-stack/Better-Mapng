@@ -12,65 +12,49 @@
     </button>
     
     <div v-if="showElevationSource" class="space-y-2 bg-gray-50 dark:bg-gray-700 p-2 rounded border border-gray-200 dark:border-gray-600">
+        <select
+            v-model="localElevationSource"
+            class="w-full bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded px-2 py-1 text-xs text-gray-900 dark:text-white focus:ring-1 focus:ring-[#FF6600] outline-none cursor-pointer"
+        >
+            <option value="default">{{ t('map.standard30m') }}</option>
+            <option value="none">{{ t('map.flatNone') }}</option>
+            <option value="kron86">{{ t('map.kron86Poland') }}</option>
+            <option value="usgs">{{ t('map.usgs1m') }}</option>
+            <option value="gpxz">{{ t('map.gpxzPremium') }}</option>
+        </select>
+
         <!-- Default -->
-        <label class="flex items-start gap-2 cursor-pointer p-1 hover:bg-gray-100 dark:hover:bg-gray-600 rounded transition-colors">
-            <input type="radio" v-model="localElevationSource" value="default" class="mt-0.5 accent-[#FF6600]" />
-            <div class="space-y-0.5">
-              <span class="block text-xs font-medium text-gray-900 dark:text-white">{{ t('map.standard30m') }}</span>
-                <span class="block text-[10px] text-gray-500 dark:text-gray-400 leading-tight">
-                {{ t('map.standardDescription') }}
-                </span>
-            </div>
-        </label>
+        <span v-if="localElevationSource === 'default'" class="block text-[10px] text-gray-500 dark:text-gray-400 leading-tight">
+            {{ t('map.standardDescription') }}
+        </span>
 
         <!-- None / Flat -->
-        <label class="flex items-start gap-2 cursor-pointer p-1 hover:bg-gray-100 dark:hover:bg-gray-600 rounded transition-colors">
-            <input type="radio" v-model="localElevationSource" value="none" class="mt-0.5 accent-[#FF6600]" />
-            <div class="space-y-0.5">
-              <span class="block text-xs font-medium text-gray-900 dark:text-white">{{ t('map.flatNone') }}</span>
-                <span class="block text-[10px] text-gray-500 dark:text-gray-400 leading-tight">
-                {{ t('map.flatNoneDescription') }}
-                </span>
-            </div>
-        </label>
+        <span v-else-if="localElevationSource === 'none'" class="block text-[10px] text-gray-500 dark:text-gray-400 leading-tight">
+            {{ t('map.flatNoneDescription') }}
+        </span>
 
         <!-- NMT EVRF2007 -->
-        <label class="flex items-start gap-2 cursor-pointer p-1 hover:bg-gray-100 dark:hover:bg-gray-600 rounded transition-colors">
-          <input type="radio" v-model="localElevationSource" value="kron86" class="mt-0.5 accent-[#FF6600]" />
-          <div class="space-y-0.5">
-            <span class="block text-xs font-medium text-gray-900 dark:text-white">{{ t('map.kron86Poland') }}</span>
-            <span class="block text-[10px] text-gray-500 dark:text-gray-400 leading-tight">
+        <span v-else-if="localElevationSource === 'kron86'" class="block text-[10px] text-gray-500 dark:text-gray-400 leading-tight">
             {{ t('map.kron86Description') }}
-            </span>
-          </div>
-        </label>
+        </span>
 
         <!-- USGS -->
-        <label class="flex items-start gap-2 cursor-pointer p-1 hover:bg-gray-100 dark:hover:bg-gray-600 rounded transition-colors">
-            <input type="radio" v-model="localElevationSource" value="usgs" class="mt-0.5 accent-[#FF6600]" />
-            <div class="space-y-0.5">
-                <div class="flex items-center gap-2">
-                <span class="block text-xs font-medium text-gray-900 dark:text-white">{{ t('map.usgs1m') }}</span>
-                <span v-if="usgsStatus" class="text-[9px] text-emerald-600 dark:text-emerald-400 font-bold px-1 bg-emerald-100 dark:bg-emerald-900/30 rounded">{{ t('map.online') }}</span>
-                <span v-else-if="usgsStatus === false" class="text-[9px] text-red-600 dark:text-red-400 font-bold px-1 bg-red-100 dark:bg-red-900/30 rounded">{{ t('map.offline') }}</span>
-                </div>
-                <span class="block text-[10px] text-gray-500 dark:text-gray-400 leading-tight">
+        <div v-else-if="localElevationSource === 'usgs'" class="space-y-0.5">
+            <span v-if="usgsStatus" class="inline-block text-[9px] text-emerald-600 dark:text-emerald-400 font-bold px-1 bg-emerald-100 dark:bg-emerald-900/30 rounded">{{ t('map.online') }}</span>
+            <span v-else-if="usgsStatus === false" class="inline-block text-[9px] text-red-600 dark:text-red-400 font-bold px-1 bg-red-100 dark:bg-red-900/30 rounded">{{ t('map.offline') }}</span>
+            <span class="block text-[10px] text-gray-500 dark:text-gray-400 leading-tight">
                 {{ t('map.usgsDescription') }}
-                </span>
-            </div>
-        </label>
+            </span>
+        </div>
 
         <!-- GPXZ -->
-        <label class="flex items-start gap-2 cursor-pointer p-1 hover:bg-gray-100 dark:hover:bg-gray-600 rounded transition-colors">
-            <input type="radio" v-model="localElevationSource" value="gpxz" class="mt-0.5 accent-[#FF6600]" />
-            <div class="space-y-0.5 w-full">
-                <span class="block text-xs font-medium text-gray-900 dark:text-white">{{ t('map.gpxzPremium') }}</span>
+        <div v-else-if="localElevationSource === 'gpxz'" class="space-y-0.5 w-full">
                 <span class="block text-[10px] text-gray-500 dark:text-gray-400 leading-tight">
-                    {{ t('map.gpxzDescription') }} <a href="https://www.gpxz.io/docs/dataset#coverage" target="_blank" class="text-[#FF6600] hover:underline" @click.stop>{{ t('map.checkCoverage') }}</a>
+                    {{ t('map.gpxzDescription') }} <a href="https://www.gpxz.io/docs/dataset#coverage" target="_blank" class="text-[#FF6600] hover:underline">{{ t('map.checkCoverage') }}</a>
                 </span>
-                
-                <div v-if="localElevationSource === 'gpxz'" class="mt-2 animate-in fade-in slide-in-from-top-1">
-                    <input 
+
+                <div class="mt-2 animate-in fade-in slide-in-from-top-1">
+                    <input
                         type="password" 
                         v-model="localGpxzApiKey"
                         :placeholder="t('map.enterGpxzKey')"
@@ -111,8 +95,7 @@
                         ⚠️ {{ t('map.largeAreaWarning', { area: areaSqKm.toFixed(2) }) }}
                     </p>
                 </div>
-            </div>
-        </label>
+        </div>
     </div>
   </div>
 </template>
