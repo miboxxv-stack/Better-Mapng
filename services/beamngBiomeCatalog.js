@@ -16,12 +16,13 @@ const ITALY_GROUNDCOVER_MATERIAL = {
   class: 'Material',
   persistentId: 'c6552e8a-3784-44da-998b-3dca87552aca',
   Stages: [{
-    colorMap: '/assets/materials/foliage/grass/GrassMiddle/Grass_Middle_d.dds',
-    diffuseColor: [0.996078491, 0.996078491, 0.996078491, 1],
-    normalMap: '/assets/materials/foliage/grass/GrassDry/Grass_green_n.normal.dds',
-    roughnessFactor: 0.481729716,
-    specular: [0.992156923, 0.992156923, 0.992156923, 1],
-    specularMap: '/assets/materials/foliage/grass/GrassDry/Grass_green_s.color.dds',
+    // BeamNG 0.39 QA build removed the legacy GrassMiddle/ and GrassDry/ texture
+    // folders. Remap to the green short-grass PBR set Italy now uses for its lawns.
+    ambientOcclusionMap: '/assets/materials/foliage/grass/t_grass_green_short_01/t_grass_green_short_01_ao.data.png',
+    baseColorMap: '/assets/materials/foliage/grass/t_grass_green_short_01/t_grass_green_short_01_b.color.png',
+    normalMap: '/assets/materials/foliage/grass/t_grass_green_short_01/t_grass_green_short_01_nm.normal.png',
+    opacityMap: '/assets/materials/foliage/grass/t_grass_green_short_01/t_grass_green_short_01_o.data.png',
+    roughnessMap: '/assets/materials/foliage/grass/t_grass_green_short_01/t_grass_green_short_01_r.data.png',
     useAnisotropic: true,
   }, {}, {}, {}],
   alphaRef: 95,
@@ -67,11 +68,14 @@ const EAST_COAST_GROUNDCOVER_MATERIAL = {
   class: 'Material',
   persistentId: 'b2d38e39-359b-4603-b334-a3263a4bcc57',
   Stages: [{
-    colorMap: '/assets/materials/foliage/grass/BNGGrass/t_grass_01_d.color.dds',
-    diffuseColor: [0.996078491, 0.996078491, 0.996078491, 1],
-    normalMap: '/levels/east_coast_usa/art/shapes/groundcover/t_grass_01_nm.normal.png',
-    specular: [0.992156923, 0.992156923, 0.992156923, 1],
-    specularMap: '/assets/materials/foliage/grass/BNGGrass/t_grass_01_s.color.dds',
+    // BeamNG 0.39 QA build relocated this texture: the legacy BNGGrass/ folder and
+    // its diffuse/specular maps were removed and the set was renamed to the PBR
+    // (Materials v1.5) layout under t_wcusa_grasses/ (same t_grass_01 source art).
+    ambientOcclusionMap: '/assets/materials/foliage/grass/t_wcusa_grasses/t_grass_01_ao.data.png',
+    baseColorMap: '/assets/materials/foliage/grass/t_wcusa_grasses/t_grass_01_b.color.png',
+    normalMap: '/assets/materials/foliage/grass/t_wcusa_grasses/t_grass_01_nm.normal.png',
+    opacityMap: '/assets/materials/foliage/grass/t_wcusa_grasses/t_grass_01_o.data.png',
+    roughnessMap: '/assets/materials/foliage/grass/t_wcusa_grasses/t_grass_01_r.data.png',
     useAnisotropic: true,
   }, {}, {}, {}],
   alphaRef: 60,
@@ -92,13 +96,16 @@ const JOHNSON_VALLEY_GROUNDCOVER_MATERIAL = {
   class: 'Material',
   persistentId: 'a58a2f27-8d2f-4556-bbc0-f7e2b2672bd5',
   Stages: [{
-    colorMap: 'levels/johnson_valley/art/shapes/groundcover/dry_grass_d.color.png',
+    // BeamNG 0.39 QA build moved Johnson Valley's dry grass out of the level folder
+    // into the shared PBR foliage set t_jv_dry_grass/ (same source art).
+    ambientOcclusionMap: '/assets/materials/foliage/grass/t_jv_dry_grass/t_jv_dry_grass_ao.data.png',
+    baseColorFactor: [0.905882418, 0.905882418, 0.905882418, 1],
+    baseColorMap: '/assets/materials/foliage/grass/t_jv_dry_grass/t_jv_dry_grass_b.color.png',
     detailNormalMapStrength: 0.5,
     detailScale: [1, 1],
-    diffuseColor: [0.905882418, 0.905882418, 0.905882418, 1],
-    normalMap: '/levels/johnson_valley/art/shapes/groundcover/dry_grass_n.normal.png',
-    specular: [0.992156923, 0.992156923, 0.992156923, 1],
-    specularMap: '/levels/johnson_valley/art/shapes/groundcover/dry_grass_s2.color.png',
+    normalMap: '/assets/materials/foliage/grass/t_jv_dry_grass/t_jv_dry_grass_nm.normal.png',
+    opacityMap: '/assets/materials/foliage/grass/t_jv_dry_grass/t_jv_dry_grass_o.data.png',
+    roughnessMap: '/assets/materials/foliage/grass/t_jv_dry_grass/t_jv_dry_grass_r.data.png',
     useAnisotropic: true,
   }, {}, {}, {}],
   alphaRef: 59,
@@ -117,7 +124,11 @@ const JUNGLE_GROUNDCOVER_MATERIAL = {
   class: 'Material',
   persistentId: 'b9a7716f-de7f-4df0-80bf-979ca74d043c',
   Stages: [{
-    colorMap: 'levels/jungle_rock_island/art/shapes/groundcover/Grass03_tropical_d.dds',
+    // BeamNG 0.39 QA build removed the level-local Grass03_tropical texture; remap to
+    // the surviving shared tropical undergrowth art under plants_grasses_v2/.
+    colorMap: '/assets/materials/foliage/grass/plants_grasses_v2/tropical_undergrowth_d.color.png',
+    normalMap: '/assets/materials/foliage/grass/plants_grasses_v2/tropical_undergrowth_n.normal.png',
+    specularMap: '/assets/materials/foliage/grass/plants_grasses_v2/tropical_undergrowth_s.color.png',
     specularPower: 1,
   }, {}, {}, {}],
   alphaRef: 107,

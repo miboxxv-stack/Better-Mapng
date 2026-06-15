@@ -326,9 +326,13 @@ const EAST_COAST_RUNTIME_MATERIAL_DEFS = {
     mapTo: 'unmapped_mat',
     class: 'Material',
     Stages: [{
-      colorMap: '/assets/materials/foliage/grass/BNGGrass/t_grass_01_d.color.png',
-      normalMap: '/assets/materials/foliage/grass/BNGGrass/t_grass_01_nm.normal.png',
-      specularMap: '/assets/materials/foliage/grass/BNGGrass/t_grass_01_s.color.png',
+      // BeamNG 0.39 QA build removed the legacy BNGGrass/ diffuse+specular textures and
+      // moved the set to the PBR (Materials v1.5) layout under t_wcusa_grasses/.
+      ambientOcclusionMap: '/assets/materials/foliage/grass/t_wcusa_grasses/t_grass_01_ao.data.png',
+      baseColorMap: '/assets/materials/foliage/grass/t_wcusa_grasses/t_grass_01_b.color.png',
+      normalMap: '/assets/materials/foliage/grass/t_wcusa_grasses/t_grass_01_nm.normal.png',
+      opacityMap: '/assets/materials/foliage/grass/t_wcusa_grasses/t_grass_01_o.data.png',
+      roughnessMap: '/assets/materials/foliage/grass/t_wcusa_grasses/t_grass_01_r.data.png',
       useAnisotropic: true,
     }],
     alphaRef: 60,
@@ -542,9 +546,13 @@ const ITALY_RUNTIME_MATERIAL_DEFS = {
     mapTo: 'GrassMiddle',
     class: 'Material',
     Stages: [{
-      colorMap: '/assets/materials/foliage/grass/GrassMiddle/Grass_Middle_d.dds',
-      normalMap: '/assets/materials/foliage/grass/GrassDry/Grass_green_n.normal.png',
-      specularMap: '/assets/materials/foliage/grass/GrassDry/Grass_green_s.color.png',
+      // BeamNG 0.39 QA build removed the GrassMiddle/ and GrassDry/ texture folders;
+      // remap to the green short-grass PBR set.
+      ambientOcclusionMap: '/assets/materials/foliage/grass/t_grass_green_short_01/t_grass_green_short_01_ao.data.png',
+      baseColorMap: '/assets/materials/foliage/grass/t_grass_green_short_01/t_grass_green_short_01_b.color.png',
+      normalMap: '/assets/materials/foliage/grass/t_grass_green_short_01/t_grass_green_short_01_nm.normal.png',
+      opacityMap: '/assets/materials/foliage/grass/t_grass_green_short_01/t_grass_green_short_01_o.data.png',
+      roughnessMap: '/assets/materials/foliage/grass/t_grass_green_short_01/t_grass_green_short_01_r.data.png',
       useAnisotropic: true,
     }],
     alphaRef: 95,
@@ -832,9 +840,13 @@ const AUTOMATION_TEST_TRACK_RUNTIME_MATERIAL_DEFS = {
     mapTo: 'GrassMiddle',
     class: 'Material',
     Stages: [{
-      colorMap: '/assets/materials/foliage/grass/GrassMiddle/Grass_Middle_d.dds',
-      normalMap: '/assets/materials/foliage/grass/GrassDry/Grass_green_n.normal.png',
-      specularMap: '/assets/materials/foliage/grass/GrassDry/Grass_green_s.color.png',
+      // BeamNG 0.39 QA build removed the GrassMiddle/ and GrassDry/ texture folders;
+      // remap to the green short-grass PBR set.
+      ambientOcclusionMap: '/assets/materials/foliage/grass/t_grass_green_short_01/t_grass_green_short_01_ao.data.png',
+      baseColorMap: '/assets/materials/foliage/grass/t_grass_green_short_01/t_grass_green_short_01_b.color.png',
+      normalMap: '/assets/materials/foliage/grass/t_grass_green_short_01/t_grass_green_short_01_nm.normal.png',
+      opacityMap: '/assets/materials/foliage/grass/t_grass_green_short_01/t_grass_green_short_01_o.data.png',
+      roughnessMap: '/assets/materials/foliage/grass/t_grass_green_short_01/t_grass_green_short_01_r.data.png',
       useAnisotropic: true,
     }],
     alphaRef: 95,
@@ -951,7 +963,8 @@ const JUNGLE_ROCK_ISLAND_RUNTIME_MATERIAL_DEFS = {
       normalMap: '/levels/jungle_rock_island/art/shapes/groundcover/grass/Grass_Green_n.dds',
       pixelSpecular: true,
       roughnessFactor: 0.662999988,
-      specularMap: '/assets/materials/foliage/grass/BNGGrass02/Grass_Green_s.dds',
+      // BeamNG 0.39 QA build removed the BNGGrass02/ specular texture; rely on
+      // pixelSpecular + roughnessFactor (diffuse/normal are still level-local).
       useAnisotropic: true,
     }, {}, {}, {}],
     alphaRef: 79,
@@ -1195,9 +1208,13 @@ const EUROPEAN_TEMPLATE_RUNTIME_MATERIAL_DEFS = {
     mapTo: 'GC_Flowers_1',
     class: 'Material',
     Stages: [{
-      colorMap: '/assets/materials/foliage/groundcover/Groundcover_spring/t_undergrowth_01_d.color.dds',
-      normalMap: '/assets/materials/foliage/groundcover/Groundcover_spring/t_undergrowth_01_nm.normal.dds',
-      specularMap: '/assets/materials/foliage/groundcover/Groundcover_spring/t_undergrowth_01_s.color.dds',
+      // BeamNG 0.39 QA build removed the Groundcover_spring/ folder; remap to the PBR
+      // undergrowth set under t_forest_vegetation/ (same source sheet).
+      ambientOcclusionMap: '/assets/materials/foliage/groundcover/t_forest_vegetation/t_undergrowth_01_ao.data.png',
+      baseColorMap: '/assets/materials/foliage/groundcover/t_forest_vegetation/t_undergrowth_01_b.color.png',
+      normalMap: '/assets/materials/foliage/groundcover/t_forest_vegetation/t_undergrowth_01_nm.normal.png',
+      opacityMap: '/assets/materials/foliage/groundcover/t_forest_vegetation/t_undergrowth_01_o.data.png',
+      roughnessMap: '/assets/materials/foliage/groundcover/t_forest_vegetation/t_undergrowth_01_r.data.png',
     }, {}, {}, {}],
     alphaRef: 40,
     alphaTest: true,
@@ -1225,9 +1242,13 @@ const EUROPEAN_TEMPLATE_RUNTIME_MATERIAL_DEFS = {
     mapTo: 'GC_Grass_close',
     class: 'Material',
     Stages: [{
-      colorMap: '/assets/materials/foliage/grass/m_grass_green_01/t_grass_green_short_03_d.color.dds',
-      normalMap: '/assets/materials/foliage/grass/m_grass_green_01/t_grass_green_short_03_nm.normal.dds',
-      specularMap: '/assets/materials/foliage/grass/m_grass_green_01/t_grass_green_short_03_s.color.dds',
+      // BeamNG 0.39 QA build removed the m_grass_green_01/ folder; remap to the green
+      // short-grass PBR set (variant base color + shared short_01 data maps).
+      ambientOcclusionMap: '/assets/materials/foliage/grass/t_grass_green_short_01/t_grass_green_short_01_ao.data.png',
+      baseColorMap: '/assets/materials/foliage/grass/t_grass_green_short_03/t_grass_green_short_03_b.color.png',
+      normalMap: '/assets/materials/foliage/grass/t_grass_green_short_01/t_grass_green_short_01_nm.normal.png',
+      opacityMap: '/assets/materials/foliage/grass/t_grass_green_short_01/t_grass_green_short_01_o.data.png',
+      roughnessMap: '/assets/materials/foliage/grass/t_grass_green_short_01/t_grass_green_short_01_r.data.png',
     }, {}, {}, {}],
     alphaRef: 65,
     alphaTest: true,
@@ -1238,9 +1259,13 @@ const EUROPEAN_TEMPLATE_RUNTIME_MATERIAL_DEFS = {
     mapTo: 'GC_Grass_close_2',
     class: 'Material',
     Stages: [{
-      colorMap: '/assets/materials/foliage/grass/m_grass_green_close/t_grass_green_close_d.color.dds',
-      normalMap: '/assets/materials/foliage/grass/m_grass_green_01/t_grass_green_short_03_nm.normal.dds',
-      specularMap: '/assets/materials/foliage/grass/m_grass_green_01/t_grass_green_short_03_s.color.dds',
+      // BeamNG 0.39 QA build removed the m_grass_green_close/ folder; remap to the
+      // green short-grass PBR set.
+      ambientOcclusionMap: '/assets/materials/foliage/grass/t_grass_green_short_01/t_grass_green_short_01_ao.data.png',
+      baseColorMap: '/assets/materials/foliage/grass/t_grass_green_short_02/t_grass_green_short_02_b.color.png',
+      normalMap: '/assets/materials/foliage/grass/t_grass_green_short_01/t_grass_green_short_01_nm.normal.png',
+      opacityMap: '/assets/materials/foliage/grass/t_grass_green_short_01/t_grass_green_short_01_o.data.png',
+      roughnessMap: '/assets/materials/foliage/grass/t_grass_green_short_01/t_grass_green_short_01_r.data.png',
     }, {}, {}, {}],
     alphaRef: 65,
     alphaTest: true,
@@ -1251,10 +1276,14 @@ const EUROPEAN_TEMPLATE_RUNTIME_MATERIAL_DEFS = {
     mapTo: 'GC_Grass_close_3',
     class: 'Material',
     Stages: [{
-      colorMap: '/assets/materials/foliage/grass/m_grass_green_close/t_grass_green_close_d.color.dds',
-      diffuseColor: [1, 0.936376989, 0.696434975, 1],
-      normalMap: '/assets/materials/foliage/grass/m_grass_green_close/t_grass_green_close_nm.normal.dds',
-      specularMap: '/assets/materials/foliage/grass/m_grass_green_close/t_grass_green_short_02_s.color.dds',
+      // BeamNG 0.39 QA build removed the m_grass_green_close/ folder; remap to the
+      // green short-grass PBR set (keeps the warm dry tint via baseColorFactor).
+      ambientOcclusionMap: '/assets/materials/foliage/grass/t_grass_green_short_01/t_grass_green_short_01_ao.data.png',
+      baseColorFactor: [1, 0.936376989, 0.696434975, 1],
+      baseColorMap: '/assets/materials/foliage/grass/t_grass_green_short_02/t_grass_green_short_02_b.color.png',
+      normalMap: '/assets/materials/foliage/grass/t_grass_green_short_01/t_grass_green_short_01_nm.normal.png',
+      opacityMap: '/assets/materials/foliage/grass/t_grass_green_short_01/t_grass_green_short_01_o.data.png',
+      roughnessMap: '/assets/materials/foliage/grass/t_grass_green_short_01/t_grass_green_short_01_r.data.png',
     }, {}, {}, {}],
     alphaRef: 65,
     alphaTest: true,
