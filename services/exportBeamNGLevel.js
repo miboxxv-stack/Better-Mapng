@@ -5425,7 +5425,7 @@ function buildGroundCoverObjects(terrainData, squareSize, includeTrees, biome) {
 
   const buildGrassTypes = (scaleMultiplier = 1) => {
     const clumpScale = grassClumpScale * scaleMultiplier;
-    return [
+    const grassTypes = [
       {
         billboardUVs: [0.496093988, 0, 0.503906012, 0.47656101],
         clumpRadius: 1.5,
@@ -5468,8 +5468,19 @@ function buildGroundCoverObjects(terrainData, squareSize, includeTrees, biome) {
         sizeMin: 0.32,
         windScale: 0.08,
       },
-      {}, {}, {}, {},
     ];
+    // The hardcoded UVs above are calibrated to east_coast's grass atlas. Each biome's
+    // grass texture lays its sprites out differently, so applying these rects to another
+    // biome's texture lands the billboard's base on empty padding → the grass floats
+    // above the terrain. When the biome profile supplies bottom-anchored sub-rects, use
+    // them (cycling if fewer than the slot count) so every billboard plants on the ground.
+    const sprites = groundCover.grassSprites;
+    if (Array.isArray(sprites) && sprites.length) {
+      grassTypes.forEach((type, i) => {
+        type.billboardUVs = sprites[i % sprites.length];
+      });
+    }
+    return [...grassTypes, {}, {}, {}, {}];
   };
 
   const baseCoverMaxElements = Math.min(

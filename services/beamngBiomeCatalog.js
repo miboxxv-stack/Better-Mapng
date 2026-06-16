@@ -324,6 +324,14 @@ const ASSET_SETS = {
       materialName: 'GrassMiddle',
       materialDef: ITALY_GROUNDCOVER_MATERIAL,
       terrainLayer: 'Grass',
+      // Bottom-anchored sub-rects for t_grass_green_short_01 (official Italy
+      // small_grass_dry_close cover); see grassSprites note on the Utah profile.
+      grassSprites: [
+        [0, 0.0078125, 0.543657303, 0.464843988],
+        [0, 0.505124986, 0.637241721, 0.472656012],
+        [0, 0.0117188003, 0.527343988, 0.484376013],
+        [0, 0.507812977, 0.5, 0.390625],
+      ],
     },
   },
   utah: {
@@ -375,6 +383,15 @@ const ASSET_SETS = {
       materialName: 'dry_grass',
       materialDef: UTAH_GROUNDCOVER_MATERIAL,
       terrainLayer: 'Grass',
+      // Billboard atlas sub-rects ([u,v,w,h]) for the grass GroundCover Types. These
+      // must match the biome's grass texture: a rect whose sprite doesn't reach the
+      // rect's bottom edge makes the billboard's base float above the terrain. Lifted
+      // from official Utah Grass_green (t_utah_dry_grass), where sprites bottom-anchor.
+      grassSprites: [
+        [0.674354613, 0.333418489, 0.325645387, 0.246889025],
+        [0.671264112, 0.675679326, 0.328736931, 0.247079358],
+        [0, 0.542968988, 0.753906012, 0.457031012],
+      ],
     },
   },
   small_island: {
@@ -467,6 +484,14 @@ const ASSET_SETS = {
       materialName: 'BNGGrass',
       materialDef: EAST_COAST_GROUNDCOVER_MATERIAL,
       terrainLayer: 'Grass',
+      // Bottom-anchored sub-rects for t_wcusa_grasses/t_grass_01; the texture's
+      // bottom-right quadrant is empty, so it is intentionally omitted (it was the
+      // source of the occasional floating billboards). See Utah grassSprites note.
+      grassSprites: [
+        [0.496093988, 0, 0.503906012, 0.47656101],
+        [0, 0, 0.507812023, 0.488281012],
+        [0, 0.50781101, 0.5, 0.49218899],
+      ],
     },
   },
   west_coast: {
@@ -540,6 +565,14 @@ const ASSET_SETS = {
       materialName: 'dry_grass',
       materialDef: JOHNSON_VALLEY_GROUNDCOVER_MATERIAL,
       terrainLayer: 'Grass',
+      // Bottom-anchored sub-rects for t_jv_dry_grass (official JV Grass2 cover);
+      // see grassSprites note on the Utah profile.
+      grassSprites: [
+        [0, 0.667967975, 0.343751013, 0.332031995],
+        [0.328126013, 0.667968988, 0.328123987, 0.332031012],
+        [0.679687023, 0.332031995, 0.320313007, 0.328125],
+        [0, 0.324218988, 0.332031012, 0.332031012],
+      ],
     },
   },
   jungle: {
@@ -831,6 +864,14 @@ const ASSET_SETS = {
       materialName: 'GrassMiddle',
       materialDef: ITALY_GROUNDCOVER_MATERIAL,
       terrainLayer: 'Grass',
+      // Bottom-anchored sub-rects for t_grass_green_short_01 (official Italy
+      // small_grass_dry_close cover); see grassSprites note on the Utah profile.
+      grassSprites: [
+        [0, 0.0078125, 0.543657303, 0.464843988],
+        [0, 0.505124986, 0.637241721, 0.472656012],
+        [0, 0.0117188003, 0.527343988, 0.484376013],
+        [0, 0.507812977, 0.5, 0.390625],
+      ],
     },
   },
 };
