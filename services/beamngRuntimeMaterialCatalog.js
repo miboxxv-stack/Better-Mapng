@@ -665,6 +665,49 @@ const UTAH_RUNTIME_MATERIAL_DEFS = {
     subSurface: true,
     subSurfaceIntensity: 1,
   },
+  // The Juniper_tree shapes (used by both Utah and Small Island) also reference the
+  // _02 leaf variants; only the base color differs (other maps reuse the _01 set),
+  // matching the official small_island Juniper main.materials.json.
+  juniper_leave_02: {
+    name: 'juniper_leave_02',
+    mapTo: 'juniper_leave_02',
+    class: 'Material',
+    Stages: [{
+      ambientOcclusionMap: '/assets/materials/tree/juniper/t_juniper_leave_01/t_juniper_leaves_ao.data.png',
+      baseColorMap: '/assets/materials/tree/juniper/t_juniper_leave_02/t_juniper_leaves_02_b.color.png',
+      normalMap: '/assets/materials/tree/juniper/t_juniper_leave_01/t_juniper_leaves_nm.normal.png',
+      opacityMap: '/assets/materials/tree/juniper/t_juniper_leave_01/t_juniper_leaves_o.data.png',
+      roughnessMap: '/assets/materials/tree/juniper/t_juniper_leave_01/t_juniper_leaves_r.data.png',
+      specular: [0.137254909, 0.137254909, 0.137254909, 1],
+    }],
+    alphaRef: 140,
+    alphaTest: true,
+    doubleSided: true,
+    groundType: 'LEAVES_THIN',
+    invertBackFaceNormals: true,
+    subSurface: true,
+    subSurfaceIntensity: 1,
+    translucentBlendOp: 'None',
+  },
+  m_juniper_leaves_02_distant: {
+    name: 'm_juniper_leaves_02_distant',
+    mapTo: 'm_juniper_leaves_02_distant',
+    class: 'Material',
+    Stages: [{
+      ambientOcclusionMap: '/assets/materials/tree/juniper/t_juniper_leave_01_distant/t_juniper_leaves_distant_ao.data.png',
+      baseColorMap: '/assets/materials/tree/juniper/t_juniper_leave_02_distant/t_juniper_leaves_02_distant_b.color.png',
+      normalMap: '/assets/materials/tree/juniper/t_juniper_leave_01_distant/t_juniper_leaves_distant_nm.normal.png',
+      opacityMap: '/assets/materials/tree/juniper/t_juniper_leave_01_distant/t_juniper_leaves_distant_o.data.png',
+      roughnessMap: '/assets/materials/tree/juniper/t_juniper_leave_01_distant/t_juniper_leaves_distant_r.data.png',
+    }],
+    alphaRef: 80,
+    alphaTest: true,
+    doubleSided: true,
+    dynamicCubemap: true,
+    invertBackFaceNormals: true,
+    subSurface: true,
+    subSurfaceIntensity: 1,
+  },
   leaves_strong: {
     name: 'leaves_strong',
     mapTo: 'leaves_strong',
@@ -1327,6 +1370,11 @@ const BIOME_RUNTIME_MATERIAL_DEFS = {
   mapng_template: EUROPEAN_TEMPLATE_RUNTIME_MATERIAL_DEFS,
   Utah: UTAH_RUNTIME_MATERIAL_DEFS,
   utah: UTAH_RUNTIME_MATERIAL_DEFS,
+  // Small Island shares Utah's Juniper trees and (via its assetSetIds) Utah's
+  // dry_grass groundcover, so it needs Utah's material defs emitted. Without this
+  // entry it fell through to {} and the juniper + grass materials were never
+  // written, so the trees/grass fell back to the .dae's missing local textures.
+  small_island: UTAH_RUNTIME_MATERIAL_DEFS,
   automation_test_track: AUTOMATION_TEST_TRACK_RUNTIME_MATERIAL_DEFS,
 };
 
