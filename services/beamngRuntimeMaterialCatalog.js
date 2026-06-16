@@ -793,7 +793,7 @@ const AUTOMATION_TEST_TRACK_RUNTIME_MATERIAL_DEFS = {
     Stages: [{
       ambientOcclusionMap: '/assets/materials/tree/holm_oak/t_holm_oak_branches/t_holm_oak_branches_ao.data.png',
       baseColorMap: '/assets/materials/tree/holm_oak/t_holm_oak_branches/t_holm_oak_branches_b.color.png',
-      detailNormalMap: '/assets/materials/tree/cork_oak/cork_oak_trunk/t_cork_oak_trunk_nm.normal.png',
+      detailNormalMap: '/assets/materials/tree/cork_oak/t_cork_oak_trunk/t_cork_oak_trunk_nm.normal.png',
       detailNormalMapStrength: 3,
       detailScale: [2, 4],
       normalMap: '/assets/materials/tree/holm_oak/t_holm_oak_branches/t_holm_oak_branches_nm.normal.png',
@@ -900,11 +900,14 @@ const JOHNSON_VALLEY_RUNTIME_MATERIAL_DEFS = {
     mapTo: 'deserttree_leaves',
     class: 'Material',
     Stages: [{
-      baseColorMap: '/levels/johnson_valley/art/shapes/trees/deserttrees/t_desert_tree_leaves_b.color.png',
+      // BeamNG 0.39 QA build moved the desert tree leaves out of the level folder into
+      // the shared foliage bush set t_deserttree_leaves/ (matches base game JV material).
+      ambientOcclusionMap: '/assets/materials/foliage/bush/t_deserttree_leaves/t_desert_tree_leaves_ao.data.png',
+      baseColorMap: '/assets/materials/foliage/bush/t_deserttree_leaves/t_desert_tree_leaves_b.color.png',
       detailScale: [1, 1],
-      normalMap: '/levels/johnson_valley/art/shapes/trees/deserttrees/t_desert_tree_leaves_nm.normal.png',
-      opacityMap: '/levels/johnson_valley/art/shapes/trees/deserttrees/t_desert_tree_leaves_o.data.png',
-      roughnessMap: '/levels/johnson_valley/art/shapes/trees/deserttrees/t_desert_tree_leaves_r.data.png',
+      normalMap: '/assets/materials/foliage/bush/t_deserttree_leaves/t_desert_tree_leaves_nm.normal.png',
+      opacityMap: '/assets/materials/foliage/bush/t_deserttree_leaves/t_desert_tree_leaves_o.data.png',
+      roughnessMap: '/assets/materials/foliage/bush/t_deserttree_leaves/t_desert_tree_leaves_r.data.png',
     }, {}, {}, {}],
     alphaRef: 65,
     alphaTest: true,

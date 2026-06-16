@@ -4992,6 +4992,21 @@ function gridSizeForElements(maxElements, minGridSize = 2) {
   return Math.max(minGridSize, needed);
 }
 
+// GroundCover renders billboards in a gridSize×gridSize grid of cells spanning the
+// camera-relative `radius`. A cell re-populates as a single unit when the camera
+// crosses into it, so oversized cells visibly "pop" in as blocks on a grid as you
+// approach. Sizing gridSize purely from the per-cell element cap minimises gridSize
+// and yields coarse cells (e.g. radius 160 / gridSize 6 ⇒ ~53 m cells). Official
+// lush-grass covers instead keep cells ~25 m (Utah Grass_green: radius 100 /
+// gridSize 8). Drive gridSize off the radius so cells stay ~25 m, while never
+// dropping below the element-cap minimum (smaller cells only ever hold fewer
+// elements, so the cap is never violated). Capped at 16 to bound per-object cost.
+const BEAMNG_GROUNDCOVER_TARGET_CELL_M = 25;
+function gridSizeForCover(radius, maxElements) {
+  const cellDriven = Math.ceil((2 * radius) / BEAMNG_GROUNDCOVER_TARGET_CELL_M);
+  return Math.min(16, Math.max(gridSizeForElements(maxElements), cellDriven));
+}
+
 /**
  * Randomly jitter a lat/lng point by up to N meters using deterministic seed.
  */
@@ -5340,7 +5355,7 @@ function buildGroundCoverObjects(terrainData, squareSize, includeTrees, biome) {
         material,
         Types: types,
         dissolveRadius: Math.max(30, roundTo(radius * 0.75, 3)),
-        gridSize: Math.max(areaSqM > 45000 ? 12 : 10, gridSizeForElements(Math.min(400000, Math.max(90000, Math.round(areaSqM * 1.9))))),
+        gridSize: gridSizeForCover(radius, Math.min(400000, Math.max(90000, Math.round(areaSqM * 1.9)))),
         maxBillboardTiltAngle: 60,
         maxElements: Math.min(400000, Math.max(90000, Math.round(areaSqM * 1.9))),
         noShapes: true,
@@ -5471,7 +5486,7 @@ function buildGroundCoverObjects(terrainData, squareSize, includeTrees, biome) {
     persistentId: generatePersistentId(),
     position: [0, 0, roundTo(centerHeight, 3)],
     material: groundCover.materialName,
-    gridSize: gridSizeForElements(baseCoverMaxElements),
+    gridSize: gridSizeForCover(mapRadius, baseCoverMaxElements),
     radius: mapRadius,
     // Fade only near the placement edge so grass stays visible far out, instead
     // of dissolving at ~0.65·radius.
@@ -5514,7 +5529,7 @@ function buildGroundCoverObjects(terrainData, squareSize, includeTrees, biome) {
     persistentId: generatePersistentId(),
     position: [0, 0, roundTo(centerHeight, 3)],
     material: 'mapng_gc_undergrowth',
-    gridSize: gridSizeForElements(weedElements),
+    gridSize: gridSizeForCover(varietyRadius, weedElements),
     radius: varietyRadius,
     dissolveRadius: Math.max(50, roundTo(varietyRadius * 0.88, 3)),
     shapeCullRadius: varietyRadius,
@@ -5547,7 +5562,7 @@ function buildGroundCoverObjects(terrainData, squareSize, includeTrees, biome) {
     persistentId: generatePersistentId(),
     position: [0, 0, roundTo(centerHeight, 3)],
     material: 'mapng_gc_undergrowth',
-    gridSize: gridSizeForElements(flowerElements),
+    gridSize: gridSizeForCover(varietyRadius, flowerElements),
     radius: varietyRadius,
     dissolveRadius: Math.max(50, roundTo(varietyRadius * 0.88, 3)),
     shapeCullRadius: varietyRadius,
