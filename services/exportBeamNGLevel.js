@@ -4586,6 +4586,185 @@ function buildNativeSignObjects(terrainData, squareSize, rightHandDrive = false)
   return objects;
 }
 
+// Cap to keep pathological inputs from exploding the scene file.
+const MAX_FUEL_STATIONS = 200;
+const MAX_PUMPS_PER_STATION = 8;
+// Real fuel_pump nodes are assigned to their nearest station within this radius.
+const PUMP_ASSOC_RADIUS_M = 60;
+// Search radius for snapping a station's pumps to the nearest drivable road.
+const FUEL_ROAD_SEARCH_M = 45;
+
+/**
+ * Derive BeamNG energyTypes from OSM fuel:* tags. Charging stations are electric;
+ * everything else defaults to a normal gasoline/diesel station with an `unknown`
+ * fallback (see Fuel-Station-Setup.md §energy-types).
+ */
+function deriveEnergyTypes(tags = {}) {
+  if (tags.amenity === 'charging_station') return ['electricEnergy'];
+  const types = new Set();
+  if (tags['fuel:diesel'] === 'yes' || tags['fuel:HGV_diesel'] === 'yes') types.add('diesel');
+  const hasOctane = Object.keys(tags).some((k) => k.startsWith('fuel:octane_'));
+  if (hasOctane || tags['fuel:gasoline'] === 'yes' || tags['fuel:e10'] === 'yes' || tags['fuel:e5'] === 'yes') {
+    types.add('gasoline');
+  }
+  if (tags['fuel:electricity'] === 'yes') types.add('electricEnergy');
+  // No specific pump tags → assume a normal dual-fuel station.
+  if (!types.has('gasoline') && !types.has('diesel')) {
+    types.add('gasoline');
+    types.add('diesel');
+  }
+  types.add('unknown');
+  return [...types];
+}
+
+/**
+ * Turn OSM fuel/charging stations into working BeamNG fuel stations.
+ *
+ * Each pump becomes a BeamNGGameplayArea (the interaction volume the vehicle
+ * overlaps to refuel) paired with a BeamNGPointOfInterest (the in-world/minimap
+ * icon), per Fuel-Station-Setup.md. The pairs are referenced from the level's
+ * facilities.facilities.json, which this also builds.
+ *
+ * Pump placement: when OSM provides `man_made=fuel_pump` nodes we use their real
+ * positions; otherwise (the common case — station mapped as a single node/area)
+ * we synthesize two pumps just off the nearest road so a vehicle can actually
+ * pull alongside the gameplay area.
+ *
+ * Returns { objects, facilities } where `objects` are scene items parented to the
+ * `gasStations` SimGroup and `facilities` are the gasStations entries.
+ */
+function buildFuelStations(terrainData, squareSize) {
+  const features = terrainData.osmFeatures ?? [];
+  const stations = features.filter((f) => (
+    f.type === 'fuel_station'
+    && Array.isArray(f.geometry)
+    && f.geometry.length === 1
+    && Number.isFinite(f.geometry[0]?.lat)
+    && Number.isFinite(f.geometry[0]?.lng)
+  ));
+  if (stations.length === 0) return { objects: [], facilities: [] };
+
+  // Project stations and pumps to world space once.
+  const stationPts = stations.map((f) => geoToWorldPoint(f.geometry[0].lat, f.geometry[0].lng, terrainData, squareSize, 0));
+  const pumpFeatures = features.filter((f) => (
+    f.type === 'fuel_pump'
+    && Array.isArray(f.geometry)
+    && f.geometry.length === 1
+    && Number.isFinite(f.geometry[0]?.lat)
+    && Number.isFinite(f.geometry[0]?.lng)
+  ));
+  const pumpPts = pumpFeatures.map((f) => geoToWorldPoint(f.geometry[0].lat, f.geometry[0].lng, terrainData, squareSize, 0));
+
+  // Assign each real pump to its nearest station within PUMP_ASSOC_RADIUS_M.
+  const pumpsByStation = stations.map(() => []);
+  for (let pi = 0; pi < pumpPts.length; pi++) {
+    let bestSi = -1;
+    let bestDist = PUMP_ASSOC_RADIUS_M;
+    for (let si = 0; si < stationPts.length; si++) {
+      const d = Math.hypot(pumpPts[pi][0] - stationPts[si][0], pumpPts[pi][1] - stationPts[si][1]);
+      if (d < bestDist) { bestDist = d; bestSi = si; }
+    }
+    if (bestSi >= 0) pumpsByStation[bestSi].push(pumpPts[pi]);
+  }
+
+  // Pre-project drivable roads for offsetting synthesized pumps toward the road.
+  const roads = [];
+  for (const feature of features) {
+    if (feature.type !== 'road' || !Array.isArray(feature.geometry) || feature.geometry.length < 2) continue;
+    const highway = feature.tags?.highway;
+    if (!highway || ['footway', 'path', 'pedestrian', 'steps', 'cycleway', 'bridleway', 'corridor'].includes(highway)) continue;
+    const isOneWay = isOneWayRoad(feature.tags || {});
+    const halfWidth = estimateRoadHalfWidth(feature.tags || {}, highway, isOneWay);
+    const pts = feature.geometry
+      .filter((p) => Number.isFinite(p?.lat) && Number.isFinite(p?.lng))
+      .map((p) => geoToWorldPoint(p.lat, p.lng, terrainData, squareSize, 0));
+    if (pts.length >= 2) roads.push({ pts, halfWidth });
+  }
+
+  const objects = [];
+  const facilities = [];
+
+  const limit = Math.min(stations.length, MAX_FUEL_STATIONS);
+  for (let si = 0; si < limit; si++) {
+    const feature = stations[si];
+    const tags = feature.tags || {};
+    const anchor = stationPts[si];
+    const energyTypes = deriveEnergyTypes(tags);
+    const isElectric = energyTypes.length === 1 && energyTypes[0] === 'electricEnergy';
+    const stationName = tags.name || tags.brand
+      || (isElectric ? `Charging Station ${si + 1}` : `Fuel Station ${si + 1}`);
+    const stationId = `fuel_${si + 1}`;
+
+    // Determine pump world positions and a yaw to align bays with the road.
+    const near = findNearestRoad(anchor[0], anchor[1], roads, FUEL_ROAD_SEARCH_M);
+    const bayYaw = near ? Math.atan2(near.ty, near.tx) : 0;
+    let pumpPositions = pumpsByStation[si].slice(0, MAX_PUMPS_PER_STATION);
+
+    if (pumpPositions.length === 0) {
+      // Synthesize two pumps just off the nearest road so a vehicle can reach the
+      // gameplay area. With no road nearby, fall back to the station anchor.
+      let baseX = anchor[0];
+      let baseY = anchor[1];
+      let tx = 1, ty = 0;
+      if (near) {
+        // Unit vector from road centerline toward the station (which side to use).
+        let nx = anchor[0] - near.cx;
+        let ny = anchor[1] - near.cy;
+        const nlen = Math.hypot(nx, ny) || 1;
+        nx /= nlen; ny /= nlen;
+        const offset = near.halfWidth + 3; // off the asphalt, onto the apron
+        baseX = near.cx + nx * offset;
+        baseY = near.cy + ny * offset;
+        tx = near.tx; ty = near.ty;
+      }
+      pumpPositions = [
+        [baseX - tx * 3, baseY - ty * 3],
+        [baseX + tx * 3, baseY + ty * 3],
+      ];
+    }
+
+    const pumpRefs = [];
+    for (let pi = 0; pi < pumpPositions.length; pi++) {
+      const [px, py] = pumpPositions[pi];
+      const ground = getTerrainHeightAtWorldXY(px, py, terrainData, squareSize);
+      const areaName = `${stationId}_pump_area_${pi + 1}`;
+      const iconName = `${stationId}_pump_icon_${pi + 1}`;
+
+      objects.push({
+        __parent: 'gasStations',
+        class: 'BeamNGGameplayArea',
+        name: areaName,
+        persistentId: generatePersistentId(),
+        position: [roundTo(px, 3), roundTo(py, 3), roundTo(ground + 1.5, 3)],
+        rotationMatrix: rotationMatrixFromYaw(bayYaw),
+        scale: [5, 7, 4],
+        area2D: false,
+      });
+      objects.push({
+        __parent: 'gasStations',
+        class: 'BeamNGPointOfInterest',
+        name: iconName,
+        persistentId: generatePersistentId(),
+        position: [roundTo(px, 3), roundTo(py, 3), roundTo(ground + 2.5, 3)],
+        title: stationName,
+        desc: isElectric ? 'Electric charging station' : 'Fuel station',
+        type: 'gasStation',
+      });
+      pumpRefs.push([areaName, iconName]);
+    }
+
+    facilities.push({
+      id: stationId,
+      name: stationName,
+      description: isElectric ? 'Electric charging station.' : 'Fuel station.',
+      energyTypes,
+      pumps: pumpRefs,
+    });
+  }
+
+  return { objects, facilities };
+}
+
 /**
  * Sanitize user-facing road folder names for BeamNG file-safe usage.
  */
@@ -6047,6 +6226,8 @@ export async function exportBeamNGLevel(terrainData, center, options = {}) {
     : [];
   const barrierFolderItems = buildBarrierFolderItems(barrierObjects);
   const signObjects = buildNativeSignObjects(exportTerrainData, squareSize, resolvedRightHandDrive);
+  const { objects: fuelStationObjects, facilities: fuelStationFacilities } =
+    buildFuelStations(exportTerrainData, squareSize);
   const roadFolderGroups = buildRoadFolderGroups(roadArchitectSession);
   const usesEastCoastFenceMaterials = barrierFolderItems.some((obj) => (
     String(obj?.shapeName || '').toLowerCase().includes('eca_bld_wood_fence_a.dae')
@@ -6634,6 +6815,12 @@ export async function exportBeamNGLevel(terrainData, center, options = {}) {
       name: 'signs',
       persistentId: generatePersistentId(),
     }] : []),
+    ...(fuelStationObjects.length > 0 ? [{
+      __parent: 'MissionGroup',
+      class: 'SimGroup',
+      name: 'gasStations',
+      persistentId: generatePersistentId(),
+    }] : []),
     ...(roadFolderGroups.length > 0 ? [{
       __parent: 'MissionGroup',
       class: 'SimGroup',
@@ -6668,6 +6855,18 @@ export async function exportBeamNGLevel(terrainData, center, options = {}) {
   // Native BeamNG sign meshes (TSStatic + .link) for OSM stop/give_way nodes.
   if (signObjects.length > 0) {
     zip.file(`${base}/main/MissionGroup/signs/items.level.json`, toNDJSON(rewrittenSignObjects));
+  }
+
+  // ── main/MissionGroup/gasStations/items.level.json + facilities ──────────
+  // Working fuel/charging stations: BeamNGGameplayArea + BeamNGPointOfInterest
+  // pairs (the in-world pumps) plus the facilities file that ties them together
+  // so the engine actually refuels vehicles (Fuel-Station-Setup.md).
+  if (fuelStationObjects.length > 0) {
+    zip.file(`${base}/main/MissionGroup/gasStations/items.level.json`, toNDJSON(fuelStationObjects));
+    zip.file(
+      `${base}/facilities/facilities.facilities.json`,
+      JSON.stringify({ gasStations: fuelStationFacilities }, null, 2)
+    );
   }
 
   // ── main/MissionGroup/roads/items.level.json ──────────────────────────────
