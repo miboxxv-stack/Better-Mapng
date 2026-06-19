@@ -162,6 +162,9 @@ const buildQuery = (bounds) => {
   node["natural"="tree_row"](${bbox});
   way["natural"="tree_row"](${bbox});
   node["natural"="shrub"](${bbox});
+  node["amenity"="fuel"](${bbox});
+  node["amenity"="charging_station"](${bbox});
+  node["man_made"="fuel_pump"](${bbox});
   node["highway"="traffic_signals"](${bbox});
   node["highway"="stop"](${bbox});
   node["highway"="give_way"](${bbox});
@@ -330,6 +333,16 @@ const parseOverpassResponse = (data, bounds) => {
         ) {
           rawFeatures.push({
             id: el.id.toString(), type: "street_furniture",
+            geometry: [{ lat: el.lat, lng: el.lon }], tags: el.tags,
+          });
+        } else if (el.tags.amenity === "fuel" || el.tags.amenity === "charging_station") {
+          rawFeatures.push({
+            id: el.id.toString(), type: "fuel_station",
+            geometry: [{ lat: el.lat, lng: el.lon }], tags: el.tags,
+          });
+        } else if (el.tags.man_made === "fuel_pump") {
+          rawFeatures.push({
+            id: el.id.toString(), type: "fuel_pump",
             geometry: [{ lat: el.lat, lng: el.lon }], tags: el.tags,
           });
         }
@@ -556,7 +569,31 @@ const parseOverpassResponse = (data, bounds) => {
     }
   }
 
-  return [...clippedFeatures, ...proceduralTrees];
+  // Fuel/charging stations are frequently mapped as areas (ways/relations) rather
+  // than nodes. Those arrive here as polygon features tagged amenity=fuel. Derive a
+  // centroid `fuel_station` point from each so the export has a single placement
+  // anchor regardless of how the station was mapped. The original polygon is kept
+  // (it still renders as a ground landuse patch).
+  const derivedFuelStations = [];
+  for (const f of clippedFeatures) {
+    const tags = f.tags || {};
+    const isStationArea =
+      (tags.amenity === "fuel" || tags.amenity === "charging_station") &&
+      f.type !== "fuel_station" &&
+      Array.isArray(f.geometry) &&
+      f.geometry.length > 2;
+    if (!isStationArea) continue;
+    let sumLat = 0, sumLng = 0;
+    for (const p of f.geometry) { sumLat += p.lat; sumLng += p.lng; }
+    const n = f.geometry.length;
+    derivedFuelStations.push({
+      id: `${f.id}_station`, type: "fuel_station",
+      geometry: [{ lat: sumLat / n, lng: sumLng / n }],
+      tags: { ...tags, source_feature: "area" },
+    });
+  }
+
+  return [...clippedFeatures, ...proceduralTrees, ...derivedFuelStations];
 };
 
 // --- Endpoint Fetcher ---
@@ -636,7 +673,9 @@ export const fetchOSMData = async (bounds) => {
     };
 
     const features = parseOverpassResponse(data, bounds);
-    console.log(`[OSM] Parsed ${features.length} features.`);
+    const fuelStations = features.filter((f) => f.type === "fuel_station").length;
+    const fuelPumps = features.filter((f) => f.type === "fuel_pump").length;
+    console.log(`[OSM] Parsed ${features.length} features (fuel stations: ${fuelStations}, fuel pumps: ${fuelPumps}).`);
     return features;
 
   } catch (error) {
