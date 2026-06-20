@@ -11,6 +11,7 @@ import { ColladaExporter } from './ColladaExporter.js';
 import { buildRoadNetwork, getEffectiveRoadLayer, makeRoadNodeKey, mergeLinearRoadSegments } from './roadNetwork.js';
 import { createBeamNGLinkFileRegistry } from './beamngLinkFiles.js';
 import { getBiomeRuntimeMaterialDefs } from './beamngRuntimeMaterialCatalog.js';
+import { getFuelStationRuntimeMaterialDefs } from './beamngFuelStationMaterials.js';
 import { validateBeamNGZipStructure } from './beamngExportConformance.js';
 import { buildManualMapNavigationData, inferManualLaneData } from './beamngMapNavigation.js';
 import { buildBeamNGSignalExportBundle } from './beamngSignals.js';
@@ -4594,6 +4595,13 @@ const PUMP_ASSOC_RADIUS_M = 60;
 // Search radius for snapping a station's pumps to the nearest drivable road.
 const FUEL_ROAD_SEARCH_M = 45;
 
+// Stock BeamNG meshes referenced (via .link) from the always-installed East
+// Coast USA level. eca_gastation_pumps is a multi-pump island (one per station);
+// eca_charging_station is a single charger unit (one per pump). Their materials
+// are bundled by the caller via getFuelStationRuntimeMaterialDefs().
+const FUEL_PUMP_SHAPE = '/levels/east_coast_usa/art/shapes/buildings/eca_gastation_pumps.DAE';
+const EV_CHARGER_SHAPE = '/levels/east_coast_usa/art/shapes/buildings/eca_charging_station.DAE';
+
 /**
  * Derive BeamNG energyTypes from OSM fuel:* tags. Charging stations are electric;
  * everything else defaults to a normal gasoline/diesel station with an `unknown`
@@ -4751,6 +4759,39 @@ function buildFuelStations(terrainData, squareSize) {
         type: 'gasStation',
       });
       pumpRefs.push([areaName, iconName]);
+    }
+
+    // Visible mesh. Charging stations use one charger unit per pump; fuel
+    // stations use a single pump-island mesh centered on the pump cluster.
+    if (isElectric) {
+      for (let pi = 0; pi < pumpPositions.length; pi++) {
+        const [px, py] = pumpPositions[pi];
+        const g = getTerrainHeightAtWorldXY(px, py, terrainData, squareSize);
+        objects.push({
+          __parent: 'gasStations',
+          class: 'TSStatic',
+          name: `${stationId}_charger_${pi + 1}`,
+          persistentId: generatePersistentId(),
+          position: [roundTo(px, 3), roundTo(py, 3), roundTo(g, 3)],
+          rotationMatrix: rotationMatrixFromYaw(bayYaw),
+          shapeName: EV_CHARGER_SHAPE,
+          useInstanceRenderData: true,
+        });
+      }
+    } else {
+      const cx = pumpPositions.reduce((s, p) => s + p[0], 0) / pumpPositions.length;
+      const cy = pumpPositions.reduce((s, p) => s + p[1], 0) / pumpPositions.length;
+      const g = getTerrainHeightAtWorldXY(cx, cy, terrainData, squareSize);
+      objects.push({
+        __parent: 'gasStations',
+        class: 'TSStatic',
+        name: `${stationId}_pumps`,
+        persistentId: generatePersistentId(),
+        position: [roundTo(cx, 3), roundTo(cy, 3), roundTo(g, 3)],
+        rotationMatrix: rotationMatrixFromYaw(bayYaw),
+        shapeName: FUEL_PUMP_SHAPE,
+        useInstanceRenderData: true,
+      });
     }
 
     facilities.push({
@@ -6715,6 +6756,12 @@ export async function exportBeamNGLevel(terrainData, center, options = {}) {
     zip.file(`${base}/map_assets/official_assets/signs_materials/main.materials.json`, JSON.stringify(getSignRuntimeMaterialDefs(), null, 2));
   }
 
+  // Fuel station mesh materials (eca_gastation_pumps / eca_charging_station).
+  // Without these the linked pump/charger meshes render untextured.
+  if (fuelStationObjects.length > 0) {
+    zip.file(`${base}/map_assets/official_assets/fuelstation_materials/main.materials.json`, JSON.stringify(getFuelStationRuntimeMaterialDefs(), null, 2));
+  }
+
   // ── art/cubemaps/Universal_cubemap_reflection ─────────────────────────────
   // Bundled universal reflection cubemap + CubemapData/Material definition.
   if (useUniversalCubemap) {
@@ -6862,7 +6909,8 @@ export async function exportBeamNGLevel(terrainData, center, options = {}) {
   // pairs (the in-world pumps) plus the facilities file that ties them together
   // so the engine actually refuels vehicles (Fuel-Station-Setup.md).
   if (fuelStationObjects.length > 0) {
-    zip.file(`${base}/main/MissionGroup/gasStations/items.level.json`, toNDJSON(fuelStationObjects));
+    // rewriteForLinks rewrites the ECA mesh shapeNames and registers .link files.
+    zip.file(`${base}/main/MissionGroup/gasStations/items.level.json`, toNDJSON(rewriteForLinks(fuelStationObjects)));
     zip.file(
       `${base}/facilities/facilities.facilities.json`,
       JSON.stringify({ gasStations: fuelStationFacilities }, null, 2)
