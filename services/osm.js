@@ -593,7 +593,41 @@ const parseOverpassResponse = (data, bounds) => {
     });
   }
 
-  return [...clippedFeatures, ...proceduralTrees, ...derivedFuelStations];
+  // Suppress generic extruded buildings that belong to a filling station, since
+  // the BeamNG export places a dedicated in-game pump/canopy asset there instead.
+  // A building is "part of a station" if it is itself tagged amenity=fuel/
+  // charging_station, or it shares a fuel station's brand/name within ~60 m (which
+  // catches the attached convenience store/shop without touching unrelated
+  // buildings nearby).
+  const fuelAnchors = [
+    ...clippedFeatures.filter((f) => f.type === "fuel_station"),
+    ...derivedFuelStations,
+  ].map((f) => ({ pt: f.geometry[0], tags: f.tags || {} }));
+
+  const brandKey = (t = {}) => String(t.brand || t.name || "").trim().toLowerCase();
+  const STATION_BUILDING_RADIUS_M = 60;
+
+  const isFuelStationBuilding = (f) => {
+    if (f.type !== "building" || !Array.isArray(f.geometry) || f.geometry.length < 3) return false;
+    const t = f.tags || {};
+    if (t.amenity === "fuel" || t.amenity === "charging_station") return true;
+    const bk = brandKey(t);
+    if (!bk) return false;
+    let sumLat = 0, sumLng = 0;
+    for (const p of f.geometry) { sumLat += p.lat; sumLng += p.lng; }
+    const c = { lat: sumLat / f.geometry.length, lng: sumLng / f.geometry.length };
+    for (const a of fuelAnchors) {
+      if (!a.pt || brandKey(a.tags) !== bk) continue;
+      const dy = (c.lat - a.pt.lat) * 111000;
+      const dx = (c.lng - a.pt.lng) * 111000 * Math.cos((c.lat * Math.PI) / 180);
+      if (Math.hypot(dx, dy) <= STATION_BUILDING_RADIUS_M) return true;
+    }
+    return false;
+  };
+
+  const featuresWithoutStationBuildings = clippedFeatures.filter((f) => !isFuelStationBuilding(f));
+
+  return [...featuresWithoutStationBuildings, ...proceduralTrees, ...derivedFuelStations];
 };
 
 // --- Endpoint Fetcher ---
