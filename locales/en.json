@@ -298,6 +298,7 @@
     "center": "Center",
     "centerPlusSurroundings": "Center + Surroundings",
     "surroundingsOnly": "Surroundings Only",
+    "realWorldScale": "Real-world scale (1 unit = 1 m)",
     "glbModel": "GLB Model",
     "colladaDae": "Collada DAE",
     "beamngTerrain": "BeamNG Terrain",

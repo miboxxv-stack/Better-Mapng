@@ -339,6 +339,10 @@
                 <span class="text-[9px] text-gray-500 dark:text-gray-400">{{ t('exportPanel.surroundingsOnly') }}</span>
               </label>
             </div>
+            <label class="flex items-center gap-1.5 cursor-pointer">
+              <input type="checkbox" v-model="modelRealWorldScale" :class="CHECKBOX" />
+              <span class="text-[9px] text-gray-500 dark:text-gray-400">{{ t('exportPanel.realWorldScale') }}</span>
+            </label>
           </div>
 
           <div class="grid grid-cols-2 gap-1.5">
@@ -621,6 +625,10 @@ const isAnyExporting = computed(() => (
 
 const modelCenterTextureType = ref('none');
 const modelTileSelection = ref('center-only');
+// Default GLB/DAE exports to real-world metres (1 unit = 1 m) so models drop
+// into Blender at the correct scale for modelling guard rails etc.
+const modelRealWorldScale = ref(localStorage.getItem('mapng_modelRealWorldScale') !== 'false');
+watch(modelRealWorldScale, (v) => localStorage.setItem('mapng_modelRealWorldScale', String(v)));
 
 // Collapsible section states
 const showExports = ref(localStorage.getItem('mapng_showExports') !== 'false');
@@ -916,6 +924,7 @@ const buildRunConfiguration = () => ({
     centerTextureType: modelCenterTextureType.value,
     tileSelection: modelTileSelection.value,
     includeSurroundings: modelTileSelection.value !== 'center-only',
+    realWorldScale: modelRealWorldScale.value,
   },
 });
 
@@ -1290,6 +1299,7 @@ const handleGLBExport = async () => {
     const blob = await exportToGLB(td, {
       centerTextureType: modelCenterTextureType.value,
       tileSelection: modelTileSelection.value,
+      realWorldScale: modelRealWorldScale.value,
       surroundingTilePositions: props.surroundingTilePositions,
       center: props.center,
       resolution: props.resolution,
@@ -1303,6 +1313,7 @@ const handleGLBExport = async () => {
       modelOptions: {
         centerTextureType: modelCenterTextureType.value,
         tileSelection: modelTileSelection.value,
+        realWorldScale: modelRealWorldScale.value,
       }
     });
     downloadMetadataSidecar(filename, metadata);
@@ -1323,6 +1334,7 @@ const handleDAEExport = async () => {
     const zipBlob = await exportToDAE(td, {
       centerTextureType: modelCenterTextureType.value,
       tileSelection: modelTileSelection.value,
+      realWorldScale: modelRealWorldScale.value,
       surroundingTilePositions: props.surroundingTilePositions,
       center: props.center,
       resolution: props.resolution,
@@ -1336,6 +1348,7 @@ const handleDAEExport = async () => {
       modelOptions: {
         centerTextureType: modelCenterTextureType.value,
         tileSelection: modelTileSelection.value,
+        realWorldScale: modelRealWorldScale.value,
       }
     });
     downloadMetadataSidecar(filename, metadata);

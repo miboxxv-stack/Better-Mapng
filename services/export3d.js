@@ -10,6 +10,27 @@ import { ColladaExporter } from './ColladaExporter.js';
 // --- Constants & Helpers ---
 export const SCENE_SIZE = 100;
 
+// Real-world metres represented by a single scene unit. The 3D pipeline builds
+// everything inside a normalised SCENE_SIZE-wide box; multiplying by this factor
+// produces a model where 1 unit = 1 metre. Mirrors the BeamNG export's
+// worldSize = width * squareSize convention (preferring an explicit per-pixel
+// ground resolution, falling back to the bounds) so exported models line up 1:1
+// with the in-game terrain and with each other.
+export const computeMetersPerUnit = (data) => {
+  const explicitMpp = [data?.metersPerPixel, data?.processingMetersPerPixel]
+    .map(Number)
+    .find((v) => Number.isFinite(v) && v > 0);
+  let worldSizeMeters;
+  if (explicitMpp != null) {
+    worldSizeMeters = data.width * explicitMpp;
+  } else {
+    const latRad = (((data.bounds.north + data.bounds.south) / 2) * Math.PI) / 180;
+    const metersPerDegree = 111320 * Math.cos(latRad);
+    worldSizeMeters = (data.bounds.east - data.bounds.west) * metersPerDegree;
+  }
+  return worldSizeMeters / SCENE_SIZE;
+};
+
 // Cached per-dataset projection and constants to avoid recomputation
 let _cachedDataId = null;
 let _cachedProjector = null;
@@ -1414,6 +1435,7 @@ export const exportToGLB = async (data, options = {}) => {
     onProgress,
     maxMeshResolution = 1024,
     returnBlob = false,
+    realWorldScale = false,
   } = options;
   const resolvedIncludeCenterTile = typeof includeCenterTile === 'boolean'
     ? includeCenterTile
@@ -1423,20 +1445,29 @@ export const exportToGLB = async (data, options = {}) => {
     : tileSelection === 'center-plus-surroundings' || tileSelection === 'surroundings-only';
   try {
     const scene = new THREE.Scene();
+    // Everything is built inside the normalised SCENE_SIZE box; a single scaled
+    // root converts the whole model to metres (1 unit = 1 m) when requested,
+    // so it imports into Blender at real-world scale.
+    const root = new THREE.Group();
+    root.name = 'mapng_model';
+    if (realWorldScale) root.scale.setScalar(computeMetersPerUnit(data));
+    scene.add(root);
 
     if (resolvedIncludeCenterTile) {
       onProgress?.('Building terrain mesh...');
       const terrainMesh = await createTerrainMesh(data, maxMeshResolution, centerTextureType);
       const osmGroup = createOSMGroup(data);
-      scene.add(terrainMesh);
-      scene.add(osmGroup);
+      root.add(terrainMesh);
+      root.add(osmGroup);
     }
 
     if (resolvedIncludeSurroundings) {
       onProgress?.('Fetching surrounding tiles for GLB...');
       const surroundingGroup = await createSurroundingMeshes(data, onProgress, maxMeshResolution);
-      if (surroundingGroup) scene.add(surroundingGroup);
+      if (surroundingGroup) root.add(surroundingGroup);
     }
+
+    scene.updateMatrixWorld(true);
 
     onProgress?.('Encoding GLB...');
     return new Promise((resolve, reject) => {
@@ -1483,6 +1514,7 @@ export const exportToDAE = async (data, options = {}) => {
     onProgress,
     maxMeshResolution = 1024,
     returnBlob = false,
+    realWorldScale = false,
   } = options;
   const resolvedIncludeCenterTile = typeof includeCenterTile === 'boolean'
     ? includeCenterTile
@@ -1492,13 +1524,20 @@ export const exportToDAE = async (data, options = {}) => {
     : tileSelection === 'center-plus-surroundings' || tileSelection === 'surroundings-only';
   try {
     const scene = new THREE.Scene();
+    // Everything is built inside the normalised SCENE_SIZE box; a single scaled
+    // root converts the whole model to metres (1 unit = 1 m) when requested,
+    // so it imports into Blender at real-world scale.
+    const root = new THREE.Group();
+    root.name = 'mapng_model';
+    if (realWorldScale) root.scale.setScalar(computeMetersPerUnit(data));
+    scene.add(root);
 
     if (resolvedIncludeCenterTile) {
       onProgress?.('Building terrain mesh...');
       const terrainMesh = await createTerrainMesh(data, maxMeshResolution, centerTextureType);
       const osmGroup = createOSMGroup(data);
-      scene.add(terrainMesh);
-      scene.add(osmGroup);
+      root.add(terrainMesh);
+      root.add(osmGroup);
     }
 
     if (resolvedIncludeSurroundings) {
@@ -1506,7 +1545,7 @@ export const exportToDAE = async (data, options = {}) => {
       const surroundingGroup = await createSurroundingMeshes(data, onProgress, maxMeshResolution);
       if (surroundingGroup) {
         surroundingGroup.name = "surroundings";
-        scene.add(surroundingGroup);
+        root.add(surroundingGroup);
       }
     }
 
