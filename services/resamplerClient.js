@@ -46,6 +46,85 @@ const getWorker = () => {
     }
 };
 
+// ── Worker-side upload raster cache ─────────────────────────────────────────
+// Uploaded GeoTIFF rasters can run to GBs (16 DEFRA tiles ≈ 1.6 GB) and used
+// to be re-cloned and re-transferred on every preview/generate run. Instead,
+// the first run transfers them once with {mode:'store', key}; repeat runs
+// against the same source array ping the worker ('hasRasterCache') and, on a
+// hit, send raster-less tile metadata with {mode:'use', key}. The worker
+// keeps at most one raster set ('store' evicts), so a new upload replaces the
+// old one. Grid (ASC) uploads are excluded: their source.data is rebuilt per
+// run, so there is no stable identity to key on.
+let uploadRasterCacheState = null; // { sourceData, key }
+let uploadRasterCacheSeq = 0;
+
+const workerHasRasterCache = async (key) => {
+    try {
+        const res = await postToWorker({ type: 'hasRasterCache', key });
+        return res?.has === true;
+    } catch {
+        return false;
+    }
+};
+
+/**
+ * Drop the worker-resident upload raster cache (call when the user removes
+ * or replaces their uploaded elevation files, so up to ~GBs are freed without
+ * waiting for the next 'store' to evict).
+ */
+export const releaseUploadRasterCache = async () => {
+    uploadRasterCacheState = null;
+    if (!worker) return;
+    try {
+        await postToWorker({ type: 'releaseRasterCache' });
+    } catch {
+        // worker gone — nothing resident anyway
+    }
+};
+
+/**
+ * Build the tiles payload for a resample message, cloning + transferring
+ * raster buffers only when the worker does not already hold them.
+ * Returns { tilesForWorker, rasterCache } — rasterCache is the directive to
+ * include in the message (or null when caching does not apply).
+ */
+const buildTilesPayload = async (source, tiles, transferables) => {
+    const transferSourceRasters = source?.transferRasters === true;
+    const cacheable = !transferSourceRasters
+        && source?.type === 'geotiff'
+        && Array.isArray(source.data)
+        && tiles.length > 0;
+
+    if (cacheable
+        && uploadRasterCacheState?.sourceData === source.data
+        && await workerHasRasterCache(uploadRasterCacheState.key)) {
+        console.log(`[ResamplerClient] Upload rasters: reusing worker cache (${tiles.length} tiles, no copy/transfer)`);
+        return {
+            tilesForWorker: tiles.map((t) => ({ ...t, raster: null })),
+            rasterCache: { mode: 'use', key: uploadRasterCacheState.key },
+        };
+    }
+
+    const tilesForWorker = tiles.map((t) => {
+        const raster = transferSourceRasters ? t.raster : new Float32Array(t.raster);
+        transferables.push(raster.buffer);
+        return { ...t, raster };
+    });
+
+    if (!cacheable) return { tilesForWorker, rasterCache: null };
+
+    const totalMB = tilesForWorker.reduce((n, t) => n + (t.raster?.byteLength || 0), 0) / (1024 * 1024);
+    console.log(`[ResamplerClient] Upload rasters: transferring ${tiles.length} tiles (${totalMB.toFixed(0)} MB) into worker cache`);
+
+    // Registered optimistically: the worker stores the rasters at message
+    // receipt, before resampling, so the cache survives a failed run. If the
+    // message never arrives (worker death), the next run's ping misses and we
+    // store again.
+    const key = `upload_${++uploadRasterCacheSeq}`;
+    uploadRasterCacheState = { sourceData: source.data, key };
+    return { tilesForWorker, rasterCache: { mode: 'store', key } };
+};
+
 /**
  * Post a message to the worker and return a promise for the response.
  */
@@ -256,13 +335,9 @@ export const resampleHeightMapOffThread = async (
             }
 
             const transferables = [];
-            // Collect raster buffers for transfer (clone first to avoid neutering originals)
-            const transferSourceRasters = source?.transferRasters === true;
-            const tilesForWorker = tiles.map(t => {
-                const raster = transferSourceRasters ? t.raster : new Float32Array(t.raster);
-                transferables.push(raster.buffer);
-                return { ...t, raster };
-            });
+            // Clone raster buffers for transfer only when the worker doesn't
+            // already hold them cached (see buildTilesPayload).
+            const { tilesForWorker, rasterCache } = await buildTilesPayload(source, tiles, transferables);
 
             // Clone fallback pixels for transfer
             let fallbackForWorker = null;
@@ -285,6 +360,7 @@ export const resampleHeightMapOffThread = async (
                 fillHoles,
                 expandFilledGaps,
                 tiles: tilesForWorker,
+                rasterCache,
                 fallback: fallbackForWorker,
                 epsgDefs,
             }, transferables, { onProgress });
@@ -333,12 +409,9 @@ export const resampleHeightAndImageOffThread = async (
             }
 
             const transferables = [];
-            const transferSourceRasters = source?.transferRasters === true;
-            const tilesForWorker = tiles.map((tile) => {
-                const raster = transferSourceRasters ? tile.raster : new Float32Array(tile.raster);
-                transferables.push(raster.buffer);
-                return { ...tile, raster };
-            });
+            // Clone raster buffers for transfer only when the worker doesn't
+            // already hold them cached (see buildTilesPayload).
+            const { tilesForWorker, rasterCache } = await buildTilesPayload(source, tiles, transferables);
 
             let fallbackForWorker = null;
             if (fallbackData) {
@@ -364,6 +437,7 @@ export const resampleHeightAndImageOffThread = async (
                 expandFilledGaps,
                 flat,
                 tiles: tilesForWorker,
+                rasterCache,
                 fallback: fallbackForWorker,
                 epsgDefs,
                 imageSource: { ...imageSourceData, pixels: imagePixels },

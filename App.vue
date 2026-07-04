@@ -217,6 +217,7 @@ import Preview3D from './components/three/Preview3D.vue';
 import AppSidebar from './components/layout/AppSidebar.vue';
 import ViewTabs from './components/ui/ViewTabs.vue';
 import { fetchTerrainData, addOSMToTerrain, parseElevationFile, loadTerrainFromUploadedElevation } from './services/terrain';
+import { releaseUploadRasterCache } from './services/resamplerClient';
 import { applyAscCoordinateSystem } from './services/ascLoader.js';
 import { computeUploadedCropBounds } from './services/uploadBounds';
 import {
@@ -538,6 +539,8 @@ const handleElevationFileClear = () => {
   localStorage.setItem('mapng_uploaded_area_mode', 'native');
   uploadedAscCoordinateSystem.value = 'auto';
   localStorage.setItem('mapng_uploaded_asc_crs', 'auto');
+  // Free the worker-resident copy of the uploaded rasters (can be GBs).
+  releaseUploadRasterCache();
 };
 
 const handleUploadedAscCoordinateSystemChange = async (value) => {

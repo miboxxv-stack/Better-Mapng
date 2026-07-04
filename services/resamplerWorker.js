@@ -848,12 +848,43 @@ const resampleImageData = ({ center, width, height, targetBounds = null, imageSo
     return rgbaBuffer;
 };
 
+// ─── Uploaded raster cache ───────────────────────────────────────────────────
+// Single-entry cache of the most recently transferred upload raster set.
+// Uploaded GeoTIFF rasters can run to GBs; the client transfers them once
+// with rasterCache {mode:'store', key} and repeat runs send raster-less tile
+// metadata with {mode:'use', key} (after confirming via 'hasRasterCache').
+// 'store' evicts any prior entry so at most one raster set stays resident.
+const uploadRasterCache = new Map();
+
+const resolveTileRasters = (tiles, directive) => {
+    if (!directive || !Array.isArray(tiles)) return tiles;
+    if (directive.mode === 'use') {
+        const cached = uploadRasterCache.get(directive.key);
+        if (!cached || cached.length !== tiles.length) throw new Error('RASTER_CACHE_MISS');
+        return tiles.map((t, i) => ({ ...t, raster: cached[i] }));
+    }
+    if (directive.mode === 'store') {
+        uploadRasterCache.clear();
+        uploadRasterCache.set(directive.key, tiles.map((t) => t.raster));
+    }
+    return tiles;
+};
+
 // ─── Message Handler ─────────────────────────────────────────────────────────
 self.onmessage = async (e) => {
     const { type, id, ...params } = e.data;
 
     try {
-        if (type === 'resampleHeight') {
+        if (type === 'resampleHeight' || type === 'resampleHeightAndImage') {
+            params.tiles = resolveTileRasters(params.tiles, params.rasterCache);
+        }
+
+        if (type === 'hasRasterCache') {
+            self.postMessage({ id, type: 'result', has: uploadRasterCache.has(params.key) });
+        } else if (type === 'releaseRasterCache') {
+            uploadRasterCache.clear();
+            self.postMessage({ id, type: 'result', released: true });
+        } else if (type === 'resampleHeight') {
             const result = await resampleHeight({ id, ...params });
             self.postMessage(
                 { id, type: 'result', heightMap: result.heightMap, bounds: result.bounds },
