@@ -5928,6 +5928,80 @@ function buildGroundCoverObjects(terrainData, squareSize, includeTrees, biome) {
 }
 
 /**
+ * Pump a JSZip internal stream into a writable stream with backpressure:
+ * pause the zip stream while each chunk write is in flight so only one
+ * chunk lives in the heap at a time.
+ */
+async function streamZipToWritable(zip, writable, onPercent) {
+  const stream = zip.generateInternalStream({
+    type: 'uint8array',
+    compression: 'DEFLATE',
+    streamFiles: true,
+  });
+  await new Promise((resolve, reject) => {
+    let chain = Promise.resolve();
+    stream.on('data', (chunk, metadata) => {
+      stream.pause();
+      chain = chain
+        .then(() => writable.write(chunk))
+        .then(() => {
+          onPercent?.(metadata?.percent);
+          stream.resume();
+        })
+        .catch(reject);
+    });
+    stream.on('error', reject);
+    stream.on('end', () => { chain.then(resolve, reject); });
+    stream.resume();
+  });
+}
+
+const OPFS_EXPORT_DIR = 'beamng_exports';
+
+/**
+ * Stream the level zip into the Origin Private File System and return the
+ * resulting disk-backed File (a Blob subclass — drop-in for the in-memory
+ * path, including URL.createObjectURL downloads). Returns null when OPFS is
+ * unavailable or anything fails, so the caller can fall back to the
+ * in-memory generateAsync path.
+ *
+ * Earlier exports are cleaned up on a 1-hour TTL rather than immediately:
+ * a File handed to the UI reads from the OPFS entry lazily, so deleting an
+ * entry too eagerly could break a download still in progress.
+ */
+async function generateZipToOPFS(zip, filename, onPercent) {
+  if (typeof navigator === 'undefined' || !navigator.storage?.getDirectory) return null;
+  try {
+    const root = await navigator.storage.getDirectory();
+    const dir = await root.getDirectoryHandle(OPFS_EXPORT_DIR, { create: true });
+
+    for await (const [name, handle] of dir.entries()) {
+      if (name === filename) continue; // truncated by createWritable below
+      try {
+        const file = handle.kind === 'file' ? await handle.getFile() : null;
+        if (!file || Date.now() - file.lastModified > 60 * 60 * 1000) {
+          await dir.removeEntry(name, { recursive: true });
+        }
+      } catch { /* best-effort cleanup */ }
+    }
+
+    const fileHandle = await dir.getFileHandle(filename, { create: true });
+    const writable = await fileHandle.createWritable();
+    try {
+      await streamZipToWritable(zip, writable, onPercent);
+      await writable.close();
+    } catch (e) {
+      try { await writable.abort(); } catch { /* already failed */ }
+      throw e;
+    }
+    return await fileHandle.getFile();
+  } catch (e) {
+    console.warn(`${BEAMNG_EXPORT_SERVICE_LOG} OPFS zip streaming unavailable/failed — using in-memory zip:`, e?.message || e);
+    return null;
+  }
+}
+
+/**
  * Generate a complete BeamNG level .zip from terrainData and center coordinates.
  *
  * ZIP structure:
@@ -7212,11 +7286,26 @@ export async function exportBeamNGLevel(terrainData, center, options = {}) {
 
   beginStep('Compressing ZIP archive (DEFLATE)…', 94);
   await yield_();
-  const zipBlob = await zip.generateAsync({ type: 'blob', compression: 'DEFLATE' });
+  const zipFilename = `${levelName}.zip`;
+  let lastZipPct = -10;
+  const onZipPercent = (pct) => {
+    if (!Number.isFinite(pct) || pct - lastZipPct < 5) return;
+    lastZipPct = pct;
+    report(`Compressing ZIP archive (${Math.round(pct)}%)…`, 94 + Math.min(5, Math.floor(pct / 20)));
+  };
+  // Stream the archive to disk (OPFS) when available so the ~1 GB output never
+  // has to accumulate in the JS heap; fall back to the in-memory blob elsewhere.
+  let zipBlob = await generateZipToOPFS(zip, zipFilename, onZipPercent);
+  let zipDelivery = 'opfs-stream';
+  if (!zipBlob) {
+    zipDelivery = 'in-memory';
+    zipBlob = await zip.generateAsync({ type: 'blob', compression: 'DEFLATE', streamFiles: true });
+  }
   console.log(`${BEAMNG_EXPORT_SERVICE_LOG} ZIP generated:`, {
-    filename: `${levelName}.zip`,
+    filename: zipFilename,
     blobType: zipBlob?.type,
     blobSize: zipBlob?.size,
+    delivery: zipDelivery,
     levelName,
   });
   beginStep('Done', 100);
