@@ -130,6 +130,98 @@ const getSatelliteZoomForProcessingMpp = (processingMetersPerPixel = 1) => {
   return Math.max(MIN_SATELLITE_ZOOM, SATELLITE_ZOOM - reduction);
 };
 
+/**
+ * Fetch a satellite tile mosaic for `fetchBounds` into a CPU-side RGBA buffer.
+ *
+ * Chromium cannot reliably back a mosaic-sized canvas at fine processing
+ * resolutions (e.g. 0.84 m/px over ~14 km → 75×75 z17 tiles = 19200² px):
+ * past ~2^28 total pixels — or earlier under GPU memory pressure — drawImage
+ * silently no-ops and getImageData returns transparent black, which turned
+ * BYOD satellite/hybrid textures black at 16k. Stitching each tile through a
+ * single 256×256 scratch canvas into a plain Uint8ClampedArray avoids canvas
+ * size limits entirely (fetchTerrainData already works this way).
+ *
+ * Returns { satDataImg: {data,width,height}, satMinTileX, satMinTileY, tileCount }.
+ */
+const fetchSatelliteMosaic = async (
+  fetchBounds,
+  satelliteZoom,
+  signal,
+  onTileProgress = null,
+  globalTileConcurrency = 20,
+) => {
+  const satNw = project(fetchBounds.north, fetchBounds.west, satelliteZoom);
+  const satSe = project(fetchBounds.south, fetchBounds.east, satelliteZoom);
+  const satMinTileX = Math.floor(satNw.x / TILE_SIZE);
+  const satMinTileY = Math.floor(satNw.y / TILE_SIZE);
+  const satMaxTileX = Math.floor(satSe.x / TILE_SIZE);
+  const satMaxTileY = Math.floor(satSe.y / TILE_SIZE);
+  const satCanvasWidth = (satMaxTileX - satMinTileX + 1) * TILE_SIZE;
+  const satCanvasHeight = (satMaxTileY - satMinTileY + 1) * TILE_SIZE;
+
+  const satBuffer = new Uint8ClampedArray(satCanvasWidth * satCanvasHeight * 4);
+  // Default to opaque black so any gap (missed tile) reads as opaque rather
+  // than transparent (little-endian RGBA: 0,0,0,255).
+  new Uint32Array(satBuffer.buffer).fill(0xFF000000);
+
+  // Reuse a single 256×256 scratch canvas to extract each tile's pixels.
+  // JS is single-threaded so concurrent pMap callbacks never actually overlap;
+  // clearing+drawing+reading is always atomic within one event-loop turn.
+  const tempSatCanvas = document.createElement('canvas');
+  tempSatCanvas.width = TILE_SIZE;
+  tempSatCanvas.height = TILE_SIZE;
+  const tempSatCtx = tempSatCanvas.getContext('2d', { willReadFrequently: true });
+  if (!tempSatCtx) throw new Error('Failed to create satellite scratch canvas context');
+
+  const satRequests = [];
+  for (let tx = satMinTileX; tx <= satMaxTileX; tx++)
+    for (let ty = satMinTileY; ty <= satMaxTileY; ty++)
+      satRequests.push({ tx, ty });
+
+  let completed = 0;
+  await pMap(satRequests, async ({ tx, ty }) => {
+    completed++;
+    if (completed % 10 === 0 || completed === satRequests.length) {
+      onTileProgress?.(completed, satRequests.length);
+    }
+    const numTiles = 2 ** satelliteZoom;
+    const wrappedTx = ((tx % numTiles) + numTiles) % numTiles;
+    const sImg = await loadImage(`${SATELLITE_API_URL}/${satelliteZoom}/${ty}/${wrappedTx}`, signal);
+    const drawX = (tx - satMinTileX) * TILE_SIZE;
+    const drawY = (ty - satMinTileY) * TILE_SIZE;
+    if (sImg) {
+      tempSatCtx.clearRect(0, 0, TILE_SIZE, TILE_SIZE);
+      tempSatCtx.drawImage(sImg, 0, 0);
+      const tilePixels = tempSatCtx.getImageData(0, 0, TILE_SIZE, TILE_SIZE).data;
+      for (let row = 0; row < TILE_SIZE; row++) {
+        const srcOff = row * TILE_SIZE * 4;
+        const dstOff = ((drawY + row) * satCanvasWidth + drawX) * 4;
+        satBuffer.set(tilePixels.subarray(srcOff, srcOff + TILE_SIZE * 4), dstOff);
+      }
+    } else {
+      // Dark gray placeholder for failed tiles (alpha already 255).
+      for (let row = 0; row < TILE_SIZE; row++) {
+        const dstOff = ((drawY + row) * satCanvasWidth + drawX) * 4;
+        for (let col = 0; col < TILE_SIZE; col++) {
+          satBuffer[dstOff + col * 4] = 0x1a;
+          satBuffer[dstOff + col * 4 + 1] = 0x1a;
+          satBuffer[dstOff + col * 4 + 2] = 0x1a;
+        }
+      }
+    }
+  }, Math.max(1, Number(globalTileConcurrency || 20)), signal);
+
+  const cIdx = ((satCanvasHeight >> 1) * satCanvasWidth + (satCanvasWidth >> 1)) * 4;
+  console.log(`[Sat Mosaic] ${satCanvasWidth}x${satCanvasHeight} (${satRequests.length} tiles, z${satelliteZoom}) center: r=${satBuffer[cIdx]} g=${satBuffer[cIdx + 1]} b=${satBuffer[cIdx + 2]} a=${satBuffer[cIdx + 3]}`);
+
+  return {
+    satDataImg: { data: satBuffer, width: satCanvasWidth, height: satCanvasHeight },
+    satMinTileX,
+    satMinTileY,
+    tileCount: satRequests.length,
+  };
+};
+
 const createTerrariumHeightSampler = async (
   bounds,
   signal,
@@ -1627,52 +1719,23 @@ export const loadTerrainFromTif = async (
   }
 
   // ── Satellite tiles (same as fetchTerrainData, no terrain tiles needed) ────
-  const satNw = project(fetchBounds.north, fetchBounds.west, satelliteZoom);
-  const satSe = project(fetchBounds.south, fetchBounds.east, satelliteZoom);
-  const satMinTileX = Math.floor(satNw.x / TILE_SIZE);
-  const satMinTileY = Math.floor(satNw.y / TILE_SIZE);
-  const satMaxTileX = Math.floor(satSe.x / TILE_SIZE);
-  const satMaxTileY = Math.floor(satSe.y / TILE_SIZE);
-  const satTileCountX = satMaxTileX - satMinTileX + 1;
-  const satTileCountY = satMaxTileY - satMinTileY + 1;
-
-  const satCanvas = document.createElement('canvas');
-  satCanvas.width  = satTileCountX * TILE_SIZE;
-  satCanvas.height = satTileCountY * TILE_SIZE;
-  const sCtx = satCanvas.getContext('2d', { willReadFrequently: true });
-  if (!sCtx) throw new Error('Failed to create satellite canvas context');
-
-  const satRequests = [];
-  for (let tx = satMinTileX; tx <= satMaxTileX; tx++)
-    for (let ty = satMinTileY; ty <= satMaxTileY; ty++)
-      satRequests.push({ tx, ty });
-
+  // CPU-side mosaic: a tileCount-sized canvas goes blank on Chromium at fine
+  // processing resolutions (see fetchSatelliteMosaic).
   emitProgress({
-    status: `Downloading ${satRequests.length} satellite tiles...`,
+    status: 'Downloading satellite tiles...',
     percent: 0,
-    detail: `0/${satRequests.length} tiles`,
   });
-  let completed = 0;
-  await pMap(satRequests, async ({ tx, ty }) => {
-    completed++;
-    if (completed % 10 === 0 || completed === satRequests.length) {
-      emitProgress({
-        status: `Downloading ${satRequests.length} satellite tiles...`,
-        percent: (completed / Math.max(1, satRequests.length)) * 100,
-        detail: `${completed}/${satRequests.length} tiles`,
-      });
-    }
-    const numTiles = Math.pow(2, satelliteZoom);
-    const wrappedTx = ((tx % numTiles) + numTiles) % numTiles;
-    const satUrl = `${SATELLITE_API_URL}/${satelliteZoom}/${ty}/${wrappedTx}`;
-    const sImg = await loadImage(satUrl, signal);
-    const drawX = (tx - satMinTileX) * TILE_SIZE;
-    const drawY = (ty - satMinTileY) * TILE_SIZE;
-    if (sImg) sCtx.drawImage(sImg, drawX, drawY);
-    else { sCtx.fillStyle = '#1a1a1a'; sCtx.fillRect(drawX, drawY, TILE_SIZE, TILE_SIZE); }
-  }, Math.max(1, Number(globalTileConcurrency || 20)), signal);
-
-  const satDataImg = sCtx.getImageData(0, 0, satCanvas.width, satCanvas.height);
+  const { satDataImg, satMinTileX, satMinTileY } = await fetchSatelliteMosaic(
+    fetchBounds,
+    satelliteZoom,
+    signal,
+    (completed, total) => emitProgress({
+      status: `Downloading ${total} satellite tiles...`,
+      percent: (completed / Math.max(1, total)) * 100,
+      detail: `${completed}/${total} tiles`,
+    }),
+    globalTileConcurrency,
+  );
   const colorSampler = (lat, lng) => {
     const p = project(lat, lng, satelliteZoom);
     const localX = p.x - satMinTileX * TILE_SIZE;
@@ -1687,7 +1750,7 @@ export const loadTerrainFromTif = async (
 
   // ── Resample TIF heightmap to metric grid ───────────────────────────────────
   signal?.throwIfAborted();
-  console.info(`[BYOD] Resampling ${uploadedRasterData.gridTiles?.length || 1} uploaded tile(s) to ${width}x${height}.`);
+  console.info(`[BYOD] Resampling ${uploadedRasterData.gridTiles?.length || uploadedRasterData.images?.length || 1} uploaded tile(s) to ${width}x${height}.`);
   emitProgress({ status: 'Mapping uploaded elevation to the output grid...', percent: 0 });
 
   let heightMap, finalBounds;
@@ -1938,43 +2001,16 @@ export const loadTerrainFromLaz = async (
   }
 
   // ── Satellite tiles ───────────────────────────────────────────────────────
-  const satNw = project(fetchBounds.north, fetchBounds.west, satelliteZoom);
-  const satSe = project(fetchBounds.south, fetchBounds.east, satelliteZoom);
-  const satMinTileX   = Math.floor(satNw.x / TILE_SIZE);
-  const satMinTileY   = Math.floor(satNw.y / TILE_SIZE);
-  const satMaxTileX   = Math.floor(satSe.x / TILE_SIZE);
-  const satMaxTileY   = Math.floor(satSe.y / TILE_SIZE);
-  const satTileCountX = satMaxTileX - satMinTileX + 1;
-  const satTileCountY = satMaxTileY - satMinTileY + 1;
-
-  const satCanvas = document.createElement('canvas');
-  satCanvas.width  = satTileCountX * TILE_SIZE;
-  satCanvas.height = satTileCountY * TILE_SIZE;
-  const sCtx = satCanvas.getContext('2d', { willReadFrequently: true });
-  if (!sCtx) throw new Error('Failed to create satellite canvas context');
-
-  const satRequests = [];
-  for (let tx = satMinTileX; tx <= satMaxTileX; tx++)
-    for (let ty = satMinTileY; ty <= satMaxTileY; ty++)
-      satRequests.push({ tx, ty });
-
-  onProgress?.(`Downloading ${satRequests.length} satellite tiles...`);
-  let completed = 0;
-  await pMap(satRequests, async ({ tx, ty }) => {
-    completed++;
-    if (completed % 10 === 0 || completed === satRequests.length)
-      onProgress?.(`Downloaded ${completed}/${satRequests.length} satellite tiles...`);
-    const numTiles  = Math.pow(2, satelliteZoom);
-    const wrappedTx = ((tx % numTiles) + numTiles) % numTiles;
-    const satUrl    = `${SATELLITE_API_URL}/${satelliteZoom}/${ty}/${wrappedTx}`;
-    const sImg = await loadImage(satUrl, signal);
-    const drawX = (tx - satMinTileX) * TILE_SIZE;
-    const drawY = (ty - satMinTileY) * TILE_SIZE;
-    if (sImg) sCtx.drawImage(sImg, drawX, drawY);
-    else { sCtx.fillStyle = '#1a1a1a'; sCtx.fillRect(drawX, drawY, TILE_SIZE, TILE_SIZE); }
-  }, Math.max(1, Number(globalTileConcurrency || 20)), signal);
-
-  const satDataImg   = sCtx.getImageData(0, 0, satCanvas.width, satCanvas.height);
+  // CPU-side mosaic: a tileCount-sized canvas goes blank on Chromium at fine
+  // processing resolutions (see fetchSatelliteMosaic).
+  onProgress?.('Downloading satellite tiles...');
+  const { satDataImg, satMinTileX, satMinTileY } = await fetchSatelliteMosaic(
+    fetchBounds,
+    satelliteZoom,
+    signal,
+    (completed, total) => onProgress?.(`Downloaded ${completed}/${total} satellite tiles...`),
+    globalTileConcurrency,
+  );
   const colorSampler = (lat, lng) => {
     const p = project(lat, lng, satelliteZoom);
     const localX = p.x - satMinTileX * TILE_SIZE;
