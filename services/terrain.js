@@ -130,6 +130,37 @@ const getSatelliteZoomForProcessingMpp = (processingMetersPerPixel = 1) => {
   return Math.max(MIN_SATELLITE_ZOOM, SATELLITE_ZOOM - reduction);
 };
 
+// Downstream consumers cap satellite-derived textures at 8192px (see
+// SAT_SOURCE_MAX_SIZE in resamplerClient.js and the OSM/hybrid texture
+// generators), so mosaic imagery finer than that cap can resolve is pure
+// overhead. Keep this in sync with resamplerClient.js.
+const SAT_TEXTURE_MAX_SIZE = 8192;
+
+/**
+ * Reduce `requestedZoom` until the satellite mosaic carries no more ground
+ * resolution than the downstream texture cap can express. Each zoom step
+ * quarters mosaic memory and tile downloads: a 0.84 m/px 16k export only ever
+ * shows ~1.68 m/px of imagery (8192px over ~13.8 km), so z16 (~1.45 m/px at
+ * 52°N) replaces z17's 75×75-tile / ~1.4 GB mosaic with 38×38 tiles at
+ * ~370 MB — identical output quality. Never raises the zoom.
+ */
+const clampSatelliteZoomForOutput = (fetchBounds, requestedZoom, outputPx) => {
+  const outPx = Math.min(Number(outputPx) || SAT_TEXTURE_MAX_SIZE, SAT_TEXTURE_MAX_SIZE);
+  const latRad = ((fetchBounds.north + fetchBounds.south) / 2) * Math.PI / 180;
+  const widthMeters = Math.abs(fetchBounds.east - fetchBounds.west) * 111320 * Math.cos(latRad);
+  if (!(widthMeters > 0) || !(outPx > 0)) return requestedZoom;
+  const neededMpp = widthMeters / outPx;
+  // Web-mercator ground resolution at zoom z: 156543.03392 · cos(lat) / 2^z.
+  let z = requestedZoom;
+  while (z > MIN_SATELLITE_ZOOM && (156543.03392 * Math.cos(latRad)) / 2 ** (z - 1) <= neededMpp) {
+    z--;
+  }
+  if (z !== requestedZoom) {
+    console.log(`[Sat Mosaic] zoom clamped ${requestedZoom} → ${z} (a ${outPx}px texture over ${Math.round(widthMeters)} m needs only ${neededMpp.toFixed(2)} m/px)`);
+  }
+  return z;
+};
+
 /**
  * Fetch a satellite tile mosaic for `fetchBounds` into a CPU-side RGBA buffer.
  *
@@ -1135,8 +1166,6 @@ export const fetchTerrainData = async (
   const effectiveMetersPerPixel = Number.isFinite(Number(processingMetersPerPixel)) && Number(processingMetersPerPixel) > 0
     ? Number(processingMetersPerPixel)
     : 1;
-  const satelliteZoom = getSatelliteZoomForProcessingMpp(effectiveMetersPerPixel);
-
   // 1. Define Target Metric Grid
   // Resolution is output pixels; meters-per-pixel controls world coverage.
   const width = resolution;
@@ -1156,6 +1185,12 @@ export const fetchTerrainData = async (
         width * effectiveMetersPerPixel,
         height * effectiveMetersPerPixel,
       );
+
+  const satelliteZoom = clampSatelliteZoomForOutput(
+    fetchBounds,
+    getSatelliteZoomForProcessingMpp(effectiveMetersPerPixel),
+    width,
+  );
 
   // 2. Try GPXZ / USGS
   let rawData = null;
@@ -1680,8 +1715,6 @@ export const loadTerrainFromTif = async (
   const effectiveMetersPerPixel = Number.isFinite(Number(processingMetersPerPixel)) && Number(processingMetersPerPixel) > 0
     ? Number(processingMetersPerPixel)
     : 1;
-  const satelliteZoom = getSatelliteZoomForProcessingMpp(effectiveMetersPerPixel);
-
   const normalizedCenter = { lat: center.lat, lng: normalizeLng(center.lng) };
   const emitProgress = (update) => onProgress?.(update);
   let width;
@@ -1721,6 +1754,11 @@ export const loadTerrainFromTif = async (
   // ── Satellite tiles (same as fetchTerrainData, no terrain tiles needed) ────
   // CPU-side mosaic: a tileCount-sized canvas goes blank on Chromium at fine
   // processing resolutions (see fetchSatelliteMosaic).
+  const satelliteZoom = clampSatelliteZoomForOutput(
+    fetchBounds,
+    getSatelliteZoomForProcessingMpp(effectiveMetersPerPixel),
+    width,
+  );
   emitProgress({
     status: 'Downloading satellite tiles...',
     percent: 0,
@@ -1960,8 +1998,6 @@ export const loadTerrainFromLaz = async (
   const effectiveMetersPerPixel = Number.isFinite(Number(processingMetersPerPixel)) && Number(processingMetersPerPixel) > 0
     ? Number(processingMetersPerPixel)
     : 1;
-  const satelliteZoom = getSatelliteZoomForProcessingMpp(effectiveMetersPerPixel);
-
   const normalizedCenter = { lat: center.lat, lng: normalizeLng(center.lng) };
 
   onProgress?.('Calculating metric bounds...');
@@ -2003,6 +2039,11 @@ export const loadTerrainFromLaz = async (
   // ── Satellite tiles ───────────────────────────────────────────────────────
   // CPU-side mosaic: a tileCount-sized canvas goes blank on Chromium at fine
   // processing resolutions (see fetchSatelliteMosaic).
+  const satelliteZoom = clampSatelliteZoomForOutput(
+    fetchBounds,
+    getSatelliteZoomForProcessingMpp(effectiveMetersPerPixel),
+    width,
+  );
   onProgress?.('Downloading satellite tiles...');
   const { satDataImg, satMinTileX, satMinTileY } = await fetchSatelliteMosaic(
     fetchBounds,
