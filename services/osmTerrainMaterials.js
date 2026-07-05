@@ -900,6 +900,15 @@ export async function buildTerrainMaterials(terrainData, worldSize, exportLevelN
   const { pbrSource = 'osm', imageCanvas = null } = options;
   const { width: size } = terrainData;
   const baseSize = satelliteTexSize ?? size;
+  // TerrainMaterial *BaseTexSize fields (and legacy diffuseSize) are WORLD
+  // METERS the base texture spans — not pixels (Terrain-Files.md: "World size
+  // used to scale the base color base texture"; vanilla small_island ships
+  // 2048px base textures with baseColorBaseTexSize=1024 = its 1024 m world).
+  // Writing the pixel size here breaks any map whose squareSize ≠ 1: at
+  // 0.84 m/px the game mapped the satellite base over 16384 m of a 13762 m
+  // terrain, so only the first 84% of the image covered the map (reported as
+  // "satellite image cropped and stretched" / terrain not matching imagery).
+  const baseWorldSize = Number.isFinite(worldSize) && worldSize > 0 ? worldSize : baseSize;
   const levelName = exportLevelName;
 
   // ── Build layer map ────────────────────────────────────────────────────────
@@ -956,16 +965,16 @@ export async function buildTerrainMaterials(terrainData, worldSize, exportLevelN
     return {
       baseColorDetailTex:      p('shared_r_sm.png'), baseColorDetailStrength: [0, 0],
       baseColorMacroTex:       p('shared_r_sm.png'), baseColorMacroStrength:  [0, 0],
-      normalBaseTex:           p('shared_nm.png'),   normalBaseTexSize:        baseSize,
+      normalBaseTex:           p('shared_nm.png'),   normalBaseTexSize:        baseWorldSize,
       normalDetailTex:         p('shared_nm_sm.png'), normalDetailStrength:    [0, 0],
       normalMacroTex:          p('shared_nm_sm.png'), normalMacroStrength:     [0, 0],
-      roughnessBaseTex:        p('shared_r.png'),    roughnessBaseTexSize:     baseSize,
+      roughnessBaseTex:        p('shared_r.png'),    roughnessBaseTexSize:     baseWorldSize,
       roughnessDetailTex:      p('shared_r_sm.png'), roughnessDetailStrength: [0, 0],
       roughnessMacroTex:       p('shared_r_sm.png'), roughnessMacroStrength:  [0, 0],
-      aoBaseTex:               p('shared_ao.png'),   aoBaseTexSize:            baseSize,
+      aoBaseTex:               p('shared_ao.png'),   aoBaseTexSize:            baseWorldSize,
       aoDetailTex:             p('shared_ao_sm.png'),
       aoMacroTex:              p('shared_ao_sm.png'),
-      heightBaseTex:           p('shared_r.png'),    heightBaseTexSize:        baseSize,
+      heightBaseTex:           p('shared_r.png'),    heightBaseTexSize:        baseWorldSize,
       heightDetailTex:         p('shared_r_sm.png'),
       heightMacroTex:          p('shared_r_sm.png'),
     };
@@ -982,16 +991,16 @@ export async function buildTerrainMaterials(terrainData, worldSize, exportLevelN
     materialDef.persistentId = uuid;
     materialDef.internalName = refMaterial.internalName;
     materialDef.baseColorBaseTex = satellitePath;
-    materialDef.baseColorBaseTexSize = baseSize;
-    materialDef.diffuseSize = baseSize;
+    materialDef.baseColorBaseTexSize = baseWorldSize;
+    materialDef.diffuseSize = baseWorldSize;
     materialDef.aoBaseTex = p('shared_ao.png');
-    materialDef.aoBaseTexSize = baseSize;
+    materialDef.aoBaseTexSize = baseWorldSize;
     materialDef.normalBaseTex = p('shared_nm.png');
-    materialDef.normalBaseTexSize = baseSize;
+    materialDef.normalBaseTexSize = baseWorldSize;
     materialDef.roughnessBaseTex = p('shared_r.png');
-    materialDef.roughnessBaseTexSize = baseSize;
+    materialDef.roughnessBaseTexSize = baseWorldSize;
     materialDef.heightBaseTex = p('shared_r.png');
-    materialDef.heightBaseTexSize = baseSize;
+    materialDef.heightBaseTexSize = baseWorldSize;
     materialDefs[key] = materialDef;
     // First reference material is the biome's dominant ground cover (semantic
     // "Grass"); DefaultMaterial inherits its surface below.
@@ -1025,8 +1034,8 @@ export async function buildTerrainMaterials(terrainData, worldSize, exportLevelN
         internalName: 'DefaultMaterial',
         groundmodelName: 'GROUNDMODEL_ASPHALT1',
         baseColorBaseTex: satellitePath,
-        baseColorBaseTexSize: baseSize,
-        diffuseSize: baseSize,
+        baseColorBaseTexSize: baseWorldSize,
+        diffuseSize: baseWorldSize,
         ...neutralSlots(),
       };
 
