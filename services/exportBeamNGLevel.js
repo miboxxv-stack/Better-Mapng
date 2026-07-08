@@ -6870,7 +6870,9 @@ export async function exportBeamNGLevel(terrainData, center, options = {}) {
       class: 'TerrainMaterial',
       internalName: 'DefaultMaterial',
       diffuseMap: `levels/${levelName}/art/terrains/terrain.png`,
-      diffuseSize: size,
+      // diffuseSize is WORLD METERS spanned by the base texture, not pixels
+      // (same as the *BaseTexSize fields in osmTerrainMaterials.js).
+      diffuseSize: worldSize,
       groundmodelName: 'GROUNDMODEL_ASPHALT1',
     },
   };
