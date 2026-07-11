@@ -347,7 +347,13 @@
     "openStreetMap": "OpenStreetMap",
     "satellite": "Satellit",
     "topoMap": "Topokarte",
-    "showLabels": "Beschriftungen anzeigen"
+    "showLabels": "Beschriftungen anzeigen",
+    "elevationOverlay": {
+      "title": "Hoehendaten (freier Datensatz)",
+      "show": "Hoehendaten-Vorschau anzeigen",
+      "hide": "Ausblenden",
+      "legend": "Magenta = fehlende/fehlerhafte Daten"
+    }
   },
   "memoryWidget": {
     "mem": "MEM",

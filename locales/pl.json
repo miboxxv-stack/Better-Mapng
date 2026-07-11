@@ -347,7 +347,13 @@
     "openStreetMap": "OpenStreetMap",
     "satellite": "Satelita",
     "topoMap": "Mapa topograficzna",
-    "showLabels": "Pokaż etykiety"
+    "showLabels": "Pokaż etykiety",
+    "elevationOverlay": {
+      "title": "Wysokości (darmowy zbiór danych)",
+      "show": "Pokaż podgląd danych wysokości",
+      "hide": "Ukryj",
+      "legend": "Magenta = brakujące/uszkodzone dane"
+    }
   },
   "memoryWidget": {
     "mem": "PAMIĘĆ",

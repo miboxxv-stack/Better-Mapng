@@ -23,7 +23,7 @@ const TILE_SIZE = 256;
 export const TERRAIN_ZOOM = 15; // Fixed high detail zoom level for Terrain
 const SATELLITE_ZOOM = 17; // Higher detail zoom level for Satellite (approx 1.2m/px)
 const MIN_SATELLITE_ZOOM = 0;
-const TILE_API_URL = "https://s3.amazonaws.com/elevation-tiles-prod/terrarium";
+export const TILE_API_URL = "https://s3.amazonaws.com/elevation-tiles-prod/terrarium";
 const SATELLITE_API_URL =
   "https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile";
 const USGS_PRODUCT_API = "https://tnmaccess.nationalmap.gov/api/v1/products";

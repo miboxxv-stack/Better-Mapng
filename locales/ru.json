@@ -347,7 +347,13 @@
     "openStreetMap": "OpenStreetMap",
     "satellite": "Спутник",
     "topoMap": "Топографическая",
-    "showLabels": "Показывать подписи"
+    "showLabels": "Показывать подписи",
+    "elevationOverlay": {
+      "title": "Высоты (бесплатный набор данных)",
+      "show": "Показать предпросмотр высот",
+      "hide": "Скрыть",
+      "legend": "Пурпурный = нет данных или повреждены"
+    }
   },
   "memoryWidget": {
     "mem": "ПАМ",

@@ -347,7 +347,13 @@
     "openStreetMap": "OpenStreetMap",
     "satellite": "Satellite",
     "topoMap": "Mappa Topo",
-    "showLabels": "Mostra Etichette"
+    "showLabels": "Mostra Etichette",
+    "elevationOverlay": {
+      "title": "Elevazione (dataset gratuito)",
+      "show": "Mostra anteprima elevazione",
+      "hide": "Nascondi",
+      "legend": "Magenta = dati mancanti/corrotti"
+    }
   },
   "memoryWidget": {
     "mem": "MEM",

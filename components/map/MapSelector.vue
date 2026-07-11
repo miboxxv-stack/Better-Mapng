@@ -137,6 +137,9 @@
       />
     </l-map>
 
+    <!-- Live free-dataset elevation preview, fitted to the selection area -->
+    <ElevationOverlay :bounds="elevationOverlayBounds" />
+
     <!-- Custom Layer Control -->
     <div class="absolute bottom-6 right-4 z-[400] bg-white dark:bg-gray-800 rounded-lg shadow-xl border border-gray-200 dark:border-gray-600 overflow-hidden text-gray-800 dark:text-gray-200 text-xs">
         <div class="bg-gray-50 dark:bg-gray-700 px-3 py-2 border-b border-gray-200 dark:border-gray-600 font-medium flex items-center gap-2">
@@ -184,6 +187,7 @@ import { LMap, LTileLayer, LRectangle, LMarker, LTooltip } from '@vue-leaflet/vu
 import { Layers } from 'lucide-vue-next';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
+import ElevationOverlay from './ElevationOverlay.vue';
 import { getAdjacentBounds, POSITION_LABELS } from '../../services/surroundingTiles';
 import { computeMetricSelectionBounds, computeUploadedCropBounds } from '../../services/uploadBounds';
 import { CHECKBOX } from '../base/controlStyles.js';
@@ -353,6 +357,29 @@ const showUploadedTileZones = computed(() => {
 const uploadedCropBounds = computed(() => {
   if (!nativeCoverageBounds.value || props.uploadedAreaMode !== 'crop') return null;
   return computeUploadedCropBounds(currentCenter.value, activeSelectionSizeMeters.value, nativeCoverageBounds.value);
+});
+
+// Area the elevation minimap stays fitted to: the batch grid extent when a
+// grid is shown, otherwise the crop box (BYOD crop mode) or the selection box.
+const elevationOverlayBounds = computed(() => {
+  if (hasBatchGrid.value) {
+    let north = -Infinity;
+    let south = Infinity;
+    let east = -Infinity;
+    let west = Infinity;
+    for (const tile of props.batchGrid) {
+      const b = tile?.bounds;
+      if (!b) continue;
+      north = Math.max(north, b.north);
+      south = Math.min(south, b.south);
+      east = Math.max(east, b.east);
+      west = Math.min(west, b.west);
+    }
+    if ([north, south, east, west].every((v) => Number.isFinite(v))) {
+      return { north, south, east, west };
+    }
+  }
+  return uploadedCropBounds.value || selectionBounds.value;
 });
 
 // Compute surrounding tile bounding boxes from current center + resolution

@@ -347,7 +347,13 @@
     "openStreetMap": "OpenStreetMap",
     "satellite": "Satellite",
     "topoMap": "Carte topo",
-    "showLabels": "Afficher les etiquettes"
+    "showLabels": "Afficher les etiquettes",
+    "elevationOverlay": {
+      "title": "Altitude (jeu de donnees gratuit)",
+      "show": "Afficher l'apercu des altitudes",
+      "hide": "Masquer",
+      "legend": "Magenta = donnees manquantes/corrompues"
+    }
   },
   "memoryWidget": {
     "mem": "MEM",

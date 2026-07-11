@@ -394,7 +394,13 @@
     "openStreetMap": "OpenStreetMap",
     "satellite": "Satellite",
     "topoMap": "Topo Map",
-    "showLabels": "Show Labels"
+    "showLabels": "Show Labels",
+    "elevationOverlay": {
+      "title": "Elevation (free dataset)",
+      "show": "Show elevation data preview",
+      "hide": "Hide",
+      "legend": "Magenta = missing/corrupt data"
+    }
   },
   "memoryWidget": {
     "mem": "MEM",
