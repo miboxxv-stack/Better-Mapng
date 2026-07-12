@@ -373,6 +373,8 @@ async function resizePngBlob(blob, targetSize) {
  *   'hybrid'          — satellite + road overlay (default)
  *   'satellite'       — plain satellite imagery
  *   'osm'             — procedural OSM texture
+ *   'painted'         — user-touched-up texture from the paint editor
+ *                       (falls back to the hybrid chain if missing)
  *
  * Falls back to the grey 64×64 placeholder if the requested texture is
  * unavailable. Always re-encodes as PNG.
@@ -388,7 +390,10 @@ async function getTerrainTextureBlob(terrainData, textureType = 'hybrid') {
       ctx.fillRect(0, 0, canvas.width, canvas.height);
       return new Promise(r => canvas.toBlob(r, 'image/png'));
     }
-    if (textureType === 'hybrid') {
+    if (textureType === 'painted' && terrainData.paintedTextureBlob) {
+      return terrainData.paintedTextureBlob;
+    }
+    if (textureType === 'hybrid' || textureType === 'painted') {
       // Priority: raw canvas (lossless, direct) → pre-encoded blob → blob URL fallback.
       // The canvas may be null after the 3D preview frees it from terrainData, but the
       // blob is always kept alive since it's a compressed PNG (much smaller than the canvas).
@@ -6039,7 +6044,7 @@ async function generateZipToOPFS(zip, filename, onPercent) {
  * @param {object} terrainData
  * @param {object} center        — { lat, lng }
  * @param {object} [options]
- * @param {string}  [options.baseTexture='hybrid']         — 'none' | 'hybrid' | 'satellite' | 'osm'
+ * @param {string}  [options.baseTexture='hybrid']         — 'none' | 'hybrid' | 'satellite' | 'osm' | 'painted'
  * @param {boolean} [options.includeBuildings=true]         — include generated OSM 3D objects (.dae)
  * @param {boolean} [options.applyFoundations=true]         — apply terrain foundation pass under buildings
  * @param {boolean} [options.includeBackdrop=false]         — fetch and include surrounding terrain backdrop DAE

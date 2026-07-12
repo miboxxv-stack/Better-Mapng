@@ -28,6 +28,23 @@ async function cropTextureUrl(url, origWidth, origHeight, startX, startY, cropSi
   });
 }
 
+// Crop a texture blob through the same pixel-space mapping as cropTextureUrl,
+// returning a new PNG blob (used for the user-painted base texture).
+async function cropTextureBlob(blob, origWidth, origHeight, startX, startY, cropSize) {
+  if (!blob) return null;
+  const url = URL.createObjectURL(blob);
+  try {
+    const croppedUrl = await cropTextureUrl(url, origWidth, origHeight, startX, startY, cropSize);
+    if (!croppedUrl) return null;
+    const response = await fetch(croppedUrl);
+    return await response.blob();
+  } catch (_) {
+    return null;
+  } finally {
+    URL.revokeObjectURL(url);
+  }
+}
+
 function cropHeightmap(heightMap, origWidth, origHeight, startX, startY, cropSize) {
   const out = new Float32Array(cropSize * cropSize);
   for (let row = 0; row < cropSize; row++) {
@@ -190,6 +207,12 @@ export async function prepareCroppedTerrainData(terrainData) {
     })
   );
 
+  // The user-painted base texture lives as a blob; crop it the same way so a
+  // 'painted' export stays aligned with the cropped heightmap.
+  const croppedPaintedBlob = await cropTextureBlob(
+    terrainData.paintedTextureBlob, origWidth, origHeight, startX, startY, cropSize
+  );
+
   return {
     ...terrainData,
     width:     cropSize,
@@ -212,6 +235,10 @@ export async function prepareCroppedTerrainData(terrainData) {
     osmTextureBlob: null,
     segmentedTextureBlob: null,
     segmentedHybridTextureBlob: null,
+    paintedTextureBlob: croppedPaintedBlob,
+    // Paint-layer blob is only for resuming edit sessions on the uncropped
+    // terrain; drop it from the derived export object.
+    paintedPaintLayerBlob: null,
     // After crop, all textures are cropSize×cropSize
     hybridTexWidth: cropSize,
   };

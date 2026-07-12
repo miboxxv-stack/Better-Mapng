@@ -55,12 +55,28 @@
           <!-- Base texture selector -->
           <div class="flex items-center justify-between gap-2 px-0.5">
             <span class="text-[10px] text-gray-500 dark:text-gray-400 shrink-0">{{ t('exportPanel.baseTexture') }}</span>
-            <select v-model="beamNGBaseTexture" :class="SELECT_XS">
-              <option value="none">{{ t('exportPanel.none') }}</option>
-              <option value="hybrid" :disabled="!terrainData?.hybridTextureUrl && !terrainData?.hybridTextureCanvas">{{ t('exportPanel.satelliteHybrid') }}</option>
-              <option value="satellite" :disabled="!terrainData?.satelliteTextureUrl">{{ t('exportPanel.satellite') }}</option>
-              <option v-if="hasOsmData" value="osm" :disabled="!terrainData?.osmTextureUrl">{{ t('exportPanel.osm') }}</option>
-            </select>
+            <div class="flex items-center gap-1 min-w-0">
+              <select v-model="beamNGBaseTexture" :class="SELECT_XS">
+                <option value="none">{{ t('exportPanel.none') }}</option>
+                <option value="hybrid" :disabled="!terrainData?.hybridTextureUrl && !terrainData?.hybridTextureCanvas">{{ t('exportPanel.satelliteHybrid') }}</option>
+                <option value="satellite" :disabled="!terrainData?.satelliteTextureUrl">{{ t('exportPanel.satellite') }}</option>
+                <option v-if="hasOsmData" value="osm" :disabled="!terrainData?.osmTextureUrl">{{ t('exportPanel.osm') }}</option>
+                <option v-if="hasPaintedTexture" value="painted">{{ t('exportPanel.touchedUp') }}</option>
+              </select>
+              <button
+                @click="openTexturePaint"
+                :disabled="!canPaintTexture || isPreparingTexturePaint"
+                :title="canPaintTexture ? t('exportPanel.texturePaint.open') : t('exportPanel.texturePaint.needsTexture')"
+                :class="['p-1 rounded border transition-colors shrink-0',
+                  hasPaintedTexture
+                    ? 'border-[#FF6600] text-[#FF6600] bg-orange-50 dark:bg-orange-900/20 hover:bg-orange-100 dark:hover:bg-orange-900/40'
+                    : 'border-gray-300 dark:border-gray-600 text-gray-500 dark:text-gray-400 hover:text-[#FF6600] hover:border-[#FF6600]',
+                  'disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:text-gray-500 disabled:hover:border-gray-300 dark:disabled:hover:border-gray-600']"
+              >
+                <Loader2 v-if="isPreparingTexturePaint" :size="11" class="animate-spin" />
+                <Paintbrush v-else :size="11" />
+              </button>
+            </div>
           </div>
 
           <!-- PBR terrain materials source selector -->
@@ -489,6 +505,18 @@
       </div>
     </Transition>
   </Teleport>
+
+  <!-- Base texture touch-up painter -->
+  <Teleport to="body">
+    <TexturePaintModal
+      v-if="showTexturePaintModal"
+      :source-url="texturePaintSourceUrl"
+      :resume-url="texturePaintResumeUrl"
+      :source-label="texturePaintSourceLabel"
+      @close="closeTexturePaint"
+      @save="handleTexturePaintSave"
+    />
+  </Teleport>
 </template>
 
 <style scoped>
@@ -506,8 +534,9 @@
 import { ref, computed, watch, nextTick, onUnmounted } from 'vue';
 import { useI18n } from 'vue-i18n';
 import {
-  Download, ChevronDown, Loader2, Mountain, Box, Trees, Layers, Route, FileCode, FileJson, PackageOpen
+  Download, ChevronDown, Loader2, Mountain, Box, Trees, Layers, Route, FileCode, FileJson, PackageOpen, Paintbrush
 } from 'lucide-vue-next';
+import TexturePaintModal from '../modals/TexturePaintModal.vue';
 import { buildRunConfiguration as buildRunConfigurationBase } from '../../services/runConfiguration';
 import { generateHeightmapBlob, generateTerBlob } from '../../services/batchExports';
 import { exportToGLB, exportToDAE } from '../../services/export3d';
@@ -563,6 +592,7 @@ const resolveBeamNGBaseTexture = (terrainData, preferred = 'osm') => {
     osm: !!terrainData?.osmTextureUrl,
     hybrid: !!terrainData?.hybridTextureUrl || !!terrainData?.hybridTextureCanvas,
     satellite: !!terrainData?.satelliteTextureUrl,
+    painted: !!terrainData?.paintedTextureBlob,
   };
 
   if (availableTextures[preferred]) return preferred;
@@ -599,6 +629,114 @@ const beamNGBiomeRequired = computed(() => hasOsmData.value);
 const canUseGpxzBackdrop = computed(() => props.elevationSource === 'gpxz' && !!props.gpxzApiKey);
 const beamNGPendingDownloadUrl = ref('');
 const beamNGPendingDownloadName = ref('');
+
+// ─── Base texture touch-up painting ─────────────────────────────────
+const showTexturePaintModal = ref(false);
+const isPreparingTexturePaint = ref(false);
+const texturePaintSourceUrl = ref('');
+const texturePaintResumeUrl = ref('');
+const texturePaintSourceKind = ref('hybrid');
+let texturePaintObjectUrls = [];
+
+const hasPaintedTexture = computed(() => !!props.terrainData?.paintedTextureBlob);
+
+const TEXTURE_SOURCE_LABEL_KEYS = {
+  hybrid: 'exportPanel.satelliteHybrid',
+  satellite: 'exportPanel.satellite',
+  osm: 'exportPanel.osm',
+};
+
+const texturePaintSourceLabel = computed(() => {
+  const key = TEXTURE_SOURCE_LABEL_KEYS[texturePaintSourceKind.value];
+  return key ? t(key) : texturePaintSourceKind.value;
+});
+
+// The texture the paint session edits: the selected base texture, or the
+// painted texture's original source when "Touched up" is selected.
+const resolveTexturePaintKind = () => {
+  const selected = beamNGBaseTexture.value;
+  if (selected === 'painted') return props.terrainData?.paintedTextureSource || 'hybrid';
+  if (selected === 'none') return null;
+  return selected;
+};
+
+const texturePaintKindAvailable = (kind) => {
+  const td = props.terrainData;
+  if (!td || !kind) return false;
+  if (kind === 'hybrid') return !!(td.hybridTextureCanvas || td.hybridTextureBlob || td.hybridTextureUrl);
+  if (kind === 'satellite') return !!td.satelliteTextureUrl;
+  if (kind === 'osm') return !!(td.osmTextureCanvas || td.osmTextureBlob || td.osmTextureUrl);
+  return false;
+};
+
+const canPaintTexture = computed(() => texturePaintKindAvailable(resolveTexturePaintKind()));
+
+const trackTexturePaintUrl = (url) => {
+  texturePaintObjectUrls.push(url);
+  return url;
+};
+
+const releaseTexturePaintUrls = () => {
+  for (const url of texturePaintObjectUrls) URL.revokeObjectURL(url);
+  texturePaintObjectUrls = [];
+};
+
+const resolveTexturePaintSourceUrl = async (kind) => {
+  const td = props.terrainData;
+  if (kind === 'hybrid') {
+    if (td.hybridTextureCanvas) {
+      const blob = await new Promise((r) => td.hybridTextureCanvas.toBlob(r, 'image/png'));
+      if (blob) return trackTexturePaintUrl(URL.createObjectURL(blob));
+    }
+    if (td.hybridTextureBlob) return trackTexturePaintUrl(URL.createObjectURL(td.hybridTextureBlob));
+    return td.hybridTextureUrl;
+  }
+  if (kind === 'satellite') return td.satelliteTextureUrl;
+  if (td.osmTextureCanvas) {
+    const blob = await new Promise((r) => td.osmTextureCanvas.toBlob(r, 'image/png'));
+    if (blob) return trackTexturePaintUrl(URL.createObjectURL(blob));
+  }
+  if (td.osmTextureBlob) return trackTexturePaintUrl(URL.createObjectURL(td.osmTextureBlob));
+  return td.osmTextureUrl;
+};
+
+const openTexturePaint = async () => {
+  if (isPreparingTexturePaint.value) return;
+  const kind = resolveTexturePaintKind();
+  if (!texturePaintKindAvailable(kind)) return;
+  isPreparingTexturePaint.value = true;
+  try {
+    const td = props.terrainData;
+    texturePaintSourceKind.value = kind;
+    texturePaintSourceUrl.value = await resolveTexturePaintSourceUrl(kind);
+    // Resume the saved paint layer only when it was painted over this source.
+    texturePaintResumeUrl.value = (td.paintedPaintLayerBlob && td.paintedTextureSource === kind)
+      ? trackTexturePaintUrl(URL.createObjectURL(td.paintedPaintLayerBlob))
+      : '';
+    showTexturePaintModal.value = true;
+  } catch (error) {
+    console.error(`${BEAMNG_EXPORT_UI_LOG} Failed to open texture painter:`, error);
+    releaseTexturePaintUrls();
+  } finally {
+    isPreparingTexturePaint.value = false;
+  }
+};
+
+const closeTexturePaint = () => {
+  showTexturePaintModal.value = false;
+  releaseTexturePaintUrls();
+};
+
+const handleTexturePaintSave = ({ compositeBlob, paintLayerBlob }) => {
+  const td = props.terrainData;
+  if (td) {
+    td.paintedTextureBlob = compositeBlob;
+    td.paintedPaintLayerBlob = paintLayerBlob;
+    td.paintedTextureSource = texturePaintSourceKind.value;
+    beamNGBaseTexture.value = 'painted';
+  }
+  closeTexturePaint();
+};
 
 const clearPendingBeamNGDownload = () => {
   if (beamNGPendingDownloadUrl.value) {
@@ -753,6 +891,7 @@ onUnmounted(() => {
   clearPreviewUrl(satellitePreviewUrl);
   clearPreviewUrl(osmPreviewUrl);
   clearPreviewUrl(hybridPreviewUrl);
+  releaseTexturePaintUrls();
 });
 
 const buildBeamNGFallbackLevelName = () => (
@@ -1424,11 +1563,14 @@ const handleBeamNGLevelExport = async () => {
       osmFeatureCount: Array.isArray(td?.osmFeatures) ? td.osmFeatures.length : null,
     });
 
-    const effectiveBaseTexture = beamNGBaseTexture.value === 'none'
-      ? 'none'
-      : (hasOsmData.value
-        ? beamNGBaseTexture.value
-        : resolveBeamNGBaseTexture(td, 'hybrid'));
+    let effectiveBaseTexture = beamNGBaseTexture.value;
+    if (effectiveBaseTexture === 'painted' && !td?.paintedTextureBlob) {
+      // Painted data didn't survive terrain preparation; fall back to its source.
+      effectiveBaseTexture = resolveBeamNGBaseTexture(td, td?.paintedTextureSource || 'hybrid');
+    }
+    if (effectiveBaseTexture !== 'none' && effectiveBaseTexture !== 'painted' && !hasOsmData.value) {
+      effectiveBaseTexture = resolveBeamNGBaseTexture(td, 'hybrid');
+    }
     const effectivePbrSource = hasOsmData.value ? beamNGPbrSource.value : 'none';
     const effectiveRoadType = hasOsmData.value ? beamNGRoadType.value : 'none';
     // Custom elevation uploads can now include the surrounding backdrop too: it
