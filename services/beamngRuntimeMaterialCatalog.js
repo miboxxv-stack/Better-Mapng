@@ -147,6 +147,9 @@ const EAST_COAST_RUNTIME_MATERIAL_DEFS = {
     name: 'm_beech_merged_foliage',
     mapTo: 'm_beech_merged_foliage',
     class: 'Material',
+    // These textures are absent from the entire 0.39 install, but vanilla levels
+    // (ecusa, derby, hirochi…) ship the identical dangling reference — matching
+    // them is correct and heals automatically if BeamNG restores the files.
     Stages: [{
       colorMap: '/assets/materials/tree/beech/m_beech_merged_foliage/t_beech_merged_foliage_d.color.png',
       normalMap: '/assets/materials/tree/beech/m_beech_merged_foliage/t_beech_merged_foliage_nm.normal.png',
@@ -585,26 +588,9 @@ const UTAH_RUNTIME_MATERIAL_DEFS = {
     alphaTest: true,
     groundType: 'WOOD',
   },
-  Juniper_bark: {
-    name: 'Juniper_bark',
-    mapTo: 'Juniper_bark',
-    class: 'Material',
-    Stages: [{
-      ambientOcclusionMap: '/assets/materials/tree/juniper/t_juniper_bark/t_juniper_bark_ao.data.png',
-      baseColorMap: '/assets/materials/tree/juniper/t_juniper_bark/t_juniper_bark_b.color.png',
-      detailMap: '/assets/materials/tree/tropical/tro_tree_1_trunk/t_tropical_bark_variation_1_detail.data.png',
-      detailNormalMap: '/assets/materials/tree/tropical/tro_tree_1_trunk/t_tro_bark_01_detail_nm.normal.png',
-      detailNormalMapStrength: 2,
-      detailScale: [2, 0.5],
-      normalMap: '/assets/materials/tree/juniper/t_juniper_bark/t_juniper_bark_nm.normal.png',
-      normalMapStrength: 1.5,
-      roughnessMap: '/assets/materials/tree/juniper/t_juniper_bark/t_juniper_bark_r.data.png',
-      specular: [0.203921586, 0.203921586, 0.203921586, 1],
-    }],
-    alphaRef: 70,
-    alphaTest: true,
-    groundType: 'WOOD',
-  },
+  // NOTE: no separate 'Juniper_bark' entry — the daes bind that capitalization
+  // but BeamNG material lookup is case-insensitive, and a second def with the
+  // same mapTo triggers duplicate-datablock warnings on level load.
   juniper_dry: {
     name: 'juniper_dry',
     mapTo: 'juniper_dry',
@@ -1003,21 +989,28 @@ const JUNGLE_ROCK_ISLAND_RUNTIME_MATERIAL_DEFS = {
     name: 'BNG_Grass_03',
     mapTo: 'unmapped_mat',
     class: 'Material',
+    // BeamNG 0.39 removed jungle_rock_island's level-local Grass_Green textures;
+    // mirror the game's own GrassMiddle material (core /assets grass set, alpha
+    // now in a dedicated opacity map so alphaRef drops to the official 20).
     Stages: [{
-      colorMap: '/levels/jungle_rock_island/art/shapes/groundcover/grass/Grass_Green_d.color.DDS',
-      diffuseColor: [0.999997973, 1, 0.999989986, 1],
-      normalMap: '/levels/jungle_rock_island/art/shapes/groundcover/grass/Grass_Green_n.dds',
-      pixelSpecular: true,
-      roughnessFactor: 0.662999988,
-      // BeamNG 0.39 QA build removed the BNGGrass02/ specular texture; rely on
-      // pixelSpecular + roughnessFactor (diffuse/normal are still level-local).
-      useAnisotropic: true,
+      ambientOcclusionMap: '/assets/materials/foliage/grass/t_grass_green_long_01/t_grass_green_long_01_ao.data.png',
+      baseColorMap: '/assets/materials/foliage/grass/t_grass_green_long_02/t_grass_green_long_02_b.color.png',
+      normalMap: '/assets/materials/foliage/grass/t_grass_green_long_01/t_grass_green_long_01_nm.normal.png',
+      opacityMap: '/assets/materials/foliage/grass/t_grass_green_long_01/t_grass_green_long_01_o.data.png',
+      roughnessFactor: 0.481729716,
+      roughnessMap: '/assets/materials/foliage/grass/t_grass_green_long_01/t_grass_green_long_01_r.data.png',
+      specular: [0.992156923, 0.992156923, 0.992156923, 1],
     }, {}, {}, {}],
-    alphaRef: 79,
+    alphaRef: 20,
     alphaTest: true,
     annotation: 'GRASS',
     doubleSided: true,
     groundType: 'GRASS',
+    invertBackFaceNormals: true,
+    subSurface: true,
+    subSurfaceIntensity: 1,
+    translucentBlendOp: 'None',
+    version: 1.5,
   },
   vegetation_palm_02: {
     name: 'vegetation_palm_02',
