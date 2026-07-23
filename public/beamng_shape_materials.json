@@ -1,5 +1,56 @@
 {
   "automation_test_track": {
+    "concrete_plain": {
+      "Stages": [
+        {
+          "ambientOcclusionMap": "/art/shapes/objects/m_concrete_plain/t_concrete_plain_ao.data.png",
+          "baseColorFactor": [
+            0.881534994,
+            0.881525993,
+            0.881525993,
+            1
+          ],
+          "baseColorMap": "/art/shapes/objects/m_concrete_plain/t_concrete_plain_b.color.png",
+          "detailScale": [
+            4,
+            0.5
+          ],
+          "normalMap": "/art/shapes/objects/m_concrete_plain/t_concrete_plain_nm.normal.png",
+          "pixelSpecular": true,
+          "roughnessMap": "/art/shapes/objects/m_concrete_plain/t_concrete_plain_r.data.png",
+          "vertColor": true
+        },
+        {
+          "baseColorFactor": null,
+          "detailScale": null,
+          "pixelSpecular": null,
+          "vertColor": null
+        },
+        {
+          "baseColorFactor": null,
+          "detailScale": null,
+          "pixelSpecular": null,
+          "vertColor": null
+        },
+        {
+          "baseColorFactor": null,
+          "detailScale": null,
+          "pixelSpecular": null,
+          "vertColor": null
+        }
+      ],
+      "alphaRef": 64,
+      "annotation": "BUILDINGS",
+      "class": "Material",
+      "mapTo": "concrete_plain",
+      "materialTag0": "beamng",
+      "materialTag1": "vehicle",
+      "name": "concrete_plain",
+      "persistentId": "0affa924-0c54-48c6-b635-e529d390a043",
+      "translucent": true,
+      "translucentBlendOp": "None",
+      "version": 1.5
+    },
     "cork_oak": {
       "Stages": [
         {
@@ -81,6 +132,67 @@
       "persistentId": "cd93bb97-6110-4371-ba67-9a48bca824d3",
       "version": 1.5
     },
+    "eca_bld_cleanmetal": {
+      "Stages": [
+        {
+          "colorMap": "/levels/east_coast_usa/art/shapes/null.dds",
+          "diffuseColor": [
+            0.9960780144,
+            0.9960780144,
+            0.9960780144,
+            1
+          ],
+          "normalMap": "/levels/east_coast_usa/art/shapes/buildings/eca_bld_cleanmetal_n.dds",
+          "overlayMap": "/levels/east_coast_usa/art/shapes/buildings/eca_breakup_texture.dds",
+          "reflectivityMap": "/levels/east_coast_usa/art/shapes/buildings/eca_bld_cleanmetal_r.dds",
+          "specularMap": "/levels/east_coast_usa/art/shapes/buildings/eca_bld_cleanmetal_s.dds",
+          "specularPower": 11,
+          "useAnisotropic": true,
+          "vertColor": true
+        },
+        {
+          "vertColor": true
+        },
+        {},
+        {}
+      ],
+      "annotation": "BUILDINGS",
+      "class": "Material",
+      "cubemap": "eca_cubemap_metalblurred",
+      "groundType": "METAL",
+      "mapTo": "eca_bld_cleanmetal",
+      "materialTag0": "beamng",
+      "materialTag1": "building",
+      "materialTag2": "east_coast_usa",
+      "name": "eca_bld_cleanmetal",
+      "persistentId": "f74c972d-e96b-4e13-9f3f-524f25dc4813",
+      "translucentBlendOp": "None"
+    },
+    "eca_bld_wood": {
+      "Stages": [
+        {
+          "colorMap": "/levels/east_coast_usa/art/shapes/buildings/eca_bld_wood_d.dds",
+          "normalMap": "/levels/east_coast_usa/art/shapes/buildings/eca_bld_wood_n.dds",
+          "overlayMap": "/levels/east_coast_usa/art/shapes/buildings/eca_breakup_texture.dds",
+          "specularMap": "/levels/east_coast_usa/art/shapes/buildings/eca_bld_wood_s.dds",
+          "useAnisotropic": true,
+          "vertColor": true
+        },
+        {},
+        {},
+        {}
+      ],
+      "annotation": "BUILDINGS",
+      "class": "Material",
+      "groundType": "WOOD",
+      "mapTo": "eca_bld_wood",
+      "materialTag0": "beamng",
+      "materialTag1": "building",
+      "materialTag2": "east_coast_usa",
+      "name": "eca_bld_wood",
+      "persistentId": "3b7d34ad-4b02-4c3f-8fb9-26ff0c34cb70",
+      "translucentBlendOp": "None"
+    },
     "holm_oak_branches": {
       "Stages": [
         {
@@ -140,6 +252,30 @@
       "mapTo": "leaves_strong",
       "name": "leaves_strong",
       "persistentId": "7e8157dc-940e-4435-937b-e934d4e42892"
+    },
+    "lod_vertcol": {
+      "Stages": [
+        {
+          "vertColor": true
+        },
+        {
+          "vertColor": null
+        },
+        {
+          "vertColor": null
+        },
+        {
+          "vertColor": null
+        }
+      ],
+      "class": "Material",
+      "groundType": "ASPHALT_OLD",
+      "mapTo": "lod_vertcol",
+      "materialTag0": "beamng",
+      "materialTag1": "building",
+      "name": "lod_vertcol",
+      "persistentId": "3122f280-003f-419e-ba18-ba85683d01ed",
+      "translucentBlendOp": "None"
     },
     "m_cork_oak_distant": {
       "Stages": [
@@ -213,6 +349,129 @@
       "persistentId": "9f88644e-9984-4f54-8a57-4e4c962eef05",
       "translucentBlendOp": "None",
       "translucentRecvShadows": true,
+      "version": 1.5
+    },
+    "metal_galvanized": {
+      "Stages": [
+        {
+          "baseColorMap": "/art/shapes/objects/t_metal_galvanized_01_b.color.png",
+          "detailScale": [
+            0.100000001,
+            0.100000001
+          ],
+          "diffuseMapUseUV": null,
+          "metallicFactor": 1,
+          "metallicMap": "/art/shapes/objects/t_metal_galvanized_02_m.data.png",
+          "opacityFactor": null,
+          "opacityMapUseUV": null,
+          "pixelSpecular": true,
+          "roughnessMap": "/art/shapes/objects/t_metal_galvanized_02_r.data.png",
+          "roughnessMapUseUV": null,
+          "vertColor": true
+        },
+        {
+          "baseColorMap": "/levels/automation_test_track/art/shapes/buildings/t_breakup_general_b.color.png",
+          "detailScale": null,
+          "diffuseMapUseUV": 1,
+          "metallicFactor": null,
+          "opacityFactor": 0.800000012,
+          "opacityMap": "/levels/automation_test_track/art/shapes/buildings/t_breakup_general_o.data.png",
+          "opacityMapUseUV": 1,
+          "pixelSpecular": null,
+          "roughnessMapUseUV": 1,
+          "vertColor": null
+        },
+        {
+          "detailScale": null,
+          "diffuseMapUseUV": null,
+          "metallicFactor": null,
+          "opacityFactor": null,
+          "opacityMapUseUV": null,
+          "pixelSpecular": null,
+          "roughnessMapUseUV": null,
+          "vertColor": null
+        },
+        {
+          "detailScale": null,
+          "diffuseMapUseUV": null,
+          "metallicFactor": null,
+          "opacityFactor": null,
+          "opacityMapUseUV": null,
+          "pixelSpecular": null,
+          "roughnessMapUseUV": null,
+          "vertColor": null
+        }
+      ],
+      "alphaRef": 0,
+      "annotation": "GUARD_RAIL",
+      "class": "Material",
+      "doubleSided": true,
+      "dynamicCubemap": true,
+      "groundType": "METAL",
+      "invertBackFaceNormals": true,
+      "mapTo": "metal_galvanized",
+      "materialTag0": "metal",
+      "name": "metal_galvanized",
+      "persistentId": "0115bd66-7eda-41a7-9541-cd91d5cc3f2e",
+      "translucentBlendOp": "None",
+      "version": 1.5
+    },
+    "wca_objects1": {
+      "Stages": [
+        {
+          "baseColorMap": "/art/shapes/objects/m_wca_objects1/t_wca_objects1_b.color.png",
+          "emissiveFactor": [
+            1,
+            1,
+            1
+          ],
+          "emissiveIntensityNits": 4000,
+          "emissiveMap": "/art/shapes/objects/m_wca_objects1/t_wca_objects1_e.color.png",
+          "instanceEmissive": true,
+          "metallicFactor": 1,
+          "metallicMap": "/art/shapes/objects/m_wca_objects1/t_wca_objects1_m.data.png",
+          "normalMap": "/art/shapes/objects/m_wca_objects1/t_wca_objects1_nm.normal.png",
+          "pixelSpecular": true,
+          "roughnessMap": "/art/shapes/objects/m_wca_objects1/t_wca_objects1_r.data.png",
+          "vertColor": true
+        },
+        {
+          "emissiveFactor": null,
+          "emissiveIntensityNits": null,
+          "instanceEmissive": null,
+          "metallicFactor": null,
+          "pixelSpecular": null,
+          "vertColor": null
+        },
+        {
+          "emissiveFactor": null,
+          "emissiveIntensityNits": null,
+          "instanceEmissive": null,
+          "metallicFactor": null,
+          "pixelSpecular": null,
+          "vertColor": null
+        },
+        {
+          "emissiveFactor": null,
+          "emissiveIntensityNits": null,
+          "instanceEmissive": null,
+          "metallicFactor": null,
+          "pixelSpecular": null,
+          "vertColor": null
+        }
+      ],
+      "alphaRef": 64,
+      "alphaTest": true,
+      "annotation": "POLE",
+      "class": "Material",
+      "dynamicCubemap": true,
+      "mapTo": "wca_objects1",
+      "materialTag0": "beamng",
+      "materialTag1": "vehicle",
+      "name": "wca_objects1",
+      "persistentId": "979469f8-df04-435e-9884-573e44bb28a6",
+      "translucentBlendOp": "None",
+      "translucentZWrite": true,
       "version": 1.5
     }
   },
@@ -368,6 +627,118 @@
       "subSurfaceIntensity": 1,
       "version": 1.5
     },
+    "concrete_plain": {
+      "Stages": [
+        {
+          "ambientOcclusionMap": "/art/shapes/objects/m_concrete_plain/t_concrete_plain_ao.data.png",
+          "baseColorFactor": [
+            0.881534994,
+            0.881525993,
+            0.881525993,
+            1
+          ],
+          "baseColorMap": "/art/shapes/objects/m_concrete_plain/t_concrete_plain_b.color.png",
+          "detailScale": [
+            4,
+            0.5
+          ],
+          "normalMap": "/art/shapes/objects/m_concrete_plain/t_concrete_plain_nm.normal.png",
+          "pixelSpecular": true,
+          "roughnessMap": "/art/shapes/objects/m_concrete_plain/t_concrete_plain_r.data.png",
+          "vertColor": true
+        },
+        {
+          "baseColorFactor": null,
+          "detailScale": null,
+          "pixelSpecular": null,
+          "vertColor": null
+        },
+        {
+          "baseColorFactor": null,
+          "detailScale": null,
+          "pixelSpecular": null,
+          "vertColor": null
+        },
+        {
+          "baseColorFactor": null,
+          "detailScale": null,
+          "pixelSpecular": null,
+          "vertColor": null
+        }
+      ],
+      "alphaRef": 64,
+      "annotation": "BUILDINGS",
+      "class": "Material",
+      "mapTo": "concrete_plain",
+      "materialTag0": "beamng",
+      "materialTag1": "vehicle",
+      "name": "concrete_plain",
+      "persistentId": "0affa924-0c54-48c6-b635-e529d390a043",
+      "translucent": true,
+      "translucentBlendOp": "None",
+      "version": 1.5
+    },
+    "eca_bld_cleanmetal": {
+      "Stages": [
+        {
+          "colorMap": "/levels/east_coast_usa/art/shapes/null.dds",
+          "diffuseColor": [
+            0.9960780144,
+            0.9960780144,
+            0.9960780144,
+            1
+          ],
+          "normalMap": "/levels/east_coast_usa/art/shapes/buildings/eca_bld_cleanmetal_n.dds",
+          "overlayMap": "/levels/east_coast_usa/art/shapes/buildings/eca_breakup_texture.dds",
+          "reflectivityMap": "/levels/east_coast_usa/art/shapes/buildings/eca_bld_cleanmetal_r.dds",
+          "specularMap": "/levels/east_coast_usa/art/shapes/buildings/eca_bld_cleanmetal_s.dds",
+          "specularPower": 11,
+          "useAnisotropic": true,
+          "vertColor": true
+        },
+        {
+          "vertColor": true
+        },
+        {},
+        {}
+      ],
+      "annotation": "BUILDINGS",
+      "class": "Material",
+      "cubemap": "eca_cubemap_metalblurred",
+      "groundType": "METAL",
+      "mapTo": "eca_bld_cleanmetal",
+      "materialTag0": "beamng",
+      "materialTag1": "building",
+      "materialTag2": "east_coast_usa",
+      "name": "eca_bld_cleanmetal",
+      "persistentId": "f74c972d-e96b-4e13-9f3f-524f25dc4813",
+      "translucentBlendOp": "None"
+    },
+    "eca_bld_wood": {
+      "Stages": [
+        {
+          "colorMap": "/levels/east_coast_usa/art/shapes/buildings/eca_bld_wood_d.dds",
+          "normalMap": "/levels/east_coast_usa/art/shapes/buildings/eca_bld_wood_n.dds",
+          "overlayMap": "/levels/east_coast_usa/art/shapes/buildings/eca_breakup_texture.dds",
+          "specularMap": "/levels/east_coast_usa/art/shapes/buildings/eca_bld_wood_s.dds",
+          "useAnisotropic": true,
+          "vertColor": true
+        },
+        {},
+        {},
+        {}
+      ],
+      "annotation": "BUILDINGS",
+      "class": "Material",
+      "groundType": "WOOD",
+      "mapTo": "eca_bld_wood",
+      "materialTag0": "beamng",
+      "materialTag1": "building",
+      "materialTag2": "east_coast_usa",
+      "name": "eca_bld_wood",
+      "persistentId": "3b7d34ad-4b02-4c3f-8fb9-26ff0c34cb70",
+      "translucentBlendOp": "None"
+    },
     "eca_rocks": {
       "Stages": [
         {
@@ -467,6 +838,129 @@
       "name": "m_birch_leaves_distant",
       "subSurface": true,
       "subSurfaceIntensity": 1,
+      "version": 1.5
+    },
+    "metal_galvanized": {
+      "Stages": [
+        {
+          "baseColorMap": "/art/shapes/objects/t_metal_galvanized_01_b.color.png",
+          "detailScale": [
+            0.100000001,
+            0.100000001
+          ],
+          "diffuseMapUseUV": null,
+          "metallicFactor": 1,
+          "metallicMap": "/art/shapes/objects/t_metal_galvanized_02_m.data.png",
+          "opacityFactor": null,
+          "opacityMapUseUV": null,
+          "pixelSpecular": true,
+          "roughnessMap": "/art/shapes/objects/t_metal_galvanized_02_r.data.png",
+          "roughnessMapUseUV": null,
+          "vertColor": true
+        },
+        {
+          "baseColorMap": "/levels/automation_test_track/art/shapes/buildings/t_breakup_general_b.color.png",
+          "detailScale": null,
+          "diffuseMapUseUV": 1,
+          "metallicFactor": null,
+          "opacityFactor": 0.800000012,
+          "opacityMap": "/levels/automation_test_track/art/shapes/buildings/t_breakup_general_o.data.png",
+          "opacityMapUseUV": 1,
+          "pixelSpecular": null,
+          "roughnessMapUseUV": 1,
+          "vertColor": null
+        },
+        {
+          "detailScale": null,
+          "diffuseMapUseUV": null,
+          "metallicFactor": null,
+          "opacityFactor": null,
+          "opacityMapUseUV": null,
+          "pixelSpecular": null,
+          "roughnessMapUseUV": null,
+          "vertColor": null
+        },
+        {
+          "detailScale": null,
+          "diffuseMapUseUV": null,
+          "metallicFactor": null,
+          "opacityFactor": null,
+          "opacityMapUseUV": null,
+          "pixelSpecular": null,
+          "roughnessMapUseUV": null,
+          "vertColor": null
+        }
+      ],
+      "alphaRef": 0,
+      "annotation": "GUARD_RAIL",
+      "class": "Material",
+      "doubleSided": true,
+      "dynamicCubemap": true,
+      "groundType": "METAL",
+      "invertBackFaceNormals": true,
+      "mapTo": "metal_galvanized",
+      "materialTag0": "metal",
+      "name": "metal_galvanized",
+      "persistentId": "0115bd66-7eda-41a7-9541-cd91d5cc3f2e",
+      "translucentBlendOp": "None",
+      "version": 1.5
+    },
+    "wca_objects1": {
+      "Stages": [
+        {
+          "baseColorMap": "/art/shapes/objects/m_wca_objects1/t_wca_objects1_b.color.png",
+          "emissiveFactor": [
+            1,
+            1,
+            1
+          ],
+          "emissiveIntensityNits": 4000,
+          "emissiveMap": "/art/shapes/objects/m_wca_objects1/t_wca_objects1_e.color.png",
+          "instanceEmissive": true,
+          "metallicFactor": 1,
+          "metallicMap": "/art/shapes/objects/m_wca_objects1/t_wca_objects1_m.data.png",
+          "normalMap": "/art/shapes/objects/m_wca_objects1/t_wca_objects1_nm.normal.png",
+          "pixelSpecular": true,
+          "roughnessMap": "/art/shapes/objects/m_wca_objects1/t_wca_objects1_r.data.png",
+          "vertColor": true
+        },
+        {
+          "emissiveFactor": null,
+          "emissiveIntensityNits": null,
+          "instanceEmissive": null,
+          "metallicFactor": null,
+          "pixelSpecular": null,
+          "vertColor": null
+        },
+        {
+          "emissiveFactor": null,
+          "emissiveIntensityNits": null,
+          "instanceEmissive": null,
+          "metallicFactor": null,
+          "pixelSpecular": null,
+          "vertColor": null
+        },
+        {
+          "emissiveFactor": null,
+          "emissiveIntensityNits": null,
+          "instanceEmissive": null,
+          "metallicFactor": null,
+          "pixelSpecular": null,
+          "vertColor": null
+        }
+      ],
+      "alphaRef": 64,
+      "alphaTest": true,
+      "annotation": "POLE",
+      "class": "Material",
+      "dynamicCubemap": true,
+      "mapTo": "wca_objects1",
+      "materialTag0": "beamng",
+      "materialTag1": "vehicle",
+      "name": "wca_objects1",
+      "persistentId": "979469f8-df04-435e-9884-573e44bb28a6",
+      "translucentBlendOp": "None",
+      "translucentZWrite": true,
       "version": 1.5
     }
   },
@@ -644,6 +1138,48 @@
       "translucentBlendOp": "None",
       "version": 1.5
     },
+    "bld_glass_transparent": {
+      "Stages": [
+        {
+          "colorMap": "/levels/italy/art/shapes/buildings/italy_bld_glass_d.dds",
+          "detailNormalMapStrength": 0.5,
+          "detailScale": [
+            8,
+            8
+          ],
+          "diffuseColor": [
+            0.894117713,
+            0.960784376,
+            0.9960784912,
+            0.561999977
+          ],
+          "specular": [
+            0.9960780144,
+            0.9960780144,
+            0.9960780144,
+            1
+          ],
+          "specularMap": "/levels/italy/art/shapes/buildings/Italy_bld_glass_s.dds",
+          "specularPower": 19
+        },
+        {},
+        {},
+        {}
+      ],
+      "alphaRef": 0,
+      "annotation": "BUILDINGS",
+      "class": "Material",
+      "dynamicCubemap": true,
+      "groundType": "METAL",
+      "mapTo": "bld_glass_transparent",
+      "materialTag0": "beamng",
+      "materialTag1": "italy",
+      "materialTag2": "Natural",
+      "name": "bld_glass_transparent",
+      "persistentId": "cf12cada-35ab-42ea-ab81-eb203c464e82",
+      "specularStrength0": "0.490196",
+      "translucent": true
+    },
     "cypress": {
       "Stages": [
         {
@@ -699,6 +1235,132 @@
       "subSurfaceIntensity": 1,
       "translucentBlendOp": "None",
       "version": 1.5
+    },
+    "eca_bld_cleanmetal": {
+      "Stages": [
+        {
+          "colorMap": "/levels/east_coast_usa/art/shapes/null.dds",
+          "diffuseColor": [
+            0.9960780144,
+            0.9960780144,
+            0.9960780144,
+            1
+          ],
+          "normalMap": "/levels/east_coast_usa/art/shapes/buildings/eca_bld_cleanmetal_n.dds",
+          "overlayMap": "/levels/east_coast_usa/art/shapes/buildings/eca_breakup_texture.dds",
+          "reflectivityMap": "/levels/east_coast_usa/art/shapes/buildings/eca_bld_cleanmetal_r.dds",
+          "specularMap": "/levels/east_coast_usa/art/shapes/buildings/eca_bld_cleanmetal_s.dds",
+          "specularPower": 11,
+          "useAnisotropic": true,
+          "vertColor": true
+        },
+        {
+          "vertColor": true
+        },
+        {},
+        {}
+      ],
+      "annotation": "BUILDINGS",
+      "class": "Material",
+      "cubemap": "eca_cubemap_metalblurred",
+      "groundType": "METAL",
+      "mapTo": "eca_bld_cleanmetal",
+      "materialTag0": "beamng",
+      "materialTag1": "building",
+      "materialTag2": "east_coast_usa",
+      "name": "eca_bld_cleanmetal",
+      "persistentId": "f74c972d-e96b-4e13-9f3f-524f25dc4813",
+      "translucentBlendOp": "None"
+    },
+    "eca_bld_metal_01_white_annotation_pole": {
+      "Stages": [
+        {
+          "colorMap": "/levels/east_coast_usa/art/shapes/buildings/eca_bld_metal_01_d_white.dds",
+          "detailMap": "/levels/east_coast_usa/art/shapes/buildings/eca_grungewood_b.dds",
+          "detailScale": [
+            0.200000003,
+            0.200000003
+          ],
+          "pixelSpecular": true,
+          "specularPower": 26,
+          "useAnisotropic": true,
+          "vertColor": true
+        },
+        {},
+        {},
+        {}
+      ],
+      "annotation": "POLE",
+      "class": "Material",
+      "doubleSided": true,
+      "groundType": "METAL",
+      "mapTo": "eca_bld_metal_01_white_annotation_pole",
+      "materialTag0": "beamng",
+      "materialTag1": "building",
+      "materialTag2": "east_coast_usa",
+      "name": "eca_bld_metal_01_white_annotation_pole",
+      "persistentId": "3439a2f8-38c5-4919-a062-f0ad572c0bf0",
+      "specularStrength0": "0.588235",
+      "translucentBlendOp": "None"
+    },
+    "eca_bld_metaltrim": {
+      "Stages": [
+        {
+          "colorMap": "/levels/east_coast_usa/art/shapes/buildings/eca_bld_metal_trim_d.dds",
+          "detailMap": "/levels/east_coast_usa/art/shapes/buildings/eca_grungewood_b.dds",
+          "detailScale": [
+            0.200000003,
+            0.200000003
+          ],
+          "normalMap": "/levels/east_coast_usa/art/shapes/buildings/eca_bld_metal_trim_n.dds",
+          "pixelSpecular": true,
+          "reflectivityMap": "/levels/east_coast_usa/art/shapes/buildings/eca_bld_metal_trim_r.dds",
+          "specularMap": "/levels/east_coast_usa/art/shapes/buildings/eca_bld_metal_trim_s.dds",
+          "specularPower": 1,
+          "useAnisotropic": true,
+          "vertColor": true
+        },
+        {},
+        {},
+        {}
+      ],
+      "annotation": "BUILDINGS",
+      "class": "Material",
+      "cubemap": "global_cubemap_metalblurred",
+      "groundType": "METAL",
+      "mapTo": "eca_bld_metaltrim",
+      "materialTag0": "beamng",
+      "materialTag1": "building",
+      "materialTag2": "east_coast_usa",
+      "name": "eca_bld_metaltrim",
+      "persistentId": "ba99d70a-41b3-4609-96b1-eb70f9893cee",
+      "specularStrength0": "0.588235",
+      "translucentBlendOp": "None"
+    },
+    "eca_bld_wood": {
+      "Stages": [
+        {
+          "colorMap": "/levels/east_coast_usa/art/shapes/buildings/eca_bld_wood_d.dds",
+          "normalMap": "/levels/east_coast_usa/art/shapes/buildings/eca_bld_wood_n.dds",
+          "overlayMap": "/levels/east_coast_usa/art/shapes/buildings/eca_breakup_texture.dds",
+          "specularMap": "/levels/east_coast_usa/art/shapes/buildings/eca_bld_wood_s.dds",
+          "useAnisotropic": true,
+          "vertColor": true
+        },
+        {},
+        {},
+        {}
+      ],
+      "annotation": "BUILDINGS",
+      "class": "Material",
+      "groundType": "WOOD",
+      "mapTo": "eca_bld_wood",
+      "materialTag0": "beamng",
+      "materialTag1": "building",
+      "materialTag2": "east_coast_usa",
+      "name": "eca_bld_wood",
+      "persistentId": "3b7d34ad-4b02-4c3f-8fb9-26ff0c34cb70",
+      "translucentBlendOp": "None"
     },
     "eca_rocks": {
       "Stages": [
@@ -1052,6 +1714,57 @@
     }
   },
   "hirochi_raceway": {
+    "concrete_plain": {
+      "Stages": [
+        {
+          "ambientOcclusionMap": "/art/shapes/objects/m_concrete_plain/t_concrete_plain_ao.data.png",
+          "baseColorFactor": [
+            0.881534994,
+            0.881525993,
+            0.881525993,
+            1
+          ],
+          "baseColorMap": "/art/shapes/objects/m_concrete_plain/t_concrete_plain_b.color.png",
+          "detailScale": [
+            4,
+            0.5
+          ],
+          "normalMap": "/art/shapes/objects/m_concrete_plain/t_concrete_plain_nm.normal.png",
+          "pixelSpecular": true,
+          "roughnessMap": "/art/shapes/objects/m_concrete_plain/t_concrete_plain_r.data.png",
+          "vertColor": true
+        },
+        {
+          "baseColorFactor": null,
+          "detailScale": null,
+          "pixelSpecular": null,
+          "vertColor": null
+        },
+        {
+          "baseColorFactor": null,
+          "detailScale": null,
+          "pixelSpecular": null,
+          "vertColor": null
+        },
+        {
+          "baseColorFactor": null,
+          "detailScale": null,
+          "pixelSpecular": null,
+          "vertColor": null
+        }
+      ],
+      "alphaRef": 64,
+      "annotation": "BUILDINGS",
+      "class": "Material",
+      "mapTo": "concrete_plain",
+      "materialTag0": "beamng",
+      "materialTag1": "vehicle",
+      "name": "concrete_plain",
+      "persistentId": "0affa924-0c54-48c6-b635-e529d390a043",
+      "translucent": true,
+      "translucentBlendOp": "None",
+      "version": 1.5
+    },
     "cork_oak": {
       "Stages": [
         {
@@ -1132,6 +1845,67 @@
       "name": "cork_oak_trunk",
       "persistentId": "cd93bb97-6110-4371-ba67-9a48bca824d3",
       "version": 1.5
+    },
+    "eca_bld_cleanmetal": {
+      "Stages": [
+        {
+          "colorMap": "/levels/east_coast_usa/art/shapes/null.dds",
+          "diffuseColor": [
+            0.9960780144,
+            0.9960780144,
+            0.9960780144,
+            1
+          ],
+          "normalMap": "/levels/east_coast_usa/art/shapes/buildings/eca_bld_cleanmetal_n.dds",
+          "overlayMap": "/levels/east_coast_usa/art/shapes/buildings/eca_breakup_texture.dds",
+          "reflectivityMap": "/levels/east_coast_usa/art/shapes/buildings/eca_bld_cleanmetal_r.dds",
+          "specularMap": "/levels/east_coast_usa/art/shapes/buildings/eca_bld_cleanmetal_s.dds",
+          "specularPower": 11,
+          "useAnisotropic": true,
+          "vertColor": true
+        },
+        {
+          "vertColor": true
+        },
+        {},
+        {}
+      ],
+      "annotation": "BUILDINGS",
+      "class": "Material",
+      "cubemap": "eca_cubemap_metalblurred",
+      "groundType": "METAL",
+      "mapTo": "eca_bld_cleanmetal",
+      "materialTag0": "beamng",
+      "materialTag1": "building",
+      "materialTag2": "east_coast_usa",
+      "name": "eca_bld_cleanmetal",
+      "persistentId": "f74c972d-e96b-4e13-9f3f-524f25dc4813",
+      "translucentBlendOp": "None"
+    },
+    "eca_bld_wood": {
+      "Stages": [
+        {
+          "colorMap": "/levels/east_coast_usa/art/shapes/buildings/eca_bld_wood_d.dds",
+          "normalMap": "/levels/east_coast_usa/art/shapes/buildings/eca_bld_wood_n.dds",
+          "overlayMap": "/levels/east_coast_usa/art/shapes/buildings/eca_breakup_texture.dds",
+          "specularMap": "/levels/east_coast_usa/art/shapes/buildings/eca_bld_wood_s.dds",
+          "useAnisotropic": true,
+          "vertColor": true
+        },
+        {},
+        {},
+        {}
+      ],
+      "annotation": "BUILDINGS",
+      "class": "Material",
+      "groundType": "WOOD",
+      "mapTo": "eca_bld_wood",
+      "materialTag0": "beamng",
+      "materialTag1": "building",
+      "materialTag2": "east_coast_usa",
+      "name": "eca_bld_wood",
+      "persistentId": "3b7d34ad-4b02-4c3f-8fb9-26ff0c34cb70",
+      "translucentBlendOp": "None"
     },
     "eca_rocks": {
       "Stages": [
@@ -1229,6 +2003,30 @@
       "name": "leaves_strong",
       "persistentId": "7e8157dc-940e-4435-937b-e934d4e42892"
     },
+    "lod_vertcol": {
+      "Stages": [
+        {
+          "vertColor": true
+        },
+        {
+          "vertColor": null
+        },
+        {
+          "vertColor": null
+        },
+        {
+          "vertColor": null
+        }
+      ],
+      "class": "Material",
+      "groundType": "ASPHALT_OLD",
+      "mapTo": "lod_vertcol",
+      "materialTag0": "beamng",
+      "materialTag1": "building",
+      "name": "lod_vertcol",
+      "persistentId": "3122f280-003f-419e-ba18-ba85683d01ed",
+      "translucentBlendOp": "None"
+    },
     "m_cork_oak_distant": {
       "Stages": [
         {
@@ -1253,9 +2051,183 @@
       "subSurface": true,
       "subSurfaceIntensity": 1,
       "version": 1.5
+    },
+    "metal_galvanized": {
+      "Stages": [
+        {
+          "baseColorMap": "/art/shapes/objects/t_metal_galvanized_01_b.color.png",
+          "detailScale": [
+            0.100000001,
+            0.100000001
+          ],
+          "diffuseMapUseUV": null,
+          "metallicFactor": 1,
+          "metallicMap": "/art/shapes/objects/t_metal_galvanized_02_m.data.png",
+          "opacityFactor": null,
+          "opacityMapUseUV": null,
+          "pixelSpecular": true,
+          "roughnessMap": "/art/shapes/objects/t_metal_galvanized_02_r.data.png",
+          "roughnessMapUseUV": null,
+          "vertColor": true
+        },
+        {
+          "baseColorMap": "/levels/automation_test_track/art/shapes/buildings/t_breakup_general_b.color.png",
+          "detailScale": null,
+          "diffuseMapUseUV": 1,
+          "metallicFactor": null,
+          "opacityFactor": 0.800000012,
+          "opacityMap": "/levels/automation_test_track/art/shapes/buildings/t_breakup_general_o.data.png",
+          "opacityMapUseUV": 1,
+          "pixelSpecular": null,
+          "roughnessMapUseUV": 1,
+          "vertColor": null
+        },
+        {
+          "detailScale": null,
+          "diffuseMapUseUV": null,
+          "metallicFactor": null,
+          "opacityFactor": null,
+          "opacityMapUseUV": null,
+          "pixelSpecular": null,
+          "roughnessMapUseUV": null,
+          "vertColor": null
+        },
+        {
+          "detailScale": null,
+          "diffuseMapUseUV": null,
+          "metallicFactor": null,
+          "opacityFactor": null,
+          "opacityMapUseUV": null,
+          "pixelSpecular": null,
+          "roughnessMapUseUV": null,
+          "vertColor": null
+        }
+      ],
+      "alphaRef": 0,
+      "annotation": "GUARD_RAIL",
+      "class": "Material",
+      "doubleSided": true,
+      "dynamicCubemap": true,
+      "groundType": "METAL",
+      "invertBackFaceNormals": true,
+      "mapTo": "metal_galvanized",
+      "materialTag0": "metal",
+      "name": "metal_galvanized",
+      "persistentId": "0115bd66-7eda-41a7-9541-cd91d5cc3f2e",
+      "translucentBlendOp": "None",
+      "version": 1.5
+    },
+    "wca_objects1": {
+      "Stages": [
+        {
+          "baseColorMap": "/art/shapes/objects/m_wca_objects1/t_wca_objects1_b.color.png",
+          "emissiveFactor": [
+            1,
+            1,
+            1
+          ],
+          "emissiveIntensityNits": 4000,
+          "emissiveMap": "/art/shapes/objects/m_wca_objects1/t_wca_objects1_e.color.png",
+          "instanceEmissive": true,
+          "metallicFactor": 1,
+          "metallicMap": "/art/shapes/objects/m_wca_objects1/t_wca_objects1_m.data.png",
+          "normalMap": "/art/shapes/objects/m_wca_objects1/t_wca_objects1_nm.normal.png",
+          "pixelSpecular": true,
+          "roughnessMap": "/art/shapes/objects/m_wca_objects1/t_wca_objects1_r.data.png",
+          "vertColor": true
+        },
+        {
+          "emissiveFactor": null,
+          "emissiveIntensityNits": null,
+          "instanceEmissive": null,
+          "metallicFactor": null,
+          "pixelSpecular": null,
+          "vertColor": null
+        },
+        {
+          "emissiveFactor": null,
+          "emissiveIntensityNits": null,
+          "instanceEmissive": null,
+          "metallicFactor": null,
+          "pixelSpecular": null,
+          "vertColor": null
+        },
+        {
+          "emissiveFactor": null,
+          "emissiveIntensityNits": null,
+          "instanceEmissive": null,
+          "metallicFactor": null,
+          "pixelSpecular": null,
+          "vertColor": null
+        }
+      ],
+      "alphaRef": 64,
+      "alphaTest": true,
+      "annotation": "POLE",
+      "class": "Material",
+      "dynamicCubemap": true,
+      "mapTo": "wca_objects1",
+      "materialTag0": "beamng",
+      "materialTag1": "vehicle",
+      "name": "wca_objects1",
+      "persistentId": "979469f8-df04-435e-9884-573e44bb28a6",
+      "translucentBlendOp": "None",
+      "translucentZWrite": true,
+      "version": 1.5
     }
   },
   "industrial": {
+    "concrete_plain": {
+      "Stages": [
+        {
+          "ambientOcclusionMap": "/art/shapes/objects/m_concrete_plain/t_concrete_plain_ao.data.png",
+          "baseColorFactor": [
+            0.881534994,
+            0.881525993,
+            0.881525993,
+            1
+          ],
+          "baseColorMap": "/art/shapes/objects/m_concrete_plain/t_concrete_plain_b.color.png",
+          "detailScale": [
+            4,
+            0.5
+          ],
+          "normalMap": "/art/shapes/objects/m_concrete_plain/t_concrete_plain_nm.normal.png",
+          "pixelSpecular": true,
+          "roughnessMap": "/art/shapes/objects/m_concrete_plain/t_concrete_plain_r.data.png",
+          "vertColor": true
+        },
+        {
+          "baseColorFactor": null,
+          "detailScale": null,
+          "pixelSpecular": null,
+          "vertColor": null
+        },
+        {
+          "baseColorFactor": null,
+          "detailScale": null,
+          "pixelSpecular": null,
+          "vertColor": null
+        },
+        {
+          "baseColorFactor": null,
+          "detailScale": null,
+          "pixelSpecular": null,
+          "vertColor": null
+        }
+      ],
+      "alphaRef": 64,
+      "annotation": "BUILDINGS",
+      "class": "Material",
+      "mapTo": "concrete_plain",
+      "materialTag0": "beamng",
+      "materialTag1": "vehicle",
+      "name": "concrete_plain",
+      "persistentId": "0affa924-0c54-48c6-b635-e529d390a043",
+      "translucent": true,
+      "translucentBlendOp": "None",
+      "version": 1.5
+    },
     "cork_oak": {
       "Stages": [
         {
@@ -1336,6 +2308,67 @@
       "name": "cork_oak_trunk",
       "persistentId": "cd93bb97-6110-4371-ba67-9a48bca824d3",
       "version": 1.5
+    },
+    "eca_bld_cleanmetal": {
+      "Stages": [
+        {
+          "colorMap": "/levels/east_coast_usa/art/shapes/null.dds",
+          "diffuseColor": [
+            0.9960780144,
+            0.9960780144,
+            0.9960780144,
+            1
+          ],
+          "normalMap": "/levels/east_coast_usa/art/shapes/buildings/eca_bld_cleanmetal_n.dds",
+          "overlayMap": "/levels/east_coast_usa/art/shapes/buildings/eca_breakup_texture.dds",
+          "reflectivityMap": "/levels/east_coast_usa/art/shapes/buildings/eca_bld_cleanmetal_r.dds",
+          "specularMap": "/levels/east_coast_usa/art/shapes/buildings/eca_bld_cleanmetal_s.dds",
+          "specularPower": 11,
+          "useAnisotropic": true,
+          "vertColor": true
+        },
+        {
+          "vertColor": true
+        },
+        {},
+        {}
+      ],
+      "annotation": "BUILDINGS",
+      "class": "Material",
+      "cubemap": "eca_cubemap_metalblurred",
+      "groundType": "METAL",
+      "mapTo": "eca_bld_cleanmetal",
+      "materialTag0": "beamng",
+      "materialTag1": "building",
+      "materialTag2": "east_coast_usa",
+      "name": "eca_bld_cleanmetal",
+      "persistentId": "f74c972d-e96b-4e13-9f3f-524f25dc4813",
+      "translucentBlendOp": "None"
+    },
+    "eca_bld_wood": {
+      "Stages": [
+        {
+          "colorMap": "/levels/east_coast_usa/art/shapes/buildings/eca_bld_wood_d.dds",
+          "normalMap": "/levels/east_coast_usa/art/shapes/buildings/eca_bld_wood_n.dds",
+          "overlayMap": "/levels/east_coast_usa/art/shapes/buildings/eca_breakup_texture.dds",
+          "specularMap": "/levels/east_coast_usa/art/shapes/buildings/eca_bld_wood_s.dds",
+          "useAnisotropic": true,
+          "vertColor": true
+        },
+        {},
+        {},
+        {}
+      ],
+      "annotation": "BUILDINGS",
+      "class": "Material",
+      "groundType": "WOOD",
+      "mapTo": "eca_bld_wood",
+      "materialTag0": "beamng",
+      "materialTag1": "building",
+      "materialTag2": "east_coast_usa",
+      "name": "eca_bld_wood",
+      "persistentId": "3b7d34ad-4b02-4c3f-8fb9-26ff0c34cb70",
+      "translucentBlendOp": "None"
     },
     "eca_rocks": {
       "Stages": [
@@ -1482,6 +2515,129 @@
       "subSurface": true,
       "subSurfaceIntensity": 1,
       "version": 1.5
+    },
+    "metal_galvanized": {
+      "Stages": [
+        {
+          "baseColorMap": "/art/shapes/objects/t_metal_galvanized_01_b.color.png",
+          "detailScale": [
+            0.100000001,
+            0.100000001
+          ],
+          "diffuseMapUseUV": null,
+          "metallicFactor": 1,
+          "metallicMap": "/art/shapes/objects/t_metal_galvanized_02_m.data.png",
+          "opacityFactor": null,
+          "opacityMapUseUV": null,
+          "pixelSpecular": true,
+          "roughnessMap": "/art/shapes/objects/t_metal_galvanized_02_r.data.png",
+          "roughnessMapUseUV": null,
+          "vertColor": true
+        },
+        {
+          "baseColorMap": "/levels/automation_test_track/art/shapes/buildings/t_breakup_general_b.color.png",
+          "detailScale": null,
+          "diffuseMapUseUV": 1,
+          "metallicFactor": null,
+          "opacityFactor": 0.800000012,
+          "opacityMap": "/levels/automation_test_track/art/shapes/buildings/t_breakup_general_o.data.png",
+          "opacityMapUseUV": 1,
+          "pixelSpecular": null,
+          "roughnessMapUseUV": 1,
+          "vertColor": null
+        },
+        {
+          "detailScale": null,
+          "diffuseMapUseUV": null,
+          "metallicFactor": null,
+          "opacityFactor": null,
+          "opacityMapUseUV": null,
+          "pixelSpecular": null,
+          "roughnessMapUseUV": null,
+          "vertColor": null
+        },
+        {
+          "detailScale": null,
+          "diffuseMapUseUV": null,
+          "metallicFactor": null,
+          "opacityFactor": null,
+          "opacityMapUseUV": null,
+          "pixelSpecular": null,
+          "roughnessMapUseUV": null,
+          "vertColor": null
+        }
+      ],
+      "alphaRef": 0,
+      "annotation": "GUARD_RAIL",
+      "class": "Material",
+      "doubleSided": true,
+      "dynamicCubemap": true,
+      "groundType": "METAL",
+      "invertBackFaceNormals": true,
+      "mapTo": "metal_galvanized",
+      "materialTag0": "metal",
+      "name": "metal_galvanized",
+      "persistentId": "0115bd66-7eda-41a7-9541-cd91d5cc3f2e",
+      "translucentBlendOp": "None",
+      "version": 1.5
+    },
+    "wca_objects1": {
+      "Stages": [
+        {
+          "baseColorMap": "/art/shapes/objects/m_wca_objects1/t_wca_objects1_b.color.png",
+          "emissiveFactor": [
+            1,
+            1,
+            1
+          ],
+          "emissiveIntensityNits": 4000,
+          "emissiveMap": "/art/shapes/objects/m_wca_objects1/t_wca_objects1_e.color.png",
+          "instanceEmissive": true,
+          "metallicFactor": 1,
+          "metallicMap": "/art/shapes/objects/m_wca_objects1/t_wca_objects1_m.data.png",
+          "normalMap": "/art/shapes/objects/m_wca_objects1/t_wca_objects1_nm.normal.png",
+          "pixelSpecular": true,
+          "roughnessMap": "/art/shapes/objects/m_wca_objects1/t_wca_objects1_r.data.png",
+          "vertColor": true
+        },
+        {
+          "emissiveFactor": null,
+          "emissiveIntensityNits": null,
+          "instanceEmissive": null,
+          "metallicFactor": null,
+          "pixelSpecular": null,
+          "vertColor": null
+        },
+        {
+          "emissiveFactor": null,
+          "emissiveIntensityNits": null,
+          "instanceEmissive": null,
+          "metallicFactor": null,
+          "pixelSpecular": null,
+          "vertColor": null
+        },
+        {
+          "emissiveFactor": null,
+          "emissiveIntensityNits": null,
+          "instanceEmissive": null,
+          "metallicFactor": null,
+          "pixelSpecular": null,
+          "vertColor": null
+        }
+      ],
+      "alphaRef": 64,
+      "alphaTest": true,
+      "annotation": "POLE",
+      "class": "Material",
+      "dynamicCubemap": true,
+      "mapTo": "wca_objects1",
+      "materialTag0": "beamng",
+      "materialTag1": "vehicle",
+      "name": "wca_objects1",
+      "persistentId": "979469f8-df04-435e-9884-573e44bb28a6",
+      "translucentBlendOp": "None",
+      "translucentZWrite": true,
+      "version": 1.5
     }
   },
   "italy": {
@@ -1523,6 +2679,48 @@
       "roundType": "WOOD",
       "specularStrength0": "0.392157",
       "version": 1.5
+    },
+    "bld_glass_transparent": {
+      "Stages": [
+        {
+          "colorMap": "/levels/italy/art/shapes/buildings/italy_bld_glass_d.dds",
+          "detailNormalMapStrength": 0.5,
+          "detailScale": [
+            8,
+            8
+          ],
+          "diffuseColor": [
+            0.894117713,
+            0.960784376,
+            0.9960784912,
+            0.561999977
+          ],
+          "specular": [
+            0.9960780144,
+            0.9960780144,
+            0.9960780144,
+            1
+          ],
+          "specularMap": "/levels/italy/art/shapes/buildings/Italy_bld_glass_s.dds",
+          "specularPower": 19
+        },
+        {},
+        {},
+        {}
+      ],
+      "alphaRef": 0,
+      "annotation": "BUILDINGS",
+      "class": "Material",
+      "dynamicCubemap": true,
+      "groundType": "METAL",
+      "mapTo": "bld_glass_transparent",
+      "materialTag0": "beamng",
+      "materialTag1": "italy",
+      "materialTag2": "Natural",
+      "name": "bld_glass_transparent",
+      "persistentId": "cf12cada-35ab-42ea-ab81-eb203c464e82",
+      "specularStrength0": "0.490196",
+      "translucent": true
     },
     "cypress": {
       "Stages": [
@@ -1579,6 +2777,132 @@
       "subSurfaceIntensity": 1,
       "translucentBlendOp": "None",
       "version": 1.5
+    },
+    "eca_bld_cleanmetal": {
+      "Stages": [
+        {
+          "colorMap": "/levels/east_coast_usa/art/shapes/null.dds",
+          "diffuseColor": [
+            0.9960780144,
+            0.9960780144,
+            0.9960780144,
+            1
+          ],
+          "normalMap": "/levels/east_coast_usa/art/shapes/buildings/eca_bld_cleanmetal_n.dds",
+          "overlayMap": "/levels/east_coast_usa/art/shapes/buildings/eca_breakup_texture.dds",
+          "reflectivityMap": "/levels/east_coast_usa/art/shapes/buildings/eca_bld_cleanmetal_r.dds",
+          "specularMap": "/levels/east_coast_usa/art/shapes/buildings/eca_bld_cleanmetal_s.dds",
+          "specularPower": 11,
+          "useAnisotropic": true,
+          "vertColor": true
+        },
+        {
+          "vertColor": true
+        },
+        {},
+        {}
+      ],
+      "annotation": "BUILDINGS",
+      "class": "Material",
+      "cubemap": "eca_cubemap_metalblurred",
+      "groundType": "METAL",
+      "mapTo": "eca_bld_cleanmetal",
+      "materialTag0": "beamng",
+      "materialTag1": "building",
+      "materialTag2": "east_coast_usa",
+      "name": "eca_bld_cleanmetal",
+      "persistentId": "f74c972d-e96b-4e13-9f3f-524f25dc4813",
+      "translucentBlendOp": "None"
+    },
+    "eca_bld_metal_01_white_annotation_pole": {
+      "Stages": [
+        {
+          "colorMap": "/levels/east_coast_usa/art/shapes/buildings/eca_bld_metal_01_d_white.dds",
+          "detailMap": "/levels/east_coast_usa/art/shapes/buildings/eca_grungewood_b.dds",
+          "detailScale": [
+            0.200000003,
+            0.200000003
+          ],
+          "pixelSpecular": true,
+          "specularPower": 26,
+          "useAnisotropic": true,
+          "vertColor": true
+        },
+        {},
+        {},
+        {}
+      ],
+      "annotation": "POLE",
+      "class": "Material",
+      "doubleSided": true,
+      "groundType": "METAL",
+      "mapTo": "eca_bld_metal_01_white_annotation_pole",
+      "materialTag0": "beamng",
+      "materialTag1": "building",
+      "materialTag2": "east_coast_usa",
+      "name": "eca_bld_metal_01_white_annotation_pole",
+      "persistentId": "3439a2f8-38c5-4919-a062-f0ad572c0bf0",
+      "specularStrength0": "0.588235",
+      "translucentBlendOp": "None"
+    },
+    "eca_bld_metaltrim": {
+      "Stages": [
+        {
+          "colorMap": "/levels/east_coast_usa/art/shapes/buildings/eca_bld_metal_trim_d.dds",
+          "detailMap": "/levels/east_coast_usa/art/shapes/buildings/eca_grungewood_b.dds",
+          "detailScale": [
+            0.200000003,
+            0.200000003
+          ],
+          "normalMap": "/levels/east_coast_usa/art/shapes/buildings/eca_bld_metal_trim_n.dds",
+          "pixelSpecular": true,
+          "reflectivityMap": "/levels/east_coast_usa/art/shapes/buildings/eca_bld_metal_trim_r.dds",
+          "specularMap": "/levels/east_coast_usa/art/shapes/buildings/eca_bld_metal_trim_s.dds",
+          "specularPower": 1,
+          "useAnisotropic": true,
+          "vertColor": true
+        },
+        {},
+        {},
+        {}
+      ],
+      "annotation": "BUILDINGS",
+      "class": "Material",
+      "cubemap": "global_cubemap_metalblurred",
+      "groundType": "METAL",
+      "mapTo": "eca_bld_metaltrim",
+      "materialTag0": "beamng",
+      "materialTag1": "building",
+      "materialTag2": "east_coast_usa",
+      "name": "eca_bld_metaltrim",
+      "persistentId": "ba99d70a-41b3-4609-96b1-eb70f9893cee",
+      "specularStrength0": "0.588235",
+      "translucentBlendOp": "None"
+    },
+    "eca_bld_wood": {
+      "Stages": [
+        {
+          "colorMap": "/levels/east_coast_usa/art/shapes/buildings/eca_bld_wood_d.dds",
+          "normalMap": "/levels/east_coast_usa/art/shapes/buildings/eca_bld_wood_n.dds",
+          "overlayMap": "/levels/east_coast_usa/art/shapes/buildings/eca_breakup_texture.dds",
+          "specularMap": "/levels/east_coast_usa/art/shapes/buildings/eca_bld_wood_s.dds",
+          "useAnisotropic": true,
+          "vertColor": true
+        },
+        {},
+        {},
+        {}
+      ],
+      "annotation": "BUILDINGS",
+      "class": "Material",
+      "groundType": "WOOD",
+      "mapTo": "eca_bld_wood",
+      "materialTag0": "beamng",
+      "materialTag1": "building",
+      "materialTag2": "east_coast_usa",
+      "name": "eca_bld_wood",
+      "persistentId": "3b7d34ad-4b02-4c3f-8fb9-26ff0c34cb70",
+      "translucentBlendOp": "None"
     },
     "generibush_leaves": {
       "Stages": [
@@ -2388,6 +3712,57 @@
       "name": "branches_strong",
       "persistentId": "fd68c03b-68ae-4e0a-850e-a66f02004d54"
     },
+    "concrete_plain": {
+      "Stages": [
+        {
+          "ambientOcclusionMap": "/art/shapes/objects/m_concrete_plain/t_concrete_plain_ao.data.png",
+          "baseColorFactor": [
+            0.881534994,
+            0.881525993,
+            0.881525993,
+            1
+          ],
+          "baseColorMap": "/art/shapes/objects/m_concrete_plain/t_concrete_plain_b.color.png",
+          "detailScale": [
+            4,
+            0.5
+          ],
+          "normalMap": "/art/shapes/objects/m_concrete_plain/t_concrete_plain_nm.normal.png",
+          "pixelSpecular": true,
+          "roughnessMap": "/art/shapes/objects/m_concrete_plain/t_concrete_plain_r.data.png",
+          "vertColor": true
+        },
+        {
+          "baseColorFactor": null,
+          "detailScale": null,
+          "pixelSpecular": null,
+          "vertColor": null
+        },
+        {
+          "baseColorFactor": null,
+          "detailScale": null,
+          "pixelSpecular": null,
+          "vertColor": null
+        },
+        {
+          "baseColorFactor": null,
+          "detailScale": null,
+          "pixelSpecular": null,
+          "vertColor": null
+        }
+      ],
+      "alphaRef": 64,
+      "annotation": "BUILDINGS",
+      "class": "Material",
+      "mapTo": "concrete_plain",
+      "materialTag0": "beamng",
+      "materialTag1": "vehicle",
+      "name": "concrete_plain",
+      "persistentId": "0affa924-0c54-48c6-b635-e529d390a043",
+      "translucent": true,
+      "translucentBlendOp": "None",
+      "version": 1.5
+    },
     "deserttree_branches": {
       "Stages": [
         {
@@ -2477,6 +3852,67 @@
       "persistentId": "59793931-81a3-4a73-8348-8c5e7b1e4877",
       "version": 1.5
     },
+    "eca_bld_cleanmetal": {
+      "Stages": [
+        {
+          "colorMap": "/levels/east_coast_usa/art/shapes/null.dds",
+          "diffuseColor": [
+            0.9960780144,
+            0.9960780144,
+            0.9960780144,
+            1
+          ],
+          "normalMap": "/levels/east_coast_usa/art/shapes/buildings/eca_bld_cleanmetal_n.dds",
+          "overlayMap": "/levels/east_coast_usa/art/shapes/buildings/eca_breakup_texture.dds",
+          "reflectivityMap": "/levels/east_coast_usa/art/shapes/buildings/eca_bld_cleanmetal_r.dds",
+          "specularMap": "/levels/east_coast_usa/art/shapes/buildings/eca_bld_cleanmetal_s.dds",
+          "specularPower": 11,
+          "useAnisotropic": true,
+          "vertColor": true
+        },
+        {
+          "vertColor": true
+        },
+        {},
+        {}
+      ],
+      "annotation": "BUILDINGS",
+      "class": "Material",
+      "cubemap": "eca_cubemap_metalblurred",
+      "groundType": "METAL",
+      "mapTo": "eca_bld_cleanmetal",
+      "materialTag0": "beamng",
+      "materialTag1": "building",
+      "materialTag2": "east_coast_usa",
+      "name": "eca_bld_cleanmetal",
+      "persistentId": "f74c972d-e96b-4e13-9f3f-524f25dc4813",
+      "translucentBlendOp": "None"
+    },
+    "eca_bld_wood": {
+      "Stages": [
+        {
+          "colorMap": "/levels/east_coast_usa/art/shapes/buildings/eca_bld_wood_d.dds",
+          "normalMap": "/levels/east_coast_usa/art/shapes/buildings/eca_bld_wood_n.dds",
+          "overlayMap": "/levels/east_coast_usa/art/shapes/buildings/eca_breakup_texture.dds",
+          "specularMap": "/levels/east_coast_usa/art/shapes/buildings/eca_bld_wood_s.dds",
+          "useAnisotropic": true,
+          "vertColor": true
+        },
+        {},
+        {},
+        {}
+      ],
+      "annotation": "BUILDINGS",
+      "class": "Material",
+      "groundType": "WOOD",
+      "mapTo": "eca_bld_wood",
+      "materialTag0": "beamng",
+      "materialTag1": "building",
+      "materialTag2": "east_coast_usa",
+      "name": "eca_bld_wood",
+      "persistentId": "3b7d34ad-4b02-4c3f-8fb9-26ff0c34cb70",
+      "translucentBlendOp": "None"
+    },
     "leaves_strong": {
       "Stages": [
         {},
@@ -2505,6 +3941,95 @@
       "mapTo": "leaves_thin",
       "name": "leaves_thin",
       "persistentId": "859cdbd4-7a36-4613-9344-b50a1d8745ea"
+    },
+    "lod_vertcol": {
+      "Stages": [
+        {
+          "vertColor": true
+        },
+        {
+          "vertColor": null
+        },
+        {
+          "vertColor": null
+        },
+        {
+          "vertColor": null
+        }
+      ],
+      "class": "Material",
+      "groundType": "ASPHALT_OLD",
+      "mapTo": "lod_vertcol",
+      "materialTag0": "beamng",
+      "materialTag1": "building",
+      "name": "lod_vertcol",
+      "persistentId": "3122f280-003f-419e-ba18-ba85683d01ed",
+      "translucentBlendOp": "None"
+    },
+    "metal_galvanized": {
+      "Stages": [
+        {
+          "baseColorMap": "/art/shapes/objects/t_metal_galvanized_01_b.color.png",
+          "detailScale": [
+            0.100000001,
+            0.100000001
+          ],
+          "diffuseMapUseUV": null,
+          "metallicFactor": 1,
+          "metallicMap": "/art/shapes/objects/t_metal_galvanized_02_m.data.png",
+          "opacityFactor": null,
+          "opacityMapUseUV": null,
+          "pixelSpecular": true,
+          "roughnessMap": "/art/shapes/objects/t_metal_galvanized_02_r.data.png",
+          "roughnessMapUseUV": null,
+          "vertColor": true
+        },
+        {
+          "baseColorMap": "/levels/automation_test_track/art/shapes/buildings/t_breakup_general_b.color.png",
+          "detailScale": null,
+          "diffuseMapUseUV": 1,
+          "metallicFactor": null,
+          "opacityFactor": 0.800000012,
+          "opacityMap": "/levels/automation_test_track/art/shapes/buildings/t_breakup_general_o.data.png",
+          "opacityMapUseUV": 1,
+          "pixelSpecular": null,
+          "roughnessMapUseUV": 1,
+          "vertColor": null
+        },
+        {
+          "detailScale": null,
+          "diffuseMapUseUV": null,
+          "metallicFactor": null,
+          "opacityFactor": null,
+          "opacityMapUseUV": null,
+          "pixelSpecular": null,
+          "roughnessMapUseUV": null,
+          "vertColor": null
+        },
+        {
+          "detailScale": null,
+          "diffuseMapUseUV": null,
+          "metallicFactor": null,
+          "opacityFactor": null,
+          "opacityMapUseUV": null,
+          "pixelSpecular": null,
+          "roughnessMapUseUV": null,
+          "vertColor": null
+        }
+      ],
+      "alphaRef": 0,
+      "annotation": "GUARD_RAIL",
+      "class": "Material",
+      "doubleSided": true,
+      "dynamicCubemap": true,
+      "groundType": "METAL",
+      "invertBackFaceNormals": true,
+      "mapTo": "metal_galvanized",
+      "materialTag0": "metal",
+      "name": "metal_galvanized",
+      "persistentId": "0115bd66-7eda-41a7-9541-cd91d5cc3f2e",
+      "translucentBlendOp": "None",
+      "version": 1.5
     },
     "rocks_desert_ca": {
       "Stages": [
@@ -2539,9 +4064,179 @@
       "persistentId": "e01b8cd9-9989-48dc-ae9e-b78a213e3cd3",
       "translucentBlendOp": "None",
       "version": 1.5
+    },
+    "wca_objects1": {
+      "Stages": [
+        {
+          "baseColorMap": "/art/shapes/objects/m_wca_objects1/t_wca_objects1_b.color.png",
+          "emissiveFactor": [
+            1,
+            1,
+            1
+          ],
+          "emissiveIntensityNits": 4000,
+          "emissiveMap": "/art/shapes/objects/m_wca_objects1/t_wca_objects1_e.color.png",
+          "instanceEmissive": true,
+          "metallicFactor": 1,
+          "metallicMap": "/art/shapes/objects/m_wca_objects1/t_wca_objects1_m.data.png",
+          "normalMap": "/art/shapes/objects/m_wca_objects1/t_wca_objects1_nm.normal.png",
+          "pixelSpecular": true,
+          "roughnessMap": "/art/shapes/objects/m_wca_objects1/t_wca_objects1_r.data.png",
+          "vertColor": true
+        },
+        {
+          "emissiveFactor": null,
+          "emissiveIntensityNits": null,
+          "instanceEmissive": null,
+          "metallicFactor": null,
+          "pixelSpecular": null,
+          "vertColor": null
+        },
+        {
+          "emissiveFactor": null,
+          "emissiveIntensityNits": null,
+          "instanceEmissive": null,
+          "metallicFactor": null,
+          "pixelSpecular": null,
+          "vertColor": null
+        },
+        {
+          "emissiveFactor": null,
+          "emissiveIntensityNits": null,
+          "instanceEmissive": null,
+          "metallicFactor": null,
+          "pixelSpecular": null,
+          "vertColor": null
+        }
+      ],
+      "alphaRef": 64,
+      "alphaTest": true,
+      "annotation": "POLE",
+      "class": "Material",
+      "dynamicCubemap": true,
+      "mapTo": "wca_objects1",
+      "materialTag0": "beamng",
+      "materialTag1": "vehicle",
+      "name": "wca_objects1",
+      "persistentId": "979469f8-df04-435e-9884-573e44bb28a6",
+      "translucentBlendOp": "None",
+      "translucentZWrite": true,
+      "version": 1.5
     }
   },
   "jungle": {
+    "concrete_plain": {
+      "Stages": [
+        {
+          "ambientOcclusionMap": "/art/shapes/objects/m_concrete_plain/t_concrete_plain_ao.data.png",
+          "baseColorFactor": [
+            0.881534994,
+            0.881525993,
+            0.881525993,
+            1
+          ],
+          "baseColorMap": "/art/shapes/objects/m_concrete_plain/t_concrete_plain_b.color.png",
+          "detailScale": [
+            4,
+            0.5
+          ],
+          "normalMap": "/art/shapes/objects/m_concrete_plain/t_concrete_plain_nm.normal.png",
+          "pixelSpecular": true,
+          "roughnessMap": "/art/shapes/objects/m_concrete_plain/t_concrete_plain_r.data.png",
+          "vertColor": true
+        },
+        {
+          "baseColorFactor": null,
+          "detailScale": null,
+          "pixelSpecular": null,
+          "vertColor": null
+        },
+        {
+          "baseColorFactor": null,
+          "detailScale": null,
+          "pixelSpecular": null,
+          "vertColor": null
+        },
+        {
+          "baseColorFactor": null,
+          "detailScale": null,
+          "pixelSpecular": null,
+          "vertColor": null
+        }
+      ],
+      "alphaRef": 64,
+      "annotation": "BUILDINGS",
+      "class": "Material",
+      "mapTo": "concrete_plain",
+      "materialTag0": "beamng",
+      "materialTag1": "vehicle",
+      "name": "concrete_plain",
+      "persistentId": "0affa924-0c54-48c6-b635-e529d390a043",
+      "translucent": true,
+      "translucentBlendOp": "None",
+      "version": 1.5
+    },
+    "eca_bld_cleanmetal": {
+      "Stages": [
+        {
+          "colorMap": "/levels/east_coast_usa/art/shapes/null.dds",
+          "diffuseColor": [
+            0.9960780144,
+            0.9960780144,
+            0.9960780144,
+            1
+          ],
+          "normalMap": "/levels/east_coast_usa/art/shapes/buildings/eca_bld_cleanmetal_n.dds",
+          "overlayMap": "/levels/east_coast_usa/art/shapes/buildings/eca_breakup_texture.dds",
+          "reflectivityMap": "/levels/east_coast_usa/art/shapes/buildings/eca_bld_cleanmetal_r.dds",
+          "specularMap": "/levels/east_coast_usa/art/shapes/buildings/eca_bld_cleanmetal_s.dds",
+          "specularPower": 11,
+          "useAnisotropic": true,
+          "vertColor": true
+        },
+        {
+          "vertColor": true
+        },
+        {},
+        {}
+      ],
+      "annotation": "BUILDINGS",
+      "class": "Material",
+      "cubemap": "eca_cubemap_metalblurred",
+      "groundType": "METAL",
+      "mapTo": "eca_bld_cleanmetal",
+      "materialTag0": "beamng",
+      "materialTag1": "building",
+      "materialTag2": "east_coast_usa",
+      "name": "eca_bld_cleanmetal",
+      "persistentId": "f74c972d-e96b-4e13-9f3f-524f25dc4813",
+      "translucentBlendOp": "None"
+    },
+    "eca_bld_wood": {
+      "Stages": [
+        {
+          "colorMap": "/levels/east_coast_usa/art/shapes/buildings/eca_bld_wood_d.dds",
+          "normalMap": "/levels/east_coast_usa/art/shapes/buildings/eca_bld_wood_n.dds",
+          "overlayMap": "/levels/east_coast_usa/art/shapes/buildings/eca_breakup_texture.dds",
+          "specularMap": "/levels/east_coast_usa/art/shapes/buildings/eca_bld_wood_s.dds",
+          "useAnisotropic": true,
+          "vertColor": true
+        },
+        {},
+        {},
+        {}
+      ],
+      "annotation": "BUILDINGS",
+      "class": "Material",
+      "groundType": "WOOD",
+      "mapTo": "eca_bld_wood",
+      "materialTag0": "beamng",
+      "materialTag1": "building",
+      "materialTag2": "east_coast_usa",
+      "name": "eca_bld_wood",
+      "persistentId": "3b7d34ad-4b02-4c3f-8fb9-26ff0c34cb70",
+      "translucentBlendOp": "None"
+    },
     "grass_field": {
       "Stages": [
         {
@@ -2626,6 +4321,95 @@
       "mapTo": "leaves_thin",
       "name": "leaves_thin",
       "persistentId": "859cdbd4-7a36-4613-9344-b50a1d8745ea"
+    },
+    "lod_vertcol": {
+      "Stages": [
+        {
+          "vertColor": true
+        },
+        {
+          "vertColor": null
+        },
+        {
+          "vertColor": null
+        },
+        {
+          "vertColor": null
+        }
+      ],
+      "class": "Material",
+      "groundType": "ASPHALT_OLD",
+      "mapTo": "lod_vertcol",
+      "materialTag0": "beamng",
+      "materialTag1": "building",
+      "name": "lod_vertcol",
+      "persistentId": "3122f280-003f-419e-ba18-ba85683d01ed",
+      "translucentBlendOp": "None"
+    },
+    "metal_galvanized": {
+      "Stages": [
+        {
+          "baseColorMap": "/art/shapes/objects/t_metal_galvanized_01_b.color.png",
+          "detailScale": [
+            0.100000001,
+            0.100000001
+          ],
+          "diffuseMapUseUV": null,
+          "metallicFactor": 1,
+          "metallicMap": "/art/shapes/objects/t_metal_galvanized_02_m.data.png",
+          "opacityFactor": null,
+          "opacityMapUseUV": null,
+          "pixelSpecular": true,
+          "roughnessMap": "/art/shapes/objects/t_metal_galvanized_02_r.data.png",
+          "roughnessMapUseUV": null,
+          "vertColor": true
+        },
+        {
+          "baseColorMap": "/levels/automation_test_track/art/shapes/buildings/t_breakup_general_b.color.png",
+          "detailScale": null,
+          "diffuseMapUseUV": 1,
+          "metallicFactor": null,
+          "opacityFactor": 0.800000012,
+          "opacityMap": "/levels/automation_test_track/art/shapes/buildings/t_breakup_general_o.data.png",
+          "opacityMapUseUV": 1,
+          "pixelSpecular": null,
+          "roughnessMapUseUV": 1,
+          "vertColor": null
+        },
+        {
+          "detailScale": null,
+          "diffuseMapUseUV": null,
+          "metallicFactor": null,
+          "opacityFactor": null,
+          "opacityMapUseUV": null,
+          "pixelSpecular": null,
+          "roughnessMapUseUV": null,
+          "vertColor": null
+        },
+        {
+          "detailScale": null,
+          "diffuseMapUseUV": null,
+          "metallicFactor": null,
+          "opacityFactor": null,
+          "opacityMapUseUV": null,
+          "pixelSpecular": null,
+          "roughnessMapUseUV": null,
+          "vertColor": null
+        }
+      ],
+      "alphaRef": 0,
+      "annotation": "GUARD_RAIL",
+      "class": "Material",
+      "doubleSided": true,
+      "dynamicCubemap": true,
+      "groundType": "METAL",
+      "invertBackFaceNormals": true,
+      "mapTo": "metal_galvanized",
+      "materialTag0": "metal",
+      "name": "metal_galvanized",
+      "persistentId": "0115bd66-7eda-41a7-9541-cd91d5cc3f2e",
+      "translucentBlendOp": "None",
+      "version": 1.5
     },
     "tro_tree_1_branches": {
       "Stages": [
@@ -3108,9 +4892,179 @@
       "persistentId": "43c00c7c-da16-49b0-bda3-f8fb495ebdaa",
       "translucentBlendOp": "None",
       "version": 1.5
+    },
+    "wca_objects1": {
+      "Stages": [
+        {
+          "baseColorMap": "/art/shapes/objects/m_wca_objects1/t_wca_objects1_b.color.png",
+          "emissiveFactor": [
+            1,
+            1,
+            1
+          ],
+          "emissiveIntensityNits": 4000,
+          "emissiveMap": "/art/shapes/objects/m_wca_objects1/t_wca_objects1_e.color.png",
+          "instanceEmissive": true,
+          "metallicFactor": 1,
+          "metallicMap": "/art/shapes/objects/m_wca_objects1/t_wca_objects1_m.data.png",
+          "normalMap": "/art/shapes/objects/m_wca_objects1/t_wca_objects1_nm.normal.png",
+          "pixelSpecular": true,
+          "roughnessMap": "/art/shapes/objects/m_wca_objects1/t_wca_objects1_r.data.png",
+          "vertColor": true
+        },
+        {
+          "emissiveFactor": null,
+          "emissiveIntensityNits": null,
+          "instanceEmissive": null,
+          "metallicFactor": null,
+          "pixelSpecular": null,
+          "vertColor": null
+        },
+        {
+          "emissiveFactor": null,
+          "emissiveIntensityNits": null,
+          "instanceEmissive": null,
+          "metallicFactor": null,
+          "pixelSpecular": null,
+          "vertColor": null
+        },
+        {
+          "emissiveFactor": null,
+          "emissiveIntensityNits": null,
+          "instanceEmissive": null,
+          "metallicFactor": null,
+          "pixelSpecular": null,
+          "vertColor": null
+        }
+      ],
+      "alphaRef": 64,
+      "alphaTest": true,
+      "annotation": "POLE",
+      "class": "Material",
+      "dynamicCubemap": true,
+      "mapTo": "wca_objects1",
+      "materialTag0": "beamng",
+      "materialTag1": "vehicle",
+      "name": "wca_objects1",
+      "persistentId": "979469f8-df04-435e-9884-573e44bb28a6",
+      "translucentBlendOp": "None",
+      "translucentZWrite": true,
+      "version": 1.5
     }
   },
   "small_island": {
+    "concrete_plain": {
+      "Stages": [
+        {
+          "ambientOcclusionMap": "/art/shapes/objects/m_concrete_plain/t_concrete_plain_ao.data.png",
+          "baseColorFactor": [
+            0.881534994,
+            0.881525993,
+            0.881525993,
+            1
+          ],
+          "baseColorMap": "/art/shapes/objects/m_concrete_plain/t_concrete_plain_b.color.png",
+          "detailScale": [
+            4,
+            0.5
+          ],
+          "normalMap": "/art/shapes/objects/m_concrete_plain/t_concrete_plain_nm.normal.png",
+          "pixelSpecular": true,
+          "roughnessMap": "/art/shapes/objects/m_concrete_plain/t_concrete_plain_r.data.png",
+          "vertColor": true
+        },
+        {
+          "baseColorFactor": null,
+          "detailScale": null,
+          "pixelSpecular": null,
+          "vertColor": null
+        },
+        {
+          "baseColorFactor": null,
+          "detailScale": null,
+          "pixelSpecular": null,
+          "vertColor": null
+        },
+        {
+          "baseColorFactor": null,
+          "detailScale": null,
+          "pixelSpecular": null,
+          "vertColor": null
+        }
+      ],
+      "alphaRef": 64,
+      "annotation": "BUILDINGS",
+      "class": "Material",
+      "mapTo": "concrete_plain",
+      "materialTag0": "beamng",
+      "materialTag1": "vehicle",
+      "name": "concrete_plain",
+      "persistentId": "0affa924-0c54-48c6-b635-e529d390a043",
+      "translucent": true,
+      "translucentBlendOp": "None",
+      "version": 1.5
+    },
+    "eca_bld_cleanmetal": {
+      "Stages": [
+        {
+          "colorMap": "/levels/east_coast_usa/art/shapes/null.dds",
+          "diffuseColor": [
+            0.9960780144,
+            0.9960780144,
+            0.9960780144,
+            1
+          ],
+          "normalMap": "/levels/east_coast_usa/art/shapes/buildings/eca_bld_cleanmetal_n.dds",
+          "overlayMap": "/levels/east_coast_usa/art/shapes/buildings/eca_breakup_texture.dds",
+          "reflectivityMap": "/levels/east_coast_usa/art/shapes/buildings/eca_bld_cleanmetal_r.dds",
+          "specularMap": "/levels/east_coast_usa/art/shapes/buildings/eca_bld_cleanmetal_s.dds",
+          "specularPower": 11,
+          "useAnisotropic": true,
+          "vertColor": true
+        },
+        {
+          "vertColor": true
+        },
+        {},
+        {}
+      ],
+      "annotation": "BUILDINGS",
+      "class": "Material",
+      "cubemap": "eca_cubemap_metalblurred",
+      "groundType": "METAL",
+      "mapTo": "eca_bld_cleanmetal",
+      "materialTag0": "beamng",
+      "materialTag1": "building",
+      "materialTag2": "east_coast_usa",
+      "name": "eca_bld_cleanmetal",
+      "persistentId": "f74c972d-e96b-4e13-9f3f-524f25dc4813",
+      "translucentBlendOp": "None"
+    },
+    "eca_bld_wood": {
+      "Stages": [
+        {
+          "colorMap": "/levels/east_coast_usa/art/shapes/buildings/eca_bld_wood_d.dds",
+          "normalMap": "/levels/east_coast_usa/art/shapes/buildings/eca_bld_wood_n.dds",
+          "overlayMap": "/levels/east_coast_usa/art/shapes/buildings/eca_breakup_texture.dds",
+          "specularMap": "/levels/east_coast_usa/art/shapes/buildings/eca_bld_wood_s.dds",
+          "useAnisotropic": true,
+          "vertColor": true
+        },
+        {},
+        {},
+        {}
+      ],
+      "annotation": "BUILDINGS",
+      "class": "Material",
+      "groundType": "WOOD",
+      "mapTo": "eca_bld_wood",
+      "materialTag0": "beamng",
+      "materialTag1": "building",
+      "materialTag2": "east_coast_usa",
+      "name": "eca_bld_wood",
+      "persistentId": "3b7d34ad-4b02-4c3f-8fb9-26ff0c34cb70",
+      "translucentBlendOp": "None"
+    },
     "juniper_bark": {
       "Stages": [
         {
@@ -3308,6 +5262,30 @@
       "name": "leaves_strong",
       "persistentId": "7e8157dc-940e-4435-937b-e934d4e42892"
     },
+    "lod_vertcol": {
+      "Stages": [
+        {
+          "vertColor": true
+        },
+        {
+          "vertColor": null
+        },
+        {
+          "vertColor": null
+        },
+        {
+          "vertColor": null
+        }
+      ],
+      "class": "Material",
+      "groundType": "ASPHALT_OLD",
+      "mapTo": "lod_vertcol",
+      "materialTag0": "beamng",
+      "materialTag1": "building",
+      "name": "lod_vertcol",
+      "persistentId": "3122f280-003f-419e-ba18-ba85683d01ed",
+      "translucentBlendOp": "None"
+    },
     "m_juniper_leaves_01_distant": {
       "Stages": [
         {
@@ -3331,10 +5309,245 @@
       "name": "m_juniper_leaves_01_distant",
       "subSurface": true,
       "subSurfaceIntensity": 1,
+      "version": 1.5
+    },
+    "metal_galvanized": {
+      "Stages": [
+        {
+          "baseColorMap": "/art/shapes/objects/t_metal_galvanized_01_b.color.png",
+          "detailScale": [
+            0.100000001,
+            0.100000001
+          ],
+          "diffuseMapUseUV": null,
+          "metallicFactor": 1,
+          "metallicMap": "/art/shapes/objects/t_metal_galvanized_02_m.data.png",
+          "opacityFactor": null,
+          "opacityMapUseUV": null,
+          "pixelSpecular": true,
+          "roughnessMap": "/art/shapes/objects/t_metal_galvanized_02_r.data.png",
+          "roughnessMapUseUV": null,
+          "vertColor": true
+        },
+        {
+          "baseColorMap": "/levels/automation_test_track/art/shapes/buildings/t_breakup_general_b.color.png",
+          "detailScale": null,
+          "diffuseMapUseUV": 1,
+          "metallicFactor": null,
+          "opacityFactor": 0.800000012,
+          "opacityMap": "/levels/automation_test_track/art/shapes/buildings/t_breakup_general_o.data.png",
+          "opacityMapUseUV": 1,
+          "pixelSpecular": null,
+          "roughnessMapUseUV": 1,
+          "vertColor": null
+        },
+        {
+          "detailScale": null,
+          "diffuseMapUseUV": null,
+          "metallicFactor": null,
+          "opacityFactor": null,
+          "opacityMapUseUV": null,
+          "pixelSpecular": null,
+          "roughnessMapUseUV": null,
+          "vertColor": null
+        },
+        {
+          "detailScale": null,
+          "diffuseMapUseUV": null,
+          "metallicFactor": null,
+          "opacityFactor": null,
+          "opacityMapUseUV": null,
+          "pixelSpecular": null,
+          "roughnessMapUseUV": null,
+          "vertColor": null
+        }
+      ],
+      "alphaRef": 0,
+      "annotation": "GUARD_RAIL",
+      "class": "Material",
+      "doubleSided": true,
+      "dynamicCubemap": true,
+      "groundType": "METAL",
+      "invertBackFaceNormals": true,
+      "mapTo": "metal_galvanized",
+      "materialTag0": "metal",
+      "name": "metal_galvanized",
+      "persistentId": "0115bd66-7eda-41a7-9541-cd91d5cc3f2e",
+      "translucentBlendOp": "None",
+      "version": 1.5
+    },
+    "wca_objects1": {
+      "Stages": [
+        {
+          "baseColorMap": "/art/shapes/objects/m_wca_objects1/t_wca_objects1_b.color.png",
+          "emissiveFactor": [
+            1,
+            1,
+            1
+          ],
+          "emissiveIntensityNits": 4000,
+          "emissiveMap": "/art/shapes/objects/m_wca_objects1/t_wca_objects1_e.color.png",
+          "instanceEmissive": true,
+          "metallicFactor": 1,
+          "metallicMap": "/art/shapes/objects/m_wca_objects1/t_wca_objects1_m.data.png",
+          "normalMap": "/art/shapes/objects/m_wca_objects1/t_wca_objects1_nm.normal.png",
+          "pixelSpecular": true,
+          "roughnessMap": "/art/shapes/objects/m_wca_objects1/t_wca_objects1_r.data.png",
+          "vertColor": true
+        },
+        {
+          "emissiveFactor": null,
+          "emissiveIntensityNits": null,
+          "instanceEmissive": null,
+          "metallicFactor": null,
+          "pixelSpecular": null,
+          "vertColor": null
+        },
+        {
+          "emissiveFactor": null,
+          "emissiveIntensityNits": null,
+          "instanceEmissive": null,
+          "metallicFactor": null,
+          "pixelSpecular": null,
+          "vertColor": null
+        },
+        {
+          "emissiveFactor": null,
+          "emissiveIntensityNits": null,
+          "instanceEmissive": null,
+          "metallicFactor": null,
+          "pixelSpecular": null,
+          "vertColor": null
+        }
+      ],
+      "alphaRef": 64,
+      "alphaTest": true,
+      "annotation": "POLE",
+      "class": "Material",
+      "dynamicCubemap": true,
+      "mapTo": "wca_objects1",
+      "materialTag0": "beamng",
+      "materialTag1": "vehicle",
+      "name": "wca_objects1",
+      "persistentId": "979469f8-df04-435e-9884-573e44bb28a6",
+      "translucentBlendOp": "None",
+      "translucentZWrite": true,
       "version": 1.5
     }
   },
   "utah": {
+    "concrete_plain": {
+      "Stages": [
+        {
+          "ambientOcclusionMap": "/art/shapes/objects/m_concrete_plain/t_concrete_plain_ao.data.png",
+          "baseColorFactor": [
+            0.881534994,
+            0.881525993,
+            0.881525993,
+            1
+          ],
+          "baseColorMap": "/art/shapes/objects/m_concrete_plain/t_concrete_plain_b.color.png",
+          "detailScale": [
+            4,
+            0.5
+          ],
+          "normalMap": "/art/shapes/objects/m_concrete_plain/t_concrete_plain_nm.normal.png",
+          "pixelSpecular": true,
+          "roughnessMap": "/art/shapes/objects/m_concrete_plain/t_concrete_plain_r.data.png",
+          "vertColor": true
+        },
+        {
+          "baseColorFactor": null,
+          "detailScale": null,
+          "pixelSpecular": null,
+          "vertColor": null
+        },
+        {
+          "baseColorFactor": null,
+          "detailScale": null,
+          "pixelSpecular": null,
+          "vertColor": null
+        },
+        {
+          "baseColorFactor": null,
+          "detailScale": null,
+          "pixelSpecular": null,
+          "vertColor": null
+        }
+      ],
+      "alphaRef": 64,
+      "annotation": "BUILDINGS",
+      "class": "Material",
+      "mapTo": "concrete_plain",
+      "materialTag0": "beamng",
+      "materialTag1": "vehicle",
+      "name": "concrete_plain",
+      "persistentId": "0affa924-0c54-48c6-b635-e529d390a043",
+      "translucent": true,
+      "translucentBlendOp": "None",
+      "version": 1.5
+    },
+    "eca_bld_cleanmetal": {
+      "Stages": [
+        {
+          "colorMap": "/levels/east_coast_usa/art/shapes/null.dds",
+          "diffuseColor": [
+            0.9960780144,
+            0.9960780144,
+            0.9960780144,
+            1
+          ],
+          "normalMap": "/levels/east_coast_usa/art/shapes/buildings/eca_bld_cleanmetal_n.dds",
+          "overlayMap": "/levels/east_coast_usa/art/shapes/buildings/eca_breakup_texture.dds",
+          "reflectivityMap": "/levels/east_coast_usa/art/shapes/buildings/eca_bld_cleanmetal_r.dds",
+          "specularMap": "/levels/east_coast_usa/art/shapes/buildings/eca_bld_cleanmetal_s.dds",
+          "specularPower": 11,
+          "useAnisotropic": true,
+          "vertColor": true
+        },
+        {
+          "vertColor": true
+        },
+        {},
+        {}
+      ],
+      "annotation": "BUILDINGS",
+      "class": "Material",
+      "cubemap": "eca_cubemap_metalblurred",
+      "groundType": "METAL",
+      "mapTo": "eca_bld_cleanmetal",
+      "materialTag0": "beamng",
+      "materialTag1": "building",
+      "materialTag2": "east_coast_usa",
+      "name": "eca_bld_cleanmetal",
+      "persistentId": "f74c972d-e96b-4e13-9f3f-524f25dc4813",
+      "translucentBlendOp": "None"
+    },
+    "eca_bld_wood": {
+      "Stages": [
+        {
+          "colorMap": "/levels/east_coast_usa/art/shapes/buildings/eca_bld_wood_d.dds",
+          "normalMap": "/levels/east_coast_usa/art/shapes/buildings/eca_bld_wood_n.dds",
+          "overlayMap": "/levels/east_coast_usa/art/shapes/buildings/eca_breakup_texture.dds",
+          "specularMap": "/levels/east_coast_usa/art/shapes/buildings/eca_bld_wood_s.dds",
+          "useAnisotropic": true,
+          "vertColor": true
+        },
+        {},
+        {},
+        {}
+      ],
+      "annotation": "BUILDINGS",
+      "class": "Material",
+      "groundType": "WOOD",
+      "mapTo": "eca_bld_wood",
+      "materialTag0": "beamng",
+      "materialTag1": "building",
+      "materialTag2": "east_coast_usa",
+      "name": "eca_bld_wood",
+      "persistentId": "3b7d34ad-4b02-4c3f-8fb9-26ff0c34cb70",
+      "translucentBlendOp": "None"
+    },
     "juniper_bark": {
       "Stages": [
         {
@@ -3532,6 +5745,30 @@
       "name": "leaves_strong",
       "persistentId": "7e8157dc-940e-4435-937b-e934d4e42892"
     },
+    "lod_vertcol": {
+      "Stages": [
+        {
+          "vertColor": true
+        },
+        {
+          "vertColor": null
+        },
+        {
+          "vertColor": null
+        },
+        {
+          "vertColor": null
+        }
+      ],
+      "class": "Material",
+      "groundType": "ASPHALT_OLD",
+      "mapTo": "lod_vertcol",
+      "materialTag0": "beamng",
+      "materialTag1": "building",
+      "name": "lod_vertcol",
+      "persistentId": "3122f280-003f-419e-ba18-ba85683d01ed",
+      "translucentBlendOp": "None"
+    },
     "m_juniper_leaves_01_distant": {
       "Stages": [
         {
@@ -3555,6 +5792,71 @@
       "name": "m_juniper_leaves_01_distant",
       "subSurface": true,
       "subSurfaceIntensity": 1,
+      "version": 1.5
+    },
+    "metal_galvanized": {
+      "Stages": [
+        {
+          "baseColorMap": "/art/shapes/objects/t_metal_galvanized_01_b.color.png",
+          "detailScale": [
+            0.100000001,
+            0.100000001
+          ],
+          "diffuseMapUseUV": null,
+          "metallicFactor": 1,
+          "metallicMap": "/art/shapes/objects/t_metal_galvanized_02_m.data.png",
+          "opacityFactor": null,
+          "opacityMapUseUV": null,
+          "pixelSpecular": true,
+          "roughnessMap": "/art/shapes/objects/t_metal_galvanized_02_r.data.png",
+          "roughnessMapUseUV": null,
+          "vertColor": true
+        },
+        {
+          "baseColorMap": "/levels/automation_test_track/art/shapes/buildings/t_breakup_general_b.color.png",
+          "detailScale": null,
+          "diffuseMapUseUV": 1,
+          "metallicFactor": null,
+          "opacityFactor": 0.800000012,
+          "opacityMap": "/levels/automation_test_track/art/shapes/buildings/t_breakup_general_o.data.png",
+          "opacityMapUseUV": 1,
+          "pixelSpecular": null,
+          "roughnessMapUseUV": 1,
+          "vertColor": null
+        },
+        {
+          "detailScale": null,
+          "diffuseMapUseUV": null,
+          "metallicFactor": null,
+          "opacityFactor": null,
+          "opacityMapUseUV": null,
+          "pixelSpecular": null,
+          "roughnessMapUseUV": null,
+          "vertColor": null
+        },
+        {
+          "detailScale": null,
+          "diffuseMapUseUV": null,
+          "metallicFactor": null,
+          "opacityFactor": null,
+          "opacityMapUseUV": null,
+          "pixelSpecular": null,
+          "roughnessMapUseUV": null,
+          "vertColor": null
+        }
+      ],
+      "alphaRef": 0,
+      "annotation": "GUARD_RAIL",
+      "class": "Material",
+      "doubleSided": true,
+      "dynamicCubemap": true,
+      "groundType": "METAL",
+      "invertBackFaceNormals": true,
+      "mapTo": "metal_galvanized",
+      "materialTag0": "metal",
+      "name": "metal_galvanized",
+      "persistentId": "0115bd66-7eda-41a7-9541-cd91d5cc3f2e",
+      "translucentBlendOp": "None",
       "version": 1.5
     },
     "utah_rocks_a": {
@@ -3575,6 +5877,64 @@
       "materialTag1": "Natural",
       "name": "utah_rocks_a",
       "persistentId": "020ff0de-c97e-4cc6-a82b-8d26c23f7016"
+    },
+    "wca_objects1": {
+      "Stages": [
+        {
+          "baseColorMap": "/art/shapes/objects/m_wca_objects1/t_wca_objects1_b.color.png",
+          "emissiveFactor": [
+            1,
+            1,
+            1
+          ],
+          "emissiveIntensityNits": 4000,
+          "emissiveMap": "/art/shapes/objects/m_wca_objects1/t_wca_objects1_e.color.png",
+          "instanceEmissive": true,
+          "metallicFactor": 1,
+          "metallicMap": "/art/shapes/objects/m_wca_objects1/t_wca_objects1_m.data.png",
+          "normalMap": "/art/shapes/objects/m_wca_objects1/t_wca_objects1_nm.normal.png",
+          "pixelSpecular": true,
+          "roughnessMap": "/art/shapes/objects/m_wca_objects1/t_wca_objects1_r.data.png",
+          "vertColor": true
+        },
+        {
+          "emissiveFactor": null,
+          "emissiveIntensityNits": null,
+          "instanceEmissive": null,
+          "metallicFactor": null,
+          "pixelSpecular": null,
+          "vertColor": null
+        },
+        {
+          "emissiveFactor": null,
+          "emissiveIntensityNits": null,
+          "instanceEmissive": null,
+          "metallicFactor": null,
+          "pixelSpecular": null,
+          "vertColor": null
+        },
+        {
+          "emissiveFactor": null,
+          "emissiveIntensityNits": null,
+          "instanceEmissive": null,
+          "metallicFactor": null,
+          "pixelSpecular": null,
+          "vertColor": null
+        }
+      ],
+      "alphaRef": 64,
+      "alphaTest": true,
+      "annotation": "POLE",
+      "class": "Material",
+      "dynamicCubemap": true,
+      "mapTo": "wca_objects1",
+      "materialTag0": "beamng",
+      "materialTag1": "vehicle",
+      "name": "wca_objects1",
+      "persistentId": "979469f8-df04-435e-9884-573e44bb28a6",
+      "translucentBlendOp": "None",
+      "translucentZWrite": true,
+      "version": 1.5
     }
   },
   "west_coast": {
@@ -3591,6 +5951,57 @@
       "mapTo": "branches_strong",
       "name": "branches_strong",
       "persistentId": "fd68c03b-68ae-4e0a-850e-a66f02004d54"
+    },
+    "concrete_plain": {
+      "Stages": [
+        {
+          "ambientOcclusionMap": "/art/shapes/objects/m_concrete_plain/t_concrete_plain_ao.data.png",
+          "baseColorFactor": [
+            0.881534994,
+            0.881525993,
+            0.881525993,
+            1
+          ],
+          "baseColorMap": "/art/shapes/objects/m_concrete_plain/t_concrete_plain_b.color.png",
+          "detailScale": [
+            4,
+            0.5
+          ],
+          "normalMap": "/art/shapes/objects/m_concrete_plain/t_concrete_plain_nm.normal.png",
+          "pixelSpecular": true,
+          "roughnessMap": "/art/shapes/objects/m_concrete_plain/t_concrete_plain_r.data.png",
+          "vertColor": true
+        },
+        {
+          "baseColorFactor": null,
+          "detailScale": null,
+          "pixelSpecular": null,
+          "vertColor": null
+        },
+        {
+          "baseColorFactor": null,
+          "detailScale": null,
+          "pixelSpecular": null,
+          "vertColor": null
+        },
+        {
+          "baseColorFactor": null,
+          "detailScale": null,
+          "pixelSpecular": null,
+          "vertColor": null
+        }
+      ],
+      "alphaRef": 64,
+      "annotation": "BUILDINGS",
+      "class": "Material",
+      "mapTo": "concrete_plain",
+      "materialTag0": "beamng",
+      "materialTag1": "vehicle",
+      "name": "concrete_plain",
+      "persistentId": "0affa924-0c54-48c6-b635-e529d390a043",
+      "translucent": true,
+      "translucentBlendOp": "None",
+      "version": 1.5
     },
     "deserttree_branches": {
       "Stages": [
@@ -3681,6 +6092,67 @@
       "persistentId": "59793931-81a3-4a73-8348-8c5e7b1e4877",
       "version": 1.5
     },
+    "eca_bld_cleanmetal": {
+      "Stages": [
+        {
+          "colorMap": "/levels/east_coast_usa/art/shapes/null.dds",
+          "diffuseColor": [
+            0.9960780144,
+            0.9960780144,
+            0.9960780144,
+            1
+          ],
+          "normalMap": "/levels/east_coast_usa/art/shapes/buildings/eca_bld_cleanmetal_n.dds",
+          "overlayMap": "/levels/east_coast_usa/art/shapes/buildings/eca_breakup_texture.dds",
+          "reflectivityMap": "/levels/east_coast_usa/art/shapes/buildings/eca_bld_cleanmetal_r.dds",
+          "specularMap": "/levels/east_coast_usa/art/shapes/buildings/eca_bld_cleanmetal_s.dds",
+          "specularPower": 11,
+          "useAnisotropic": true,
+          "vertColor": true
+        },
+        {
+          "vertColor": true
+        },
+        {},
+        {}
+      ],
+      "annotation": "BUILDINGS",
+      "class": "Material",
+      "cubemap": "eca_cubemap_metalblurred",
+      "groundType": "METAL",
+      "mapTo": "eca_bld_cleanmetal",
+      "materialTag0": "beamng",
+      "materialTag1": "building",
+      "materialTag2": "east_coast_usa",
+      "name": "eca_bld_cleanmetal",
+      "persistentId": "f74c972d-e96b-4e13-9f3f-524f25dc4813",
+      "translucentBlendOp": "None"
+    },
+    "eca_bld_wood": {
+      "Stages": [
+        {
+          "colorMap": "/levels/east_coast_usa/art/shapes/buildings/eca_bld_wood_d.dds",
+          "normalMap": "/levels/east_coast_usa/art/shapes/buildings/eca_bld_wood_n.dds",
+          "overlayMap": "/levels/east_coast_usa/art/shapes/buildings/eca_breakup_texture.dds",
+          "specularMap": "/levels/east_coast_usa/art/shapes/buildings/eca_bld_wood_s.dds",
+          "useAnisotropic": true,
+          "vertColor": true
+        },
+        {},
+        {},
+        {}
+      ],
+      "annotation": "BUILDINGS",
+      "class": "Material",
+      "groundType": "WOOD",
+      "mapTo": "eca_bld_wood",
+      "materialTag0": "beamng",
+      "materialTag1": "building",
+      "materialTag2": "east_coast_usa",
+      "name": "eca_bld_wood",
+      "persistentId": "3b7d34ad-4b02-4c3f-8fb9-26ff0c34cb70",
+      "translucentBlendOp": "None"
+    },
     "eca_rocks": {
       "Stages": [
         {
@@ -3770,6 +6242,129 @@
       "name": "lod_vertcol",
       "persistentId": "3122f280-003f-419e-ba18-ba85683d01ed",
       "translucentBlendOp": "None"
+    },
+    "metal_galvanized": {
+      "Stages": [
+        {
+          "baseColorMap": "/art/shapes/objects/t_metal_galvanized_01_b.color.png",
+          "detailScale": [
+            0.100000001,
+            0.100000001
+          ],
+          "diffuseMapUseUV": null,
+          "metallicFactor": 1,
+          "metallicMap": "/art/shapes/objects/t_metal_galvanized_02_m.data.png",
+          "opacityFactor": null,
+          "opacityMapUseUV": null,
+          "pixelSpecular": true,
+          "roughnessMap": "/art/shapes/objects/t_metal_galvanized_02_r.data.png",
+          "roughnessMapUseUV": null,
+          "vertColor": true
+        },
+        {
+          "baseColorMap": "/levels/automation_test_track/art/shapes/buildings/t_breakup_general_b.color.png",
+          "detailScale": null,
+          "diffuseMapUseUV": 1,
+          "metallicFactor": null,
+          "opacityFactor": 0.800000012,
+          "opacityMap": "/levels/automation_test_track/art/shapes/buildings/t_breakup_general_o.data.png",
+          "opacityMapUseUV": 1,
+          "pixelSpecular": null,
+          "roughnessMapUseUV": 1,
+          "vertColor": null
+        },
+        {
+          "detailScale": null,
+          "diffuseMapUseUV": null,
+          "metallicFactor": null,
+          "opacityFactor": null,
+          "opacityMapUseUV": null,
+          "pixelSpecular": null,
+          "roughnessMapUseUV": null,
+          "vertColor": null
+        },
+        {
+          "detailScale": null,
+          "diffuseMapUseUV": null,
+          "metallicFactor": null,
+          "opacityFactor": null,
+          "opacityMapUseUV": null,
+          "pixelSpecular": null,
+          "roughnessMapUseUV": null,
+          "vertColor": null
+        }
+      ],
+      "alphaRef": 0,
+      "annotation": "GUARD_RAIL",
+      "class": "Material",
+      "doubleSided": true,
+      "dynamicCubemap": true,
+      "groundType": "METAL",
+      "invertBackFaceNormals": true,
+      "mapTo": "metal_galvanized",
+      "materialTag0": "metal",
+      "name": "metal_galvanized",
+      "persistentId": "0115bd66-7eda-41a7-9541-cd91d5cc3f2e",
+      "translucentBlendOp": "None",
+      "version": 1.5
+    },
+    "wca_objects1": {
+      "Stages": [
+        {
+          "baseColorMap": "/art/shapes/objects/m_wca_objects1/t_wca_objects1_b.color.png",
+          "emissiveFactor": [
+            1,
+            1,
+            1
+          ],
+          "emissiveIntensityNits": 4000,
+          "emissiveMap": "/art/shapes/objects/m_wca_objects1/t_wca_objects1_e.color.png",
+          "instanceEmissive": true,
+          "metallicFactor": 1,
+          "metallicMap": "/art/shapes/objects/m_wca_objects1/t_wca_objects1_m.data.png",
+          "normalMap": "/art/shapes/objects/m_wca_objects1/t_wca_objects1_nm.normal.png",
+          "pixelSpecular": true,
+          "roughnessMap": "/art/shapes/objects/m_wca_objects1/t_wca_objects1_r.data.png",
+          "vertColor": true
+        },
+        {
+          "emissiveFactor": null,
+          "emissiveIntensityNits": null,
+          "instanceEmissive": null,
+          "metallicFactor": null,
+          "pixelSpecular": null,
+          "vertColor": null
+        },
+        {
+          "emissiveFactor": null,
+          "emissiveIntensityNits": null,
+          "instanceEmissive": null,
+          "metallicFactor": null,
+          "pixelSpecular": null,
+          "vertColor": null
+        },
+        {
+          "emissiveFactor": null,
+          "emissiveIntensityNits": null,
+          "instanceEmissive": null,
+          "metallicFactor": null,
+          "pixelSpecular": null,
+          "vertColor": null
+        }
+      ],
+      "alphaRef": 64,
+      "alphaTest": true,
+      "annotation": "POLE",
+      "class": "Material",
+      "dynamicCubemap": true,
+      "mapTo": "wca_objects1",
+      "materialTag0": "beamng",
+      "materialTag1": "vehicle",
+      "name": "wca_objects1",
+      "persistentId": "979469f8-df04-435e-9884-573e44bb28a6",
+      "translucentBlendOp": "None",
+      "translucentZWrite": true,
+      "version": 1.5
     }
   }
 }

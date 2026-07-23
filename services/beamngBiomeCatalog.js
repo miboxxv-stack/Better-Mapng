@@ -141,6 +141,23 @@ const JUNGLE_GROUNDCOVER_MATERIAL = {
 
 const ASSET_SETS = {
   italy: {
+    streetFurniture: {
+      // OSM highway=street_lamp / amenity=bench → native TSStatics.
+      // Lamp yaw points local +X (arm) at the nearest road; light offsets
+      // match the vanilla wcusa lamp↔nightLight PointLight pairings.
+      lamp: {
+        // Ornate cast-iron lamppost for European streetscapes (8.3 m, 2.9 m arm).
+        shapeFile: '/levels/east_coast_usa/art/shapes/buildings/eca_lamppost.dae',
+        lightHeight: 7.6,
+        lightForward: 2.4,
+        yawOffset: 0,
+      },
+      bench: {
+        shapeFile: '/levels/east_coast_usa/art/shapes/clutter/clutter_city_bench_wood.dae',
+        // Seat front assumed local +Y; flip the sign if benches face away in-game.
+        yawOffset: -Math.PI / 2,
+      },
+    },
     managedItemTemplates: {
       cypress_tree: {
         name: 'cypress_tree',
@@ -335,6 +352,22 @@ const ASSET_SETS = {
     },
   },
   utah: {
+    streetFurniture: {
+      // OSM highway=street_lamp / amenity=bench → native TSStatics.
+      // Lamp yaw points local +X (arm) at the nearest road; light offsets
+      // match the vanilla wcusa lamp↔nightLight PointLight pairings.
+      lamp: {
+        shapeFile: '/art/shapes/objects/lamp1.dae',
+        lightHeight: 6.4,
+        lightForward: 0.8,
+        yawOffset: 0,
+      },
+      bench: {
+        shapeFile: '/levels/east_coast_usa/art/shapes/clutter/clutter_city_bench_wood.dae',
+        // Seat front assumed local +Y; flip the sign if benches face away in-game.
+        yawOffset: -Math.PI / 2,
+      },
+    },
     managedItemTemplates: {
       Juniper_tree_01: {
         name: 'Juniper_tree_01',
@@ -395,6 +428,22 @@ const ASSET_SETS = {
     },
   },
   small_island: {
+    streetFurniture: {
+      // OSM highway=street_lamp / amenity=bench → native TSStatics.
+      // Lamp yaw points local +X (arm) at the nearest road; light offsets
+      // match the vanilla wcusa lamp↔nightLight PointLight pairings.
+      lamp: {
+        shapeFile: '/art/shapes/objects/lamp1.dae',
+        lightHeight: 6.4,
+        lightForward: 0.8,
+        yawOffset: 0,
+      },
+      bench: {
+        shapeFile: '/levels/east_coast_usa/art/shapes/clutter/clutter_city_bench_wood.dae',
+        // Seat front assumed local +Y; flip the sign if benches face away in-game.
+        yawOffset: -Math.PI / 2,
+      },
+    },
     managedItemTemplates: {
       Juniper_tree_01: {
         name: 'Juniper_tree_01',
@@ -434,6 +483,22 @@ const ASSET_SETS = {
     rockCandidates: [],
   },
   east_coast: {
+    streetFurniture: {
+      // OSM highway=street_lamp / amenity=bench → native TSStatics.
+      // Lamp yaw points local +X (arm) at the nearest road; light offsets
+      // match the vanilla wcusa lamp↔nightLight PointLight pairings.
+      lamp: {
+        shapeFile: '/art/shapes/objects/lamp1.dae',
+        lightHeight: 6.4,
+        lightForward: 0.8,
+        yawOffset: 0,
+      },
+      bench: {
+        shapeFile: '/levels/east_coast_usa/art/shapes/clutter/clutter_city_bench_wood.dae',
+        // Seat front assumed local +Y; flip the sign if benches face away in-game.
+        yawOffset: -Math.PI / 2,
+      },
+    },
     managedItemTemplates: {
       tree_aspen_small_a: {
         name: 'tree_aspen_small_a',
@@ -495,6 +560,22 @@ const ASSET_SETS = {
     },
   },
   west_coast: {
+    streetFurniture: {
+      // OSM highway=street_lamp / amenity=bench → native TSStatics.
+      // Lamp yaw points local +X (arm) at the nearest road; light offsets
+      // match the vanilla wcusa lamp↔nightLight PointLight pairings.
+      lamp: {
+        shapeFile: '/art/shapes/objects/lamp1.dae',
+        lightHeight: 6.4,
+        lightForward: 0.8,
+        yawOffset: 0,
+      },
+      bench: {
+        shapeFile: '/levels/east_coast_usa/art/shapes/clutter/clutter_city_bench_wood.dae',
+        // Seat front assumed local +Y; flip the sign if benches face away in-game.
+        yawOffset: -Math.PI / 2,
+      },
+    },
     managedItemTemplates: {
       deserttree_bush_medium: {
         name: 'deserttree_bush_medium',
@@ -524,6 +605,22 @@ const ASSET_SETS = {
     rockCandidates: ['eca_rock_small'],
   },
   johnson_valley: {
+    streetFurniture: {
+      // OSM highway=street_lamp / amenity=bench → native TSStatics.
+      // Lamp yaw points local +X (arm) at the nearest road; light offsets
+      // match the vanilla wcusa lamp↔nightLight PointLight pairings.
+      lamp: {
+        shapeFile: '/art/shapes/objects/lamp1.dae',
+        lightHeight: 6.4,
+        lightForward: 0.8,
+        yawOffset: 0,
+      },
+      bench: {
+        shapeFile: '/levels/east_coast_usa/art/shapes/clutter/clutter_city_bench_wood.dae',
+        // Seat front assumed local +Y; flip the sign if benches face away in-game.
+        yawOffset: -Math.PI / 2,
+      },
+    },
     managedItemTemplates: {
       deserttree_bush_medium: {
         name: 'deserttree_bush_medium',
@@ -576,6 +673,22 @@ const ASSET_SETS = {
     },
   },
   jungle: {
+    streetFurniture: {
+      // OSM highway=street_lamp / amenity=bench → native TSStatics.
+      // Lamp yaw points local +X (arm) at the nearest road; light offsets
+      // match the vanilla wcusa lamp↔nightLight PointLight pairings.
+      lamp: {
+        shapeFile: '/art/shapes/objects/lamp1.dae',
+        lightHeight: 6.4,
+        lightForward: 0.8,
+        yawOffset: 0,
+      },
+      bench: {
+        shapeFile: '/levels/east_coast_usa/art/shapes/clutter/clutter_city_bench_wood.dae',
+        // Seat front assumed local +Y; flip the sign if benches face away in-game.
+        yawOffset: -Math.PI / 2,
+      },
+    },
     managedItemTemplates: {
       palm_medium: {
         name: 'palm_medium',
@@ -640,6 +753,22 @@ const ASSET_SETS = {
     },
   },
   industrial: {
+    streetFurniture: {
+      // OSM highway=street_lamp / amenity=bench → native TSStatics.
+      // Lamp yaw points local +X (arm) at the nearest road; light offsets
+      // match the vanilla wcusa lamp↔nightLight PointLight pairings.
+      lamp: {
+        shapeFile: '/art/shapes/objects/lamp1.dae',
+        lightHeight: 6.4,
+        lightForward: 0.8,
+        yawOffset: 0,
+      },
+      bench: {
+        shapeFile: '/levels/east_coast_usa/art/shapes/clutter/clutter_city_bench_wood.dae',
+        // Seat front assumed local +Y; flip the sign if benches face away in-game.
+        yawOffset: -Math.PI / 2,
+      },
+    },
     managedItemTemplates: {
       cork_oak_bush_large: {
         name: 'cork_oak_bush_large',
@@ -673,6 +802,22 @@ const ASSET_SETS = {
     rockCandidates: ['eca_rock_small'],
   },
   automation_test_track: {
+    streetFurniture: {
+      // OSM highway=street_lamp / amenity=bench → native TSStatics.
+      // Lamp yaw points local +X (arm) at the nearest road; light offsets
+      // match the vanilla wcusa lamp↔nightLight PointLight pairings.
+      lamp: {
+        shapeFile: '/art/shapes/objects/lamp1.dae',
+        lightHeight: 6.4,
+        lightForward: 0.8,
+        yawOffset: 0,
+      },
+      bench: {
+        shapeFile: '/levels/east_coast_usa/art/shapes/clutter/clutter_city_bench_wood.dae',
+        // Seat front assumed local +Y; flip the sign if benches face away in-game.
+        yawOffset: -Math.PI / 2,
+      },
+    },
     managedItemTemplates: {
       cork_oak_large_1: {
         name: 'cork_oak_large_1',
@@ -721,6 +866,22 @@ const ASSET_SETS = {
     rockCandidates: ['rocks_nz_jagged_medium_1'],
   },
   hirochi_raceway: {
+    streetFurniture: {
+      // OSM highway=street_lamp / amenity=bench → native TSStatics.
+      // Lamp yaw points local +X (arm) at the nearest road; light offsets
+      // match the vanilla wcusa lamp↔nightLight PointLight pairings.
+      lamp: {
+        shapeFile: '/art/shapes/objects/lamp1.dae',
+        lightHeight: 6.4,
+        lightForward: 0.8,
+        yawOffset: 0,
+      },
+      bench: {
+        shapeFile: '/levels/east_coast_usa/art/shapes/clutter/clutter_city_bench_wood.dae',
+        // Seat front assumed local +Y; flip the sign if benches face away in-game.
+        yawOffset: -Math.PI / 2,
+      },
+    },
     managedItemTemplates: {
       cork_oak_bush_large: {
         name: 'cork_oak_bush_large',
@@ -744,6 +905,23 @@ const ASSET_SETS = {
     rockCandidates: ['eca_rock_small'],
   },
   european_template: {
+    streetFurniture: {
+      // OSM highway=street_lamp / amenity=bench → native TSStatics.
+      // Lamp yaw points local +X (arm) at the nearest road; light offsets
+      // match the vanilla wcusa lamp↔nightLight PointLight pairings.
+      lamp: {
+        // Ornate cast-iron lamppost for European streetscapes (8.3 m, 2.9 m arm).
+        shapeFile: '/levels/east_coast_usa/art/shapes/buildings/eca_lamppost.dae',
+        lightHeight: 7.6,
+        lightForward: 2.4,
+        yawOffset: 0,
+      },
+      bench: {
+        shapeFile: '/levels/east_coast_usa/art/shapes/clutter/clutter_city_bench_wood.dae',
+        // Seat front assumed local +Y; flip the sign if benches face away in-game.
+        yawOffset: -Math.PI / 2,
+      },
+    },
     managedItemTemplates: {
       cypress_tree: {
         name: 'cypress_tree',
@@ -1118,6 +1296,14 @@ export function getTerrainLevelFallbacks(biome) {
     biome?.levelName,
     ...(biome?.terrainLevelFallbacks ?? []),
   ].filter(Boolean)));
+}
+
+export function getStreetFurnitureProfile(biome) {
+  for (const assetSetId of biome?.assetSetIds ?? []) {
+    const profile = ASSET_SETS[assetSetId]?.streetFurniture;
+    if (profile) return profile;
+  }
+  return ASSET_SETS.east_coast?.streetFurniture ?? null;
 }
 
 export function getGroundCoverProfile(biome) {

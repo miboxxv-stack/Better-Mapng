@@ -22,6 +22,7 @@ import {
   getManagedForestTemplate,
   getRockCandidates,
   getShapeMaterialDefsForBiome,
+  getStreetFurnitureProfile,
   getTrafficProfile,
   getWaterProfile,
   resolveBushType,
@@ -575,6 +576,9 @@ async function generateOSMObjectsDAE(terrainData, worldSize) {
     // Signs are placed as native BeamNG sign assets (see buildNativeSignObjects),
     // so don't bake the procedural sign boxes into the generic OSM mesh.
     includeSigns: false,
+    // Street furniture (lamps, benches, bollards) is 3D-preview-only geometry;
+    // lamps and benches ship as native game assets (buildStreetFurnitureObjects).
+    includeStreetFurniture: false,
     // Keep exact building footprints in exported levels.
     simplifyBuildingFootprints: false,
   });
@@ -4520,14 +4524,9 @@ function findNearestRoad(px, py, roads, maxSearch) {
  * approaching traffic (right side for right-hand-drive), and yaw the sign to
  * face back down the road toward oncoming vehicles.
  */
-function buildNativeSignObjects(terrainData, squareSize, rightHandDrive = false) {
-  const features = terrainData.osmFeatures?.filter((feature) => (
-    feature.type === 'street_furniture'
-    && Array.isArray(feature.geometry)
-    && feature.geometry.length === 1
-  )) ?? [];
-
-  // Pre-project drivable roads to world-space polylines once for offset lookup.
+// Pre-project drivable roads to world-space polylines once for offset lookup
+// (shared by sign and street-furniture placement).
+function projectDrivableRoads(terrainData, squareSize) {
   const roads = [];
   for (const feature of terrainData.osmFeatures ?? []) {
     if (feature.type !== 'road' || !Array.isArray(feature.geometry) || feature.geometry.length < 2) continue;
@@ -4540,6 +4539,17 @@ function buildNativeSignObjects(terrainData, squareSize, rightHandDrive = false)
       .map((p) => geoToWorldPoint(p.lat, p.lng, terrainData, squareSize, 0));
     if (pts.length >= 2) roads.push({ pts, halfWidth });
   }
+  return roads;
+}
+
+function buildNativeSignObjects(terrainData, squareSize, rightHandDrive = false) {
+  const features = terrainData.osmFeatures?.filter((feature) => (
+    feature.type === 'street_furniture'
+    && Array.isArray(feature.geometry)
+    && feature.geometry.length === 1
+  )) ?? [];
+
+  const roads = projectDrivableRoads(terrainData, squareSize);
 
   // Shoulder clearance beyond the road edge so the post sits off the asphalt.
   const SHOULDER_M = 1.5;
@@ -4589,6 +4599,139 @@ function buildNativeSignObjects(terrainData, squareSize, rightHandDrive = false)
       shapeName: asset.shapeName,
       useInstanceRenderData: true,
     });
+  }
+  return objects;
+}
+
+// Street furniture caps. BeamNG QA (Wonly): 25k+ lights per level are fine
+// even on Steam Deck; the constraints that matter are no shadow-casting point
+// lights and no heavy overlap — hence the min-spacing dedupe below.
+const MAX_STREET_LAMPS = 20000;
+const MAX_BENCHES = 5000;
+const LAMP_MIN_SPACING_M = 2;
+
+// Vanilla wcusa street lamp light (lightemitters_vintage sodium pairing,
+// 400+ instances) — with castShadows forced off per QA guidance. isEnabled
+// false + nightLight "1" makes the engine run them dusk-to-dawn, no lua.
+const STREET_LAMP_LIGHT_TEMPLATE = {
+  class: 'PointLight',
+  attenuationRatio: [0, 0, 0],
+  brightness: 0.0795774609,
+  castShadows: false,
+  color: [1, 0.474550009, 0.156189993, 1],
+  intensity: 5000,
+  isEnabled: false,
+  nightLight: '1',
+  radius: 15,
+  useColorTemperature: 'true',
+};
+
+/**
+ * Convert OSM street furniture nodes into native BeamNG objects:
+ *   highway=street_lamp → biome lamp TSStatic + nightLight PointLight at the
+ *                         luminaire (engine toggles it dusk-to-dawn)
+ *   amenity=bench       → biome bench TSStatic
+ *
+ * Both orient toward the nearest drivable road (lamp arm over the roadway,
+ * bench seat facing it); `direction`/`light:direction` tags win when present.
+ * Wall/wire/ceiling-mounted lamps are skipped — their node marks a luminaire
+ * with no pole, frequently in the middle of the carriageway.
+ *
+ * Replaces the procedural preview primitives that used to be baked into the
+ * OSM objects DAE (see generateOSMObjectsDAE includeStreetFurniture: false).
+ */
+function buildStreetFurnitureObjects(terrainData, squareSize, biome) {
+  const profile = getStreetFurnitureProfile(biome);
+  if (!profile) return [];
+
+  const features = terrainData.osmFeatures?.filter((feature) => (
+    feature.type === 'street_furniture'
+    && Array.isArray(feature.geometry)
+    && feature.geometry.length === 1
+  )) ?? [];
+  if (features.length === 0) return [];
+
+  const roads = projectDrivableRoads(terrainData, squareSize);
+  const MAX_ROAD_SEARCH_M = 30;
+
+  const objects = [];
+  let lampCount = 0;
+  let benchCount = 0;
+  const lampCells = new Set();
+  const cellKey = (x, y) => `${Math.round(x / LAMP_MIN_SPACING_M)},${Math.round(y / LAMP_MIN_SPACING_M)}`;
+
+  for (let i = 0; i < features.length; i++) {
+    const tags = features[i].tags || {};
+    const isLamp = tags.highway === 'street_lamp';
+    const isBench = !isLamp && tags.amenity === 'bench';
+    if (!isLamp && !isBench) continue;
+    if (isLamp && ['wall', 'wall_mounted', 'ceiling', 'wire'].includes(String(tags.support))) continue;
+    if (isLamp && lampCount >= MAX_STREET_LAMPS) continue;
+    if (isBench && benchCount >= MAX_BENCHES) continue;
+
+    const pt = features[i].geometry[0];
+    if (!Number.isFinite(pt?.lat) || !Number.isFinite(pt?.lng)) continue;
+    const world = geoToWorldPoint(pt.lat, pt.lng, terrainData, squareSize, 0);
+    const posX = world[0];
+    const posY = world[1];
+
+    const asset = isLamp ? profile.lamp : profile.bench;
+    if (!asset?.shapeFile) continue;
+
+    // Face the nearest road; explicit OSM direction tags override.
+    let facing = null;
+    const dirTag = tags['light:direction'] ?? tags.direction;
+    const dirDeg = Number.parseFloat(dirTag);
+    if (Number.isFinite(dirDeg)) {
+      // OSM: 0 = north (+Y), 90 = east (+X) → math yaw from +X axis.
+      facing = ((90 - dirDeg) * Math.PI) / 180;
+    } else {
+      const near = findNearestRoad(posX, posY, roads, MAX_ROAD_SEARCH_M);
+      if (near) facing = Math.atan2(near.cy - posY, near.cx - posX);
+    }
+    if (facing === null) facing = 0;
+    const yaw = facing + (asset.yawOffset ?? 0);
+
+    if (isLamp) {
+      const key = cellKey(posX, posY);
+      if (lampCells.has(key)) continue;
+      lampCells.add(key);
+    }
+
+    const z = getTerrainHeightAtWorldXY(posX, posY, terrainData, squareSize);
+    const kind = isLamp ? 'street_lamp' : 'bench';
+    objects.push({
+      __parent: 'street_furniture',
+      class: 'TSStatic',
+      name: `${kind}_${i}`,
+      persistentId: generatePersistentId(),
+      position: [roundTo(posX, 3), roundTo(posY, 3), roundTo(z, 3)],
+      rotationMatrix: rotationMatrixFromYaw(yaw),
+      shapeName: asset.shapeFile,
+      useInstanceRenderData: true,
+    });
+
+    if (isLamp) {
+      lampCount++;
+      const forward = asset.lightForward ?? 0;
+      objects.push({
+        __parent: 'street_furniture',
+        name: `street_lamp_light_${i}`,
+        persistentId: generatePersistentId(),
+        position: [
+          roundTo(posX + Math.cos(facing) * forward, 3),
+          roundTo(posY + Math.sin(facing) * forward, 3),
+          roundTo(z + (asset.lightHeight ?? 6), 3),
+        ],
+        ...STREET_LAMP_LIGHT_TEMPLATE,
+      });
+    } else {
+      benchCount++;
+    }
+  }
+
+  if (lampCount + benchCount > 0) {
+    console.log(`[BeamNG Export] Street furniture: ${lampCount} lamps (+lights), ${benchCount} benches`);
   }
   return objects;
 }
@@ -6349,6 +6492,7 @@ export async function exportBeamNGLevel(terrainData, center, options = {}) {
     : [];
   const barrierFolderItems = buildBarrierFolderItems(barrierObjects);
   const signObjects = buildNativeSignObjects(exportTerrainData, squareSize, resolvedRightHandDrive);
+  const streetFurnitureObjects = buildStreetFurnitureObjects(exportTerrainData, squareSize, biome);
   const { objects: fuelStationObjects, facilities: fuelStationFacilities } =
     buildFuelStations(exportTerrainData, squareSize);
   const roadFolderGroups = buildRoadFolderGroups(roadArchitectSession);
@@ -6972,6 +7116,12 @@ export async function exportBeamNGLevel(terrainData, center, options = {}) {
       name: 'signs',
       persistentId: generatePersistentId(),
     }] : []),
+    ...(streetFurnitureObjects.length > 0 ? [{
+      __parent: 'MissionGroup',
+      class: 'SimGroup',
+      name: 'street_furniture',
+      persistentId: generatePersistentId(),
+    }] : []),
     ...(fuelStationObjects.length > 0 ? [{
       __parent: 'MissionGroup',
       class: 'SimGroup',
@@ -7012,6 +7162,14 @@ export async function exportBeamNGLevel(terrainData, center, options = {}) {
   // Native BeamNG sign meshes (TSStatic + .link) for OSM stop/give_way nodes.
   if (signObjects.length > 0) {
     zip.file(`${base}/main/MissionGroup/signs/items.level.json`, toNDJSON(rewrittenSignObjects));
+  }
+
+  // ── main/MissionGroup/street_furniture/items.level.json ─────────────────
+  // Native lamp/bench TSStatics + nightLight PointLights for OSM
+  // street_lamp/bench nodes. rewriteForLinks registers .link files for the
+  // level-scoped meshes (core /art/shapes paths pass through untouched).
+  if (streetFurnitureObjects.length > 0) {
+    zip.file(`${base}/main/MissionGroup/street_furniture/items.level.json`, toNDJSON(rewriteForLinks(streetFurnitureObjects)));
   }
 
   // ── main/MissionGroup/gasStations/items.level.json + facilities ──────────

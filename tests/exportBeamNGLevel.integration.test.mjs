@@ -172,6 +172,37 @@ function makeTerrainData() {
           { lat: 0.45, lng: 0.55 },
         ],
       },
+      {
+        id: 'lamp_1',
+        type: 'street_furniture',
+        tags: {
+          highway: 'street_lamp',
+        },
+        geometry: [
+          { lat: 0.55, lng: 0.45 },
+        ],
+      },
+      {
+        id: 'lamp_wire_1',
+        type: 'street_furniture',
+        tags: {
+          highway: 'street_lamp',
+          support: 'wire',
+        },
+        geometry: [
+          { lat: 0.5, lng: 0.5 },
+        ],
+      },
+      {
+        id: 'bench_1',
+        type: 'street_furniture',
+        tags: {
+          amenity: 'bench',
+        },
+        geometry: [
+          { lat: 0.65, lng: 0.35 },
+        ],
+      },
     ],
   };
 }
@@ -184,7 +215,7 @@ function parseNDJSON(text) {
     .map((line) => JSON.parse(line));
 }
 
-async function runExportForRoadType(roadType, { includeTrees = false, pbrSource = 'none', terrainOverrides = {} } = {}) {
+async function runExportForRoadType(roadType, { includeTrees = false, pbrSource = 'none', terrainOverrides = {}, includeBuildings = false } = {}) {
   const result = await exportBeamNGLevel(
     { ...makeTerrainData(), ...terrainOverrides },
     { lat: 0.5, lng: 0.5 },
@@ -194,7 +225,7 @@ async function runExportForRoadType(roadType, { includeTrees = false, pbrSource 
       biomeId: 'west_coast_usa',
       baseTexture: 'none',
       pbrSource,
-      includeBuildings: false,
+      includeBuildings,
       applyFoundations: false,
       includeBackdrop: false,
       includeWater: false,
@@ -307,6 +338,62 @@ test('exportBeamNGLevel rewrites barrier shape paths and emits .link files acros
         `Sign near a road should be rotated to face traffic for roadType=${roadType}`,
       );
     }
+  } finally {
+    restorePolyfills();
+  }
+});
+
+test('exportBeamNGLevel emits native street furniture with engine-managed night lights', async () => {
+  const restorePolyfills = installCanvasPolyfill();
+
+  try {
+    const zip = await runExportForRoadType('decal');
+    const base = 'levels/mapng_demo';
+
+    const path = `${base}/main/MissionGroup/street_furniture/items.level.json`;
+    const file = zip.file(path);
+    assert.ok(file, `Missing ${path}`);
+    const items = parseNDJSON(await file.async('string'));
+
+    const lamps = items.filter((i) => i?.class === 'TSStatic' && i.name?.startsWith('street_lamp_'));
+    const lights = items.filter((i) => i?.class === 'PointLight');
+    const benches = items.filter((i) => i?.class === 'TSStatic' && i.name?.startsWith('bench_'));
+
+    // The fixture has one pole lamp, one wire-suspended lamp, and one bench.
+    // Wire/wall/ceiling lamps mark a luminaire with no pole, so they're skipped.
+    assert.equal(lamps.length, 1, 'expected exactly one pole-mounted lamp');
+    assert.equal(benches.length, 1, 'expected exactly one bench');
+    assert.equal(lights.length, 1, 'each placed lamp needs exactly one light');
+
+    // BeamNG QA (Wonly): nightLight lets the engine run street lights
+    // dusk-to-dawn with no custom lua, and point lights must not cast shadows.
+    const [light] = lights;
+    assert.equal(light.nightLight, '1', 'street lights must set nightLight');
+    assert.equal(light.isEnabled, false, 'nightLight lights start disabled');
+    assert.equal(light.castShadows, false, 'point lights must not cast shadows');
+
+    // The light belongs at the luminaire, above and offset from the pole base.
+    const [lamp] = lamps;
+    assert.ok(
+      light.position[2] - lamp.position[2] > 3,
+      `light should sit at the luminaire, got dz=${light.position[2] - lamp.position[2]}`,
+    );
+
+    // Lamps/benches near a road are yawed toward it (non-identity rotation).
+    assert.ok(
+      Math.abs(lamp.rotationMatrix[0] - 1) > 1e-6 || Math.abs(lamp.rotationMatrix[1]) > 1e-6,
+      'lamp near a road should be rotated toward it',
+    );
+
+    // The procedural preview primitives must not also ship in the OSM mesh.
+    // The fixture has no buildings, so with street furniture excluded the OSM
+    // group has no meshes at all and the DAE is skipped entirely — if the
+    // preview lamp/bench/bollard geometry leaked back in, this file appears.
+    const withObjects = await runExportForRoadType('decal', { includeBuildings: true });
+    assert.ok(
+      !withObjects.file(`${base}/map_assets/custom_assets/osm_objects/osm_objects.dae`),
+      'preview street furniture must not be baked into the OSM objects DAE',
+    );
   } finally {
     restorePolyfills();
   }
