@@ -55,6 +55,9 @@ test('rewrites nested object path values deeply', () => {
 });
 
 test('does not rewrite texture-like level paths', () => {
+  // Textures must never be link-mirrored: TerrainCellMaterial does not resolve
+  // .link redirects, and shape materials reference official texture locations
+  // directly (Car_Killer's "link the dae + materials.json, no textures").
   const links = createBeamNGLinkFileRegistry('mapng_demo');
 
   assert.equal(

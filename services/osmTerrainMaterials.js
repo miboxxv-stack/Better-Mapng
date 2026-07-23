@@ -13,6 +13,7 @@ import {
   getTerrainLevelFallbacks,
   getTerrainSemanticCandidates,
 } from './beamngBiomeCatalog.js';
+import { TERRAIN_MATERIAL_LIBRARY } from './beamngTerrainMaterialLibrary.js';
 
 // ── Material names ─────────────────────────────────────────────────────────
 // Index 0 = DefaultMaterial (satellite base), 1–8 = BeamNG-referenced materials.
@@ -33,13 +34,13 @@ const REFERENCE_MATERIALS = [
       annotation: 'GRASS',
       aoBaseTex: '/levels/east_coast_usa/art/terrains/t_terrain_base_ao.png',
       aoBaseTexSize: 2048,
-      aoDetailTex: '/levels/east_coast_usa/art/terrains/t_grass1_ao.png',
+      aoDetailTex: '/assets/materials/terrain/grass/t_grass_01/t_grass_01_ao.png',
       aoMacroTex: '/assets/materials/terrain/grass/macro_grass/t_macro_grass_ao.png',
       aoMacroTexSize: 100,
       baseColorBaseTex: '/levels/east_coast_usa/art/terrains/t_terrain_base_b.png',
       baseColorBaseTexSize: 2048,
       baseColorDetailStrength: [0.319999993, 0],
-      baseColorDetailTex: '/levels/east_coast_usa/art/terrains/t_grass1_b.png',
+      baseColorDetailTex: '/assets/materials/terrain/grass/t_grass_01/t_grass_01_b.png',
       baseColorMacroStrength: [0.100000001, 0.400000006],
       baseColorMacroTex: '/assets/materials/terrain/grass/macro_grass/t_macro_grass_b.png',
       baseColorMacroTexSize: 100,
@@ -48,7 +49,7 @@ const REFERENCE_MATERIALS = [
       groundmodelName: 'GRASS',
       heightBaseTex: '/levels/east_coast_usa/art/terrains/t_terrain_base_h.png',
       heightBaseTexSize: 2048,
-      heightDetailTex: '/levels/east_coast_usa/art/terrains/t_grass1_h.png',
+      heightDetailTex: '/assets/materials/terrain/grass/t_grass_01/t_grass_01_h.png',
       heightMacroTex: '/assets/materials/terrain/grass/macro_grass/t_macro_grass_h.png',
       heightMacroTexSize: 100,
       macroDistAtten: [0.349999994, 0],
@@ -56,14 +57,14 @@ const REFERENCE_MATERIALS = [
       normalBaseTex: '/levels/east_coast_usa/art/terrains/t_terrain_base_nm.png',
       normalBaseTexSize: 2048,
       normalDetailStrength: [0.600000024, 0],
-      normalDetailTex: '/levels/east_coast_usa/art/terrains/t_grass1_nm.png',
+      normalDetailTex: '/assets/materials/terrain/grass/t_grass_01/t_grass_01_nm.png',
       normalMacroStrength: [0.400000006, 0.600000024],
       normalMacroTex: '/assets/materials/terrain/grass/macro_grass/t_macro_grass_nm.png',
       normalMacroTexSize: 100,
       roughnessBaseTex: '/levels/east_coast_usa/art/terrains/t_terrain_base_r.png',
       roughnessBaseTexSize: 2048,
       roughnessDetailStrength: [0.899999976, 0],
-      roughnessDetailTex: '/levels/east_coast_usa/art/terrains/t_grass1_r.png',
+      roughnessDetailTex: '/assets/materials/terrain/grass/t_grass_01/t_grass_01_r.png',
       roughnessMacroStrength: [0.200000003, 0.5],
       roughnessMacroTex: '/assets/materials/terrain/grass/macro_grass/t_macro_grass_r.png',
       roughnessMacroTexSize: 100,
@@ -75,12 +76,12 @@ const REFERENCE_MATERIALS = [
       class: 'TerrainMaterial',
       aoBaseTex: '/levels/gridmap_v2/art/terrains/t_terrain_base_ao.png',
       aoBaseTexSize: 2048,
-      aoDetailTex: '/levels/gridmap_v2/art/terrains/t_dirt_loose_ao.png',
+      aoDetailTex: '/assets/materials/terrain/soil/dirt_loose_dusty/t_dirt_loose_dusty_ao.png',
       aoMacroTex: '/assets/materials/terrain/rock/macro_rocky/t_macro_rocky_ao.png',
       baseColorBaseTex: '/levels/gridmap_v2/art/terrains/t_terrain_base_b.png',
       baseColorBaseTexSize: 2048,
       baseColorDetailStrength: [0.25, 0.25],
-      baseColorDetailTex: '/levels/gridmap_v2/art/terrains/t_dirt_loose_b.png',
+      baseColorDetailTex: '/assets/materials/terrain/soil/dirt_loose_dusty/t_dirt_loose_dusty_b.png',
       baseColorMacroStrength: [0.100000001, 0.200000003],
       baseColorMacroTex: '/assets/materials/terrain/rock/macro_rocky/t_macro_rocky_b.png',
       detailDistance: 25,
@@ -90,24 +91,22 @@ const REFERENCE_MATERIALS = [
       groundmodelName: 'DIRT',
       heightBaseTex: '/levels/gridmap_v2/art/terrains/t_terrain_base_h.png',
       heightBaseTexSize: 2048,
-      heightDetailTex: '/levels/gridmap_v2/art/terrains/t_dirt_loose_h.png',
+      heightDetailTex: '/assets/materials/terrain/soil/dirt_loose_dusty/t_dirt_loose_dusty_h.png',
       heightMacroTex: '/assets/materials/terrain/rock/macro_rocky/t_macro_rocky_h.png',
       macroDistance: 1000,
       macroDistances: [0, 10, 100, 3000],
-      macroMap: '/levels/gridmap_v2/art/terrains/macro_grass_d.color.png',
       macroSize: 40,
       macroStrength: 0.5,
       normalBaseTex: '/levels/gridmap_v2/art/terrains/t_terrain_base_nm.png',
       normalBaseTexSize: 2048,
       normalDetailStrength: [0.699999988, 0.150000006],
-      normalDetailTex: '/levels/gridmap_v2/art/terrains/t_dirt_loose_nm.png',
+      normalDetailTex: '/assets/materials/terrain/soil/dirt_loose_dusty/t_dirt_loose_dusty_nm.png',
       normalMacroStrength: [0.300000012, 0.400000006],
       normalMacroTex: '/assets/materials/terrain/rock/macro_rocky/t_macro_rocky_nm.png',
-      normalMap: '/levels/gridmap_v2/art/terrains/grass_n.normal.png',
       roughnessBaseTex: '/levels/gridmap_v2/art/terrains/t_terrain_base_r.png',
       roughnessBaseTexSize: 2048,
       roughnessDetailStrength: [0.300000012, 0.300000012],
-      roughnessDetailTex: '/levels/gridmap_v2/art/terrains/t_dirt_loose_r.png',
+      roughnessDetailTex: '/assets/materials/terrain/soil/dirt_loose_dusty/t_dirt_loose_dusty_r.png',
       roughnessMacroStrength: [0.200000003, 0.699999988],
       roughnessMacroTex: '/assets/materials/terrain/rock/macro_rocky/t_macro_rocky_r.png',
     },
@@ -168,12 +167,12 @@ const REFERENCE_MATERIALS = [
       annotation: 'SAND',
       aoBaseTex: '/levels/gridmap_v2/art/terrains/t_terrain_base_ao.png',
       aoBaseTexSize: 2048,
-      aoDetailTex: '/levels/gridmap_v2/art/terrains/t_beachsand_ao.png',
+      aoDetailTex: '/assets/materials/terrain/sand/t_sand/t_sand_ao.png',
       aoMacroTex: '/assets/materials/terrain/soil/macro_clumply/t_macro_clumpy_ao.png',
       baseColorBaseTex: '/levels/gridmap_v2/art/terrains/t_terrain_base_b.png',
       baseColorBaseTexSize: 2048,
       baseColorDetailStrength: [0.25, 0.25],
-      baseColorDetailTex: '/levels/gridmap_v2/art/terrains/t_beachsand_b.png',
+      baseColorDetailTex: '/assets/materials/terrain/sand/t_sand/t_sand_b.png',
       baseColorMacroStrength: [0.0500000007, 0.100000001],
       baseColorMacroTex: '/assets/materials/terrain/soil/macro_clumply/t_macro_clumpy_b.png',
       detailDistance: 25,
@@ -183,7 +182,7 @@ const REFERENCE_MATERIALS = [
       groundmodelName: 'SAND',
       heightBaseTex: '/levels/gridmap_v2/art/terrains/t_terrain_base_h.png',
       heightBaseTexSize: 2048,
-      heightDetailTex: '/levels/gridmap_v2/art/terrains/t_beachsand_h.png',
+      heightDetailTex: '/assets/materials/terrain/sand/t_sand/t_sand_h.png',
       heightMacroTex: '/assets/materials/terrain/soil/macro_clumply/t_macro_clumpy_h.png',
       macroDistance: 1000,
       macroDistances: [0, 10, 100, 3000],
@@ -192,13 +191,13 @@ const REFERENCE_MATERIALS = [
       normalBaseTex: '/levels/gridmap_v2/art/terrains/t_terrain_base_nm.png',
       normalBaseTexSize: 2048,
       normalDetailStrength: [0.699999988, 0.150000006],
-      normalDetailTex: '/levels/gridmap_v2/art/terrains/t_beachsand_nm.png',
+      normalDetailTex: '/assets/materials/terrain/sand/t_sand/t_sand_nm.png',
       normalMacroStrength: [0.25, 0.25],
       normalMacroTex: '/assets/materials/terrain/soil/macro_clumply/t_macro_clumpy_nm.png',
       roughnessBaseTex: '/levels/gridmap_v2/art/terrains/t_terrain_base_r.png',
       roughnessBaseTexSize: 2048,
       roughnessDetailStrength: [0.300000012, 0.300000012],
-      roughnessDetailTex: '/levels/gridmap_v2/art/terrains/t_beachsand_r.png',
+      roughnessDetailTex: '/assets/materials/terrain/sand/t_sand/t_sand_r.png',
       roughnessMacroStrength: [0.150000006, 0.5],
       roughnessMacroTex: '/assets/materials/terrain/soil/macro_clumply/t_macro_clumpy_r.png',
     },
@@ -210,37 +209,37 @@ const REFERENCE_MATERIALS = [
       annotation: 'ROCK',
       aoBaseTex: '/levels/east_coast_usa/art/terrains/t_terrain_base_ao.png',
       aoBaseTexSize: 2048,
-      aoDetailTex: '/levels/east_coast_usa/art/terrains/t_rock_eca_ao.png',
-      aoMacroTex: '/levels/east_coast_usa/art/terrains/t_rocks_pac_ao.png',
+      aoDetailTex: '/assets/materials/terrain/rock/t_dirt_rocky/t_dirt_rocky_ao.png',
+      aoMacroTex: '/assets/materials/terrain/rock/macro_rocky/t_macro_rocky_ao.png',
       aoMacroTexSize: 10,
       baseColorBaseTex: '/levels/east_coast_usa/art/terrains/t_terrain_base_b.png',
       baseColorBaseTexSize: 2048,
       baseColorDetailStrength: [0.25, 0.25],
-      baseColorDetailTex: '/levels/east_coast_usa/art/terrains/t_rock_eca_b.png',
+      baseColorDetailTex: '/assets/materials/terrain/rock/t_dirt_rocky/t_dirt_rocky_b.png',
       baseColorMacroStrength: [0.200000003, 0.300000012],
-      baseColorMacroTex: '/levels/east_coast_usa/art/terrains/t_rocks_pac_b.png',
+      baseColorMacroTex: '/assets/materials/terrain/rock/macro_rocky/t_macro_rocky_b.png',
       baseColorMacroTexSize: 10,
       detailDistances: [0, 0, 15, 50],
       groundmodelName: 'ROCK',
       heightBaseTex: '/levels/east_coast_usa/art/terrains/t_terrain_base_h.png',
       heightBaseTexSize: 2048,
-      heightDetailTex: '/levels/east_coast_usa/art/terrains/t_rock_eca_h.png',
-      heightMacroTex: '/levels/east_coast_usa/art/terrains/t_rocks_pac_h.png',
+      heightDetailTex: '/assets/materials/terrain/rock/t_dirt_rocky/t_dirt_rocky_h.png',
+      heightMacroTex: '/assets/materials/terrain/rock/macro_rocky/t_macro_rocky_h.png',
       heightMacroTexSize: 10,
       macroDistances: [0, 10, 100, 3000],
       normalBaseTex: '/levels/east_coast_usa/art/terrains/t_terrain_base_nm.png',
       normalBaseTexSize: 2048,
       normalDetailStrength: [0.400000006, 0.150000006],
-      normalDetailTex: '/levels/east_coast_usa/art/terrains/t_rock_eca_nm.png',
+      normalDetailTex: '/assets/materials/terrain/rock/t_dirt_rocky/t_dirt_rocky_nm.png',
       normalMacroStrength: [0.800000012, 0.800000012],
-      normalMacroTex: '/levels/east_coast_usa/art/terrains/t_rocks_pac_nm.png',
+      normalMacroTex: '/assets/materials/terrain/rock/macro_rocky/t_macro_rocky_nm.png',
       normalMacroTexSize: 10,
       roughnessBaseTex: '/levels/east_coast_usa/art/terrains/t_terrain_base_r.png',
       roughnessBaseTexSize: 2048,
       roughnessDetailStrength: [0.300000012, 0.300000012],
-      roughnessDetailTex: '/levels/east_coast_usa/art/terrains/t_rock_eca_r.png',
+      roughnessDetailTex: '/assets/materials/terrain/rock/t_dirt_rocky/t_dirt_rocky_r.png',
       roughnessMacroStrength: [0.150000006, 0.5],
-      roughnessMacroTex: '/levels/east_coast_usa/art/terrains/t_rocks_pac_r.png',
+      roughnessMacroTex: '/assets/materials/terrain/rock/macro_rocky/t_macro_rocky_r.png',
       roughnessMacroTexSize: 10,
     },
   },
@@ -249,12 +248,12 @@ const REFERENCE_MATERIALS = [
     template: {
       class: 'TerrainMaterial',
       annotation: 'ASPHALT',
-      aoBaseTex: '/levels/east_coast_usa/art/terrains/t_terrain_base02_ao.png',
+      aoBaseTex: '/levels/east_coast_usa/art/terrains/t_terrain_base_ao.png',
       aoBaseTexSize: 2048,
       aoDetailTex: '/assets/materials/terrain/asphalt/t_asphalt_02/t_asphalt_02_ao.png',
       aoMacroTex: '/assets/materials/terrain/asphalt/macro_asphalt/t_macro_asphalt_ao.png',
       aoMacroTexSize: 80,
-      baseColorBaseTex: '/levels/east_coast_usa/art/terrains/t_terrain_base02_b.png',
+      baseColorBaseTex: '/levels/east_coast_usa/art/terrains/t_terrain_base_b.png',
       baseColorBaseTexSize: 2048,
       baseColorDetailStrength: [0.349999994, 0],
       baseColorDetailTex: '/assets/materials/terrain/asphalt/t_asphalt_02/t_asphalt_02_b.png',
@@ -262,20 +261,20 @@ const REFERENCE_MATERIALS = [
       baseColorMacroTex: '/assets/materials/terrain/asphalt/macro_asphalt/t_macro_asphalt_b.png',
       baseColorMacroTexSize: 80,
       groundmodelName: 'ASPHALT',
-      heightBaseTex: '/levels/east_coast_usa/art/terrains/t_terrain_base02_h.png',
+      heightBaseTex: '/levels/east_coast_usa/art/terrains/t_terrain_base_h.png',
       heightBaseTexSize: 2048,
       heightDetailTex: '/assets/materials/terrain/asphalt/t_asphalt_02/t_asphalt_02_h.png',
       heightMacroTex: '/assets/materials/terrain/asphalt/macro_asphalt/t_macro_asphalt_h.png',
       heightMacroTexSize: 80,
       macroDistances: [0, 10, 100, 3000],
-      normalBaseTex: '/levels/east_coast_usa/art/terrains/t_terrain_base02_nm.png',
+      normalBaseTex: '/levels/east_coast_usa/art/terrains/t_terrain_base_nm.png',
       normalBaseTexSize: 2048,
       normalDetailStrength: [0.800000012, 0.200000003],
       normalDetailTex: '/assets/materials/terrain/asphalt/t_asphalt_02/t_asphalt_02_nm.png',
       normalMacroStrength: [0.800000012, 0.800000012],
       normalMacroTex: '/assets/materials/terrain/asphalt/macro_asphalt/t_macro_asphalt_nm.png',
       normalMacroTexSize: 80,
-      roughnessBaseTex: '/levels/east_coast_usa/art/terrains/t_terrain_base02_r.png',
+      roughnessBaseTex: '/levels/east_coast_usa/art/terrains/t_terrain_base_r.png',
       roughnessBaseTexSize: 2048,
       roughnessDetailStrength: [0.699999988, 0.5],
       roughnessDetailTex: '/assets/materials/terrain/asphalt/t_asphalt_02/t_asphalt_02_r.png',
@@ -338,13 +337,13 @@ const REFERENCE_MATERIALS = [
       annotation: 'ASPHALT',
       aoBaseTex: '/levels/gridmap_v2/art/terrains/t_terrain_base_ao.png',
       aoBaseTexSize: 2048,
-      aoDetailTex: '/levels/gridmap_v2/art/terrains/t_concrete_gm_ao.png',
+      aoDetailTex: '/assets/materials/terrain/concrete/concrete/t_concrete_damaged_ao.png',
       aoMacroTex: '/assets/materials/terrain/soil/macro_holes/t_macro_holes_ao.png',
       aoMacroTexSize: 40,
       baseColorBaseTex: '/levels/gridmap_v2/art/terrains/t_terrain_base_b.png',
       baseColorBaseTexSize: 2048,
       baseColorDetailStrength: [0.25, 0.25],
-      baseColorDetailTex: '/levels/gridmap_v2/art/terrains/t_concrete_gm_b.png',
+      baseColorDetailTex: '/assets/materials/terrain/concrete/concrete/t_concrete_damaged_b.png',
       baseColorMacroStrength: [0.100000001, 0.100000001],
       baseColorMacroTex: '/assets/materials/terrain/soil/macro_holes/t_macro_holes_b.png',
       baseColorMacroTexSize: 40,
@@ -355,7 +354,7 @@ const REFERENCE_MATERIALS = [
       groundmodelName: 'ASPHALT',
       heightBaseTex: '/levels/gridmap_v2/art/terrains/t_terrain_base_h.png',
       heightBaseTexSize: 2048,
-      heightDetailTex: '/levels/gridmap_v2/art/terrains/t_concrete_gm_h.png',
+      heightDetailTex: '/assets/materials/terrain/concrete/concrete/t_concrete_damaged_h.png',
       heightMacroTex: '/assets/materials/terrain/soil/macro_holes/t_macro_holes_h.png',
       heightMacroTexSize: 40,
       macroDistance: 1000,
@@ -365,14 +364,14 @@ const REFERENCE_MATERIALS = [
       normalBaseTex: '/levels/gridmap_v2/art/terrains/t_terrain_base_nm.png',
       normalBaseTexSize: 2048,
       normalDetailStrength: [0.699999988, 0.150000006],
-      normalDetailTex: '/levels/gridmap_v2/art/terrains/t_concrete_gm_nm.png',
+      normalDetailTex: '/assets/materials/terrain/concrete/concrete/t_concrete_damaged_nm.png',
       normalMacroStrength: [0.100000001, 0.100000001],
       normalMacroTex: '/assets/materials/terrain/soil/macro_holes/t_macro_holes_nm.png',
       normalMacroTexSize: 40,
       roughnessBaseTex: '/levels/gridmap_v2/art/terrains/t_terrain_base_r.png',
       roughnessBaseTexSize: 2048,
       roughnessDetailStrength: [0.600000024, 0.600000024],
-      roughnessDetailTex: '/levels/gridmap_v2/art/terrains/t_concrete_gm_r.png',
+      roughnessDetailTex: '/assets/materials/terrain/concrete/concrete/t_concrete_damaged_r.png',
       roughnessMacroStrength: [0.150000006, 0.5],
       roughnessMacroTex: '/assets/materials/terrain/soil/macro_holes/t_macro_holes_r.png',
       roughnessMacroTexSize: 40,
@@ -380,71 +379,12 @@ const REFERENCE_MATERIALS = [
   },
 ];
 
-let terrainMaterialLibraryPromise = null;
-
 function normalizeLevelName(value) {
   return String(value || '').toLowerCase();
 }
 
 function normalizeMaterialName(value) {
   return String(value || '').trim().toLowerCase();
-}
-
-async function loadTerrainMaterialLibrary() {
-  if (!terrainMaterialLibraryPromise) {
-    terrainMaterialLibraryPromise = fetch('/example_terrain.materials.json')
-      .then((response) => {
-        if (!response.ok) throw new Error(`Failed to load terrain material library: ${response.status}`);
-        return response.json();
-      })
-      .catch((error) => {
-        console.warn('Failed to load terrain material library, using built-in fallbacks:', error);
-        return {};
-      });
-  }
-  return terrainMaterialLibraryPromise;
-}
-
-function collectLevelNames(value, acc = new Set()) {
-  if (typeof value === 'string') {
-    const matches = value.match(/\/levels\/([^/]+)\//gi) ?? [];
-    for (const match of matches) {
-      const levelName = match.split('/levels/')[1]?.split('/')[0];
-      if (levelName) acc.add(normalizeLevelName(levelName));
-    }
-    return acc;
-  }
-  if (Array.isArray(value)) {
-    for (const item of value) collectLevelNames(item, acc);
-    return acc;
-  }
-  if (value && typeof value === 'object') {
-    for (const item of Object.values(value)) collectLevelNames(item, acc);
-  }
-  return acc;
-}
-
-function matchesMaterialCandidate(entryKey, template, candidate) {
-  const names = [
-    entryKey,
-    template?.name,
-    template?.internalName,
-    template?.mapTo,
-  ].map(normalizeMaterialName).filter(Boolean);
-  const expected = normalizeMaterialName(candidate);
-  return names.some((name) => name === expected);
-}
-
-function findLibraryTemplateForCandidate(library, levelName, candidate) {
-  const normalizedLevel = normalizeLevelName(levelName);
-  for (const [entryKey, template] of Object.entries(library || {})) {
-    if (!template || typeof template !== 'object') continue;
-    const levels = collectLevelNames(template);
-    if (levels.size > 0 && !levels.has(normalizedLevel)) continue;
-    if (!matchesMaterialCandidate(entryKey, template, candidate)) continue;
-    return structuredClone(template);
-  }
-  return null;
 }
 
 function findFallbackReferenceMaterial(semanticName) {
@@ -458,16 +398,17 @@ function findFallbackReferenceMaterial(semanticName) {
   return ref ? cloneMaterialTemplate(ref.template) : null;
 }
 
-async function resolveReferenceMaterialsForBiome(biome) {
-  const library = await loadTerrainMaterialLibrary();
-  const levelFallbacks = getTerrainLevelFallbacks(biome);
+// Per-biome slot resolution against the generated 0.39 library: semantics are
+// pre-resolved per level offline (scripts/build-terrain-material-library.py),
+// and every detail/macro texture is a core /assets/... path — TerrainMaterial
+// must never reference another level's folder (TerrainCellMaterial does not
+// resolve .link redirects, and cross-level files move between game versions).
+function resolveReferenceMaterialsForBiome(biome) {
+  const levelFallbacks = getTerrainLevelFallbacks(biome).map(normalizeLevelName);
   return MATERIAL_NAMES_LIST.slice(1).map((semanticName) => {
-    const candidates = getTerrainSemanticCandidates(semanticName);
     for (const levelName of levelFallbacks) {
-      for (const candidate of candidates) {
-        const template = findLibraryTemplateForCandidate(library, levelName, candidate);
-        if (template) return { internalName: semanticName, template };
-      }
+      const template = TERRAIN_MATERIAL_LIBRARY[levelName]?.[semanticName];
+      if (template) return { internalName: semanticName, template: cloneMaterialTemplate(template) };
     }
     const fallbackTemplate = findFallbackReferenceMaterial(semanticName);
     return {
@@ -923,7 +864,7 @@ export async function buildTerrainMaterials(terrainData, worldSize, exportLevelN
   const DETAIL_SIZE = 1024;
   const textureFiles = [];
   const materialDefs = {};
-  const referenceMaterials = await resolveReferenceMaterialsForBiome(biome);
+  const referenceMaterials = resolveReferenceMaterialsForBiome(biome);
 
   // TerrainMaterialTextureSet: switches BeamNG to PBR mode. baseTexSize must
   // match the pixel dimensions of the base-slot textures we generate below.

@@ -17,6 +17,10 @@ function parseLevelScopedAssetPath(path) {
 }
 
 function isLinkableLevelAssetPath(pathNoSlash) {
+  // Meshes only. Textures must NOT be link-mirrored: TerrainCellMaterial does
+  // not resolve .link redirects (verified in-game 2026-07-22), and shape
+  // materials follow Car_Killer's pattern — link the .dae, reference textures
+  // at their official location directly ("no textures" in the link folder).
   const lower = pathNoSlash.toLowerCase();
   return lower.endsWith('.dae') || lower.endsWith('.cdae');
 }
