@@ -21,6 +21,7 @@ import {
   getGroundCoverProfile,
   getManagedForestTemplate,
   getRockCandidates,
+  getShapeMaterialDefsForBiome,
   getTrafficProfile,
   getWaterProfile,
   resolveBushType,
@@ -3465,11 +3466,11 @@ const WATER_BLOCK_TEMPLATE = {
   baseColor: [189, 253, 255, 255],
   cubemap: 'cubemap_italy_reflection',
   depthGradientMax: 30,
-  depthGradientTex: '/levels/italy/art/water/depthcolor_ramp_italy_muddy.png',
+  depthGradientTex: '/assets/materials/tileable/water/depthcolor_ramp/depthcolor_ramp_italy_muddy_b.png',
   foamAmbientLerp: 1.29999995,
   foamMaxDepth: 0.150000006,
   foamRippleInfluence: 0.0149999997,
-  foamTex: 'levels/italy/art/water/foam2.dds',
+  foamTex: '/assets/materials/tileable/water/water_effects/foam2_b.color.dds',
   fresnelBias: 0.2,
   fresnelPower: 20,
   fullReflect: false,
@@ -3478,7 +3479,7 @@ const WATER_BLOCK_TEMPLATE = {
   overallRippleMagnitude: 0.2,
   overallWaveMagnitude: 0,
   reflectivity: 0.8,
-  rippleTex: '/levels/italy/art/water/ripple.dds',
+  rippleTex: '/assets/materials/tileable/water/water_effects/ripple_nm.normal.dds',
   specularPower: 200,
   waterFogDensity: 1,
   waterFogDensityOffset: 0.1,
@@ -3545,7 +3546,7 @@ const RIVER_TEMPLATE = {
   baseColor: [254, 220, 165, 255],
   cubemap: 'cubemap_ocean_reflection',
   depthGradientMax: 20,
-  depthGradientTex: 'levels/italy/art/water/depthcolor_ramp_italy_rivers.png',
+  depthGradientTex: '/assets/materials/tileable/water/depthcolor_ramp/depthcolor_ramp_italy_rivers_b.png',
   flowMagnitudePhysics: 4,
   foamMaxDepth: 1,
   foamRippleInfluence: 0.09,
@@ -3560,7 +3561,7 @@ const RIVER_TEMPLATE = {
   reflectDetailAdjust: -2,
   reflectMaxRateMs: 10,
   reflectivity: 0.3,
-  rippleTex: 'levels/italy/art/water/ripple3.dds',
+  rippleTex: '/assets/materials/tileable/water/water_effects/ripple3_nm.normal.dds',
   subdivideLength: 2,
   underwaterColor: [254, 253, 252, 250],
   waterFogDensity: 0.8,
@@ -5487,8 +5488,10 @@ function buildForestBrushItems(itemNames) {
       persistentId: generatePersistentId(),
       __parent: 'ForestBrushGroup',
     });
+    // No `name` on elements: sim object names are global, and naming the
+    // element after its ForestItemData collides with that object on level
+    // load. Vanilla brushes carry only internalName + forestItemData.
     items.push({
-      name,
       internalName: name,
       class: 'ForestBrushElement',
       persistentId: generatePersistentId(),
@@ -6827,7 +6830,30 @@ export async function exportBeamNGLevel(terrainData, center, options = {}) {
 
   // Write Biome materials (which used to be in art/shapes/) to map_assets/official_assets/biome_materials/
   // because they override official names without having specific meshes.
-  zip.file(`${base}/map_assets/official_assets/biome_materials/main.materials.json`, JSON.stringify(getBiomeRuntimeMaterialDefs(biome), null, 2));
+  const biomeRuntimeDefs = getBiomeRuntimeMaterialDefs(biome);
+  zip.file(`${base}/map_assets/official_assets/biome_materials/main.materials.json`, JSON.stringify(biomeRuntimeDefs, null, 2));
+
+  // Per-biome shape material defs harvested from the game install
+  // (scripts/build-shape-material-library.py). Every material a placed .dae
+  // binds must be defined by this export: the official level that owns the
+  // shape is not loaded in-game, and undefined materials fall back to the
+  // collada's embedded info, which resolves textures relative to the
+  // link-mirrored shape folder (NO-TEXTURE trees). Curated runtime defs win
+  // on name conflicts.
+  const runtimeMaterialNames = new Set();
+  for (const [key, def] of Object.entries(biomeRuntimeDefs)) {
+    runtimeMaterialNames.add(key.toLowerCase());
+    if (def?.mapTo) runtimeMaterialNames.add(String(def.mapTo).toLowerCase());
+  }
+  const shapeMaterialDefs = Object.fromEntries(
+    Object.entries(await getShapeMaterialDefsForBiome(biome)).filter(([key, def]) => (
+      !runtimeMaterialNames.has(key.toLowerCase())
+      && !runtimeMaterialNames.has(String(def?.mapTo || '').toLowerCase())
+    ))
+  );
+  if (Object.keys(shapeMaterialDefs).length > 0) {
+    zip.file(`${base}/map_assets/official_assets/shape_materials/main.materials.json`, JSON.stringify(shapeMaterialDefs, null, 2));
+  }
 
   // Sign paint materials (signs_usa atlas + metal pole). Without these the
   // linked sign meshes render as bare metal. See getSignRuntimeMaterialDefs.
@@ -6881,6 +6907,9 @@ export async function exportBeamNGLevel(terrainData, center, options = {}) {
       groundmodelName: 'GROUNDMODEL_ASPHALT1',
     },
   };
+  // TerrainMaterial texture slots must be own-level or /assets paths only —
+  // the material templates guarantee this (beamngTerrainMaterialLibrary.js);
+  // TerrainCellMaterial does not resolve .link redirects, so no link routing.
   zip.file(`${base}/art/terrains/main.materials.json`, JSON.stringify(terrainMaterialDefs, null, 2));
 
   // ── groundModels/mapng_groundmodels.json ──────────────────────────────────

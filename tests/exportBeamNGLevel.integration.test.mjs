@@ -1,5 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import { readFileSync } from 'node:fs';
 import JSZip from 'jszip';
 
 import { exportBeamNGLevel } from '../services/exportBeamNGLevel.js';
@@ -82,6 +83,10 @@ function installCanvasPolyfill() {
         status: 200,
         arrayBuffer: async () => new Uint8Array([0x44, 0x44, 0x53, 0x20]).buffer,
       };
+    }
+    if (url === '/beamng_shape_materials.json') {
+      const raw = readFileSync(new URL('../public/beamng_shape_materials.json', import.meta.url), 'utf8');
+      return { ok: true, status: 200, json: async () => JSON.parse(raw) };
     }
     if (typeof originalFetch === 'function') {
       return originalFetch(input, init);
@@ -429,6 +434,33 @@ test('exportBeamNGLevel gives DefaultMaterial real surface detail + non-asphalt 
       !zip.file('levels/mapng_demo/art/terrains/asphalt_base_b.png'),
       'asphalt_base_b.png should not be bundled',
     );
+  } finally {
+    restorePolyfills();
+  }
+});
+
+test('exportBeamNGLevel terrain materials reference only own-level and /assets paths', async () => {
+  const restorePolyfills = installCanvasPolyfill();
+
+  try {
+    const zip = await runExportForRoadType('decal', { pbrSource: 'osm' });
+
+    const matPath = 'levels/mapng_demo/art/terrains/main.materials.json';
+    const matFile = zip.file(matPath);
+    assert.ok(matFile, `Missing ${matPath}`);
+    const contents = await matFile.async('string');
+
+    // TerrainCellMaterial loads textures without resolving .link redirects, and
+    // cross-level files move between game versions (0.39 removed ecusa's
+    // t_grass1_*). Every texture must live in this level or under /assets/.
+    const crossLevelRef = contents.match(/["']\/?levels\/(?!mapng_demo\/)[^"']+["']/);
+    assert.ok(
+      !crossLevelRef,
+      `Terrain materials reference another level's folder: ${crossLevelRef?.[0]}`,
+    );
+
+    // And the detail slots should actually come from the core /assets library.
+    assert.match(contents, /\/assets\/materials\/terrain\//);
   } finally {
     restorePolyfills();
   }

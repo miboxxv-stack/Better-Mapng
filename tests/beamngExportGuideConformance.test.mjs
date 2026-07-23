@@ -9,6 +9,7 @@
  */
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import { readFileSync } from 'node:fs';
 import JSZip from 'jszip';
 
 import { exportBeamNGLevel } from '../services/exportBeamNGLevel.js';
@@ -57,6 +58,10 @@ function installCanvasPolyfill() {
     }
     if (/^\/cubemap\/skybox[0-5]\.hdr\.dds$/.test(url)) {
       return { ok: true, status: 200, arrayBuffer: async () => new Uint8Array([0x44, 0x44, 0x53, 0x20]).buffer };
+    }
+    if (url === '/beamng_shape_materials.json') {
+      const raw = readFileSync(new URL('../public/beamng_shape_materials.json', import.meta.url), 'utf8');
+      return { ok: true, status: 200, json: async () => JSON.parse(raw) };
     }
     if (typeof originalFetch === 'function') return originalFetch(input, init);
     throw new Error(`Unexpected fetch in test: ${url}`);

@@ -1,142 +1,77 @@
 {
   "automation_test_track": {
-    "aspen_leaves": {
-      "Stages": [
-        {
-          "colorMap": "/levels/automation_test_track/art/shapes/trees/trees_aspen/vegetation_aspen_01_d.dds",
-          "diffuseColor": [
-            0.9960780143737792,
-            0.9960780143737792,
-            0.9960780143737792,
-            1
-          ],
-          "normalMap": "/levels/automation_test_track/art/shapes/trees/trees_aspen/vegetation_aspen_01_n.dds",
-          "pixelSpecular": true,
-          "specular": [
-            0.992156982,
-            0.992156982,
-            0.992156982,
-            1
-          ],
-          "specularMap": "/levels/automation_test_track/art/shapes/trees/trees_aspen/vegetation_aspen_01_s.dds",
-          "specularPower": 29,
-          "useAnisotropic": true
-        },
-        {},
-        {},
-        {}
-      ],
-      "alphaRef": 50,
-      "alphaTest": true,
-      "class": "Material",
-      "doubleSided": true,
-      "groundType": "LEAVES_THIN",
-      "mapTo": "aspen_leaves",
-      "materialTag0": "beamng",
-      "materialTag1": "vegetation",
-      "materialTag2": "Natural",
-      "materialTag3": "vegetation",
-      "name": "aspen_leaves",
-      "persistentId": "6499ea22-7722-4da7-b825-d2d0910bc7a6"
-    },
-    "aspen_trunk": {
-      "Stages": [
-        {
-          "colorMap": "/levels/automation_test_track/art/shapes/trees/trees_aspen/vegetation_aspen_bark_d.dds",
-          "detailMap": "/levels/automation_test_track/art/shapes/trees/trees_aspen/vegetation_aspen_bark_detail.dds",
-          "detailNormalMap": "/levels/automation_test_track/art/shapes/trees/trees_aspen/vegetation_aspen_bark_n.dds",
-          "detailScale": [
-            0.800000012,
-            0.800000012
-          ],
-          "diffuseColor": [
-            0.9960780143737792,
-            0.9960780143737792,
-            0.9960780143737792,
-            1
-          ],
-          "normalMap": "/levels/automation_test_track/art/shapes/trees/trees_aspen/vegetation_aspen_bark_n.dds",
-          "specularMap": "/levels/automation_test_track/art/shapes/trees/trees_aspen/vegetation_aspen_bark_s.dds",
-          "specularPower": 1
-        },
-        {},
-        {},
-        {}
-      ],
-      "class": "Material",
-      "groundType": "WOOD",
-      "mapTo": "aspen_trunk",
-      "materialTag0": "vegetation",
-      "materialTag1": "beamng",
-      "materialTag2": "Natural",
-      "materialTag3": "vegetation",
-      "name": "aspen_trunk",
-      "persistentId": "f2098070-ceb4-4f44-84f9-0ec7a985a23e",
-      "specularStrength0": "0.490196"
-    },
     "cork_oak": {
       "Stages": [
         {
-          "ambientOcclusionMap": "/levels/automation_test_track/art/shapes/trees/trees_cork_oak/t_cork_oak_ao.data.png",
-          "baseColorMap": "/levels/automation_test_track/art/shapes/trees/trees_cork_oak/t_cork_oak_b.color.png",
-          "normalMap": "/levels/automation_test_track/art/shapes/trees/trees_cork_oak/t_cork_oak_nm.normal.png",
-          "opacityMap": "/levels/automation_test_track/art/shapes/trees/trees_cork_oak/t_cork_oak_o.data.png",
-          "roughnessMap": "/levels/automation_test_track/art/shapes/trees/trees_cork_oak/t_cork_oak_r.data.png"
+          "ambientOcclusionMap": "/assets/materials/tree/cork_oak/t_cork_oak/t_cork_oak_ao.data.png",
+          "baseColorMap": "/assets/materials/tree/cork_oak/t_cork_oak_autumn/t_cork_oak_autumn_b.color.png",
+          "normalMap": "/assets/materials/tree/cork_oak/t_cork_oak/t_cork_oak_nm.normal.png",
+          "normalMapStrength": 2,
+          "opacityMap": "/assets/materials/tree/cork_oak/t_cork_oak/t_cork_oak_o.data.png",
+          "roughnessMap": "/assets/materials/tree/cork_oak/t_cork_oak/t_cork_oak_r.data.png"
         },
-        {},
-        {},
-        {}
+        {
+          "normalMapStrength": null
+        },
+        {
+          "normalMapStrength": null
+        },
+        {
+          "normalMapStrength": null
+        }
       ],
-      "alphaRef": 68,
+      "alphaRef": 100,
       "alphaTest": true,
       "annotation": "NATURE",
       "class": "Material",
       "doubleSided": true,
       "groundType": "WOOD",
+      "invertBackFaceNormals": true,
       "mapTo": "cork_oak",
       "materialTag0": "beamng",
       "materialTag1": "vegetation",
       "materialTag2": "Natural",
       "name": "cork_oak",
       "persistentId": "c7c521a2-cac1-4b93-846d-64e7630ba883",
+      "subSurface": true,
+      "subSurfaceIntensity": 1,
       "version": 1.5
     },
     "cork_oak_trunk": {
       "Stages": [
         {
-          "ambientOcclusionMap": "/levels/automation_test_track/art/shapes/trees/trees_cork_oak/t_cork_oak_trunk_ao.data.png",
-          "baseColorFactor": [
-            0.886605024,
-            0.864377975,
-            0.79904002,
-            1
-          ],
-          "baseColorMap": "/levels/automation_test_track/art/shapes/trees/trees_cork_oak/t_cork_oak_trunk_b.color.png",
-          "detailMap": "/levels/automation_test_track/art/shapes/trees/trees_cork_oak/t_tro_bark_01_detail.data.png",
-          "detailNormalMap": "/levels/automation_test_track/art/shapes/trees/trees_cork_oak/t_tro_bark_01_detail_nm.normal.png",
+          "ambientOcclusionMap": "/assets/materials/tree/cork_oak/t_cork_oak_trunk/t_cork_oak_trunk_ao.data.png",
+          "baseColorMap": "/assets/materials/tree/cork_oak/t_cork_oak_trunk/t_cork_oak_trunk_b.color.png",
+          "detailBaseColorMapStrength": 1.5,
+          "detailMap": "/assets/materials/tree/tropical/tro_tree_1_trunk/t_tropical_bark_variation_1_detail.data.png",
+          "detailNormalMap": "/assets/materials/tree/tropical/tro_tree_1_trunk/t_tro_bark_01_detail_nm.normal.png",
           "detailScale": [
             0.5,
-            0.5
+            0.25
           ],
-          "normalMap": "/levels/automation_test_track/art/shapes/trees/trees_cork_oak/t_cork_oak_trunk_nm.normal.png",
-          "roughnessMap": "/levels/automation_test_track/art/shapes/trees/trees_cork_oak/t_cork_oak_trunk_r.data.png"
+          "normalMap": "/assets/materials/tree/cork_oak/t_cork_oak_trunk/t_cork_oak_trunk_nm.normal.png",
+          "normalMapStrength": 1.5,
+          "roughnessMap": "/assets/materials/tree/cork_oak/t_cork_oak_trunk/t_cork_oak_trunk_r.data.png"
         },
         {
-          "baseColorFactor": null,
-          "detailScale": null
+          "detailBaseColorMapStrength": null,
+          "detailScale": null,
+          "normalMapStrength": null
         },
         {
-          "baseColorFactor": null,
-          "detailScale": null
+          "detailBaseColorMapStrength": null,
+          "detailScale": null,
+          "normalMapStrength": null
         },
         {
-          "baseColorFactor": null,
-          "detailScale": null
+          "detailBaseColorMapStrength": null,
+          "detailScale": null,
+          "normalMapStrength": null
         }
       ],
       "alphaRef": 85,
       "annotation": "NATURE",
-      "class": "material",
+      "class": "Material",
       "groundType": "WOOD",
       "mapTo": "cork_oak_trunk",
       "materialTag0": "beamng",
@@ -149,20 +84,37 @@
     "holm_oak_branches": {
       "Stages": [
         {
-          "ambientOcclusionMap": "/levels/automation_test_track/art/shapes/trees/trees_cork_oak/t_holm_oak_branches_ao.data.png",
-          "baseColorMap": "/levels/automation_test_track/art/shapes/trees/trees_cork_oak/t_holm_oak_branches_b.color.png",
-          "normalMap": "/levels/automation_test_track/art/shapes/trees/trees_cork_oak/t_holm_oak_branches_nm.normal.png",
-          "opacityMap": "/levels/automation_test_track/art/shapes/trees/trees_cork_oak/t_holm_oak_branches_o.data.png",
-          "roughnessMap": "/levels/automation_test_track/art/shapes/trees/trees_cork_oak/t_holm_oak_branches_r.data.png"
+          "ambientOcclusionMap": "/assets/materials/tree/holm_oak/t_holm_oak_branches/t_holm_oak_branches_ao.data.png",
+          "baseColorMap": "/assets/materials/tree/holm_oak/t_holm_oak_branches/t_holm_oak_branches_b.color.png",
+          "detailNormalMap": "/assets/materials/tree/cork_oak/t_cork_oak_trunk/t_cork_oak_trunk_nm.normal.png",
+          "detailNormalMapStrength": 3,
+          "detailScale": [
+            2,
+            4
+          ],
+          "normalMap": "/assets/materials/tree/holm_oak/t_holm_oak_branches/t_holm_oak_branches_nm.normal.png",
+          "opacityMap": "/assets/materials/tree/holm_oak/t_holm_oak_branches/t_holm_oak_branches_o.data.png",
+          "roughnessMap": "/assets/materials/tree/holm_oak/t_holm_oak_branches/t_holm_oak_branches_r.data.png"
         },
-        {},
-        {},
-        {}
+        {
+          "detailNormalMapStrength": null,
+          "detailScale": null
+        },
+        {
+          "detailNormalMapStrength": null,
+          "detailScale": null
+        },
+        {
+          "detailNormalMapStrength": null,
+          "detailScale": null
+        }
       ],
-      "alphaRef": 100,
+      "alphaRef": 70,
       "alphaTest": true,
       "annotation": "NATURE",
       "class": "Material",
+      "doubleSided": true,
+      "invertBackFaceNormals": true,
       "mapTo": "holm_oak_branches",
       "materialTag0": "beamng",
       "materialTag1": "vegetation",
@@ -170,75 +122,9 @@
       "name": "holm_oak_branches",
       "persistentId": "4a22acc4-61c7-4767-9174-cd83c9996e3f",
       "specularStrength0": "0.490196",
+      "subSurface": true,
+      "subSurfaceIntensity": 0.00999999978,
       "version": 1.5
-    },
-    "leaves_autumn_green": {
-      "Stages": [
-        {
-          "colorMap": "/levels/automation_test_track/art/shapes/trees/leaves_autumn_green_d.dds",
-          "minnaertConstant": -2,
-          "normalMap": "/levels/automation_test_track/art/shapes/trees/leaves_autumn_n.dds",
-          "pixelSpecular": true,
-          "specular": [
-            0.2000000029802322,
-            0.2000000029802322,
-            0.2000000029802322,
-            1
-          ],
-          "specularPower": 1,
-          "useAnisotropic": true
-        },
-        {},
-        {},
-        {}
-      ],
-      "alphaRef": 120,
-      "alphaTest": true,
-      "annotation": "NATURE",
-      "class": "Material",
-      "doubleSided": true,
-      "groundType": "LEAVES_THIN",
-      "mapTo": "leaves_autumn_green",
-      "materialTag0": "beamng",
-      "materialTag1": "vegetation",
-      "materialTag2": "Natural",
-      "materialTag3": "Natural",
-      "name": "leaves_autumn_green",
-      "persistentId": "4bfca3a8-4310-4fec-acba-aba295360357"
-    },
-    "leaves_autumn_orange": {
-      "Stages": [
-        {
-          "colorMap": "/levels/automation_test_track/art/shapes/trees/leaves_autumn_orange_d.dds",
-          "minnaertConstant": -2,
-          "normalMap": "/levels/automation_test_track/art/shapes/trees/leaves_autumn_n.dds",
-          "pixelSpecular": true,
-          "specular": [
-            0.2000000029802322,
-            0.2000000029802322,
-            0.2000000029802322,
-            1
-          ],
-          "specularPower": 1,
-          "useAnisotropic": true
-        },
-        {},
-        {},
-        {}
-      ],
-      "alphaRef": 84,
-      "alphaTest": true,
-      "annotation": "NATURE",
-      "class": "Material",
-      "doubleSided": true,
-      "groundType": "LEAVES_THIN",
-      "mapTo": "leaves_autumn_orange",
-      "materialTag0": "beamng",
-      "materialTag1": "vegetation",
-      "materialTag2": "Natural",
-      "materialTag3": "Natural",
-      "name": "leaves_autumn_orange",
-      "persistentId": "668f3901-8ca4-4c4b-b96c-552682f993ac"
     },
     "leaves_strong": {
       "Stages": [
@@ -255,48 +141,29 @@
       "name": "leaves_strong",
       "persistentId": "7e8157dc-940e-4435-937b-e934d4e42892"
     },
-    "leaves_thin": {
+    "m_cork_oak_distant": {
       "Stages": [
-        {},
+        {
+          "ambientOcclusionMap": "/assets/materials/tree/cork_oak/t_cork_oak_distant/t_cork_oak_distant_ao.data.png",
+          "baseColorMap": "/assets/materials/tree/cork_oak/t_cork_oak_autumn_distant/t_cork_oak_autumn_distant_b.color.png",
+          "normalMap": "/assets/materials/tree/cork_oak/t_cork_oak_distant/t_cork_oak_distant_nm.normal.png",
+          "opacityMap": "/assets/materials/tree/cork_oak/t_cork_oak_distant/t_cork_oak_distant_o.data.png",
+          "roughnessMap": "/assets/materials/tree/cork_oak/t_cork_oak_distant/t_cork_oak_distant_r.data.png"
+        },
         {},
         {},
         {}
       ],
-      "class": "Material",
-      "groundDepth": 1,
-      "groundType": "leaves_thin",
-      "mapTo": "leaves_thin",
-      "name": "leaves_thin",
-      "persistentId": "859cdbd4-7a36-4613-9344-b50a1d8745ea"
-    },
-    "m_cork_oak_automn": {
-      "Stages": [
-        {
-          "ambientOcclusionMap": "/levels/automation_test_track/art/shapes/trees/trees_cork_oak/t_cork_oak_automn_ao.data.png",
-          "baseColorMap": "/levels/automation_test_track/art/shapes/trees/trees_cork_oak/t_cork_oak_automn_b.color.png",
-          "normalMap": "/levels/automation_test_track/art/shapes/trees/trees_cork_oak/t_cork_oak_automn_nm.normal.png",
-          "normalMapStrength": 1.5,
-          "opacityMap": "/levels/automation_test_track/art/shapes/trees/trees_cork_oak/t_cork_oak_automn_o.data.png",
-          "roughnessMap": "/levels/automation_test_track/art/shapes/trees/trees_cork_oak/t_cork_oak_automn_r.data.png"
-        },
-        {
-          "normalMapStrength": null
-        },
-        {
-          "normalMapStrength": null
-        },
-        {
-          "normalMapStrength": null
-        }
-      ],
-      "alphaRef": 60,
+      "alphaRef": 75,
       "alphaTest": true,
       "class": "Material",
       "doubleSided": true,
-      "mapTo": "m_cork_oak_automn",
-      "name": "m_cork_oak_automn",
-      "persistentId": "5f24854f-b01f-4f22-92d5-68d5d9d0a0f0",
-      "translucentZWrite": true,
+      "dynamicCubemap": true,
+      "invertBackFaceNormals": true,
+      "mapTo": "m_cork_oak_distant",
+      "name": "m_cork_oak_distant",
+      "subSurface": true,
+      "subSurfaceIntensity": 1,
       "version": 1.5
     },
     "m_rocks_nz_jagged": {
@@ -347,45 +214,28 @@
       "translucentBlendOp": "None",
       "translucentRecvShadows": true,
       "version": 1.5
-    },
-    "rocks_cliff": {
-      "Stages": [
-        {
-          "colorMap": "/levels/automation_test_track/art/shapes/rocks/rocks_cliff_d.dds",
-          "normalMap": "/levels/automation_test_track/art/shapes/rocks/rocks_cliff_n.dds",
-          "pixelSpecular": true,
-          "specularMap": "levels/automation_test_track/art/shapes/rocks/rocks_cliff_s.dds",
-          "specularPower": 6
-        },
-        {},
-        {},
-        {}
-      ],
-      "annotation": "ROCK",
-      "class": "Material",
-      "groundType": "ROCK",
-      "mapTo": "rocks_cliff",
-      "materialTag0": "beamng",
-      "materialTag1": "Natural",
-      "name": "rocks_cliff",
-      "persistentId": "1eec66e4-97f6-4284-ad39-9f688c63b2a0",
-      "translucentBlendOp": "None"
     }
   },
   "east_coast": {
     "Birch_Bark_01": {
       "Stages": [
         {
-          "ambientOcclusionMap": "/levels/east_coast_usa/art/shapes/trees/trees_aspen/t_birch_leaves_ao.data.png",
+          "ambientOcclusionMap": "/assets/materials/tree/birch/t_birch_bark/t_birch_bark_ao.data.png",
           "baseColorFactor": [
-            0.996078491,
-            0.996078491,
-            0.996078491,
+            0.854701996,
+            0.854701996,
+            0.854701996,
             1
           ],
-          "baseColorMap": "/levels/east_coast_usa/art/shapes/trees/trees_aspen/t_birch_bark_b.color.png",
-          "normalMap": "/levels/east_coast_usa/art/shapes/trees/trees_aspen/t_birch_bark_nm.normal.png",
-          "roughnessMap": "/levels/east_coast_usa/art/shapes/trees/trees_aspen/t_birch_bark_r.data.png"
+          "baseColorMap": "/assets/materials/tree/birch/t_birch_bark/t_birch_bark_b.color.png",
+          "detailBaseColorMapStrength": 3,
+          "detailMap": "/assets/materials/tree/tropical/tro_tree_1_trunk/t_tropical_bark_variation_1_detail.data.png",
+          "detailScale": [
+            0.25,
+            2
+          ],
+          "normalMap": "/assets/materials/tree/birch/t_birch_bark/t_birch_bark_nm.normal.png",
+          "roughnessMap": "/assets/materials/tree/birch/t_birch_bark/t_birch_bark_r.data.png"
         },
         {},
         {},
@@ -404,60 +254,22 @@
       "persistentId": "fed20e4b-919f-46a2-b49c-2a292d295e1b",
       "version": 1.5
     },
-    "Birch_Branch_01": {
-      "Stages": [
-        {
-          "ambientOcclusionMap": "/levels/east_coast_usa/art/shapes/trees/trees_aspen/t_birch_branch_ao.data.png",
-          "baseColorFactor": [
-            0.712957978,
-            0.712951005,
-            0.712951005,
-            1
-          ],
-          "baseColorMap": "/levels/east_coast_usa/art/shapes/trees/trees_aspen/t_birch_branch_b.color.png",
-          "normalMap": "/levels/east_coast_usa/art/shapes/trees/trees_aspen/t_birch_branch_nm.normal.png",
-          "opacityMap": "/levels/east_coast_usa/art/shapes/trees/trees_aspen/t_birch_branch_o.data.png",
-          "roughnessMap": "/levels/east_coast_usa/art/shapes/trees/trees_aspen/t_birch_branch_r.data.png",
-          "specular": [
-            0.992156982,
-            0.992156982,
-            0.992156982,
-            1
-          ]
-        },
-        {},
-        {},
-        {}
-      ],
-      "alphaRef": 40,
-      "alphaTest": true,
-      "annotation": "NATURE",
-      "class": "Material",
-      "doubleSided": true,
-      "groundType": "WOOD",
-      "mapTo": "Birch_Branch_01",
-      "materialTag0": "beamng",
-      "materialTag1": "vegetation",
-      "materialTag2": "Natural",
-      "materialTag3": "vegetation",
-      "name": "Birch_Branch_01",
-      "persistentId": "6004f7c6-146c-4a22-9e85-68e58ff9c241",
-      "version": 1.5
-    },
     "Birch_Leaves_01": {
       "Stages": [
         {
-          "ambientOcclusionMap": "/levels/east_coast_usa/art/shapes/trees/trees_aspen/t_birch_leaves_ao.data.png",
+          "ambientOcclusionMap": "/assets/materials/tree/birch/t_birch_leaves/t_birch_leaves_ao.data.png",
           "baseColorFactor": [
             0.996078491,
             0.996078491,
             0.996078491,
             1
           ],
-          "baseColorMap": "/levels/east_coast_usa/art/shapes/trees/trees_aspen/t_birch_leaves_b.color.png",
-          "normalMap": "/levels/east_coast_usa/art/shapes/trees/trees_aspen/t_birch_leaves_nm.normal.png",
-          "opacityMap": "/levels/east_coast_usa/art/shapes/trees/trees_aspen/t_birch_leaves_o.data.png",
-          "roughnessMap": "/levels/east_coast_usa/art/shapes/trees/trees_aspen/t_birch_leaves_r.data.png",
+          "baseColorMap": "/assets/materials/tree/birch/t_birch_leaves/t_birch_leaves_b.color.png",
+          "normalMap": "/assets/materials/tree/birch/t_birch_leaves/t_birch_leaves_nm.normal.png",
+          "normalMapStrength": 0.5,
+          "opacityMap": "/assets/materials/tree/birch/t_birch_leaves/t_birch_leaves_o.data.png",
+          "pixelSpecular": true,
+          "roughnessMap": "/assets/materials/tree/birch/t_birch_leaves/t_birch_leaves_r.data.png",
           "specular": [
             0.992156923,
             0.992156923,
@@ -467,23 +279,30 @@
         },
         {
           "baseColorFactor": null,
+          "normalMapStrength": null,
+          "pixelSpecular": null,
           "specular": null
         },
         {
           "baseColorFactor": null,
+          "normalMapStrength": null,
+          "pixelSpecular": null,
           "specular": null
         },
         {
           "baseColorFactor": null,
+          "normalMapStrength": null,
+          "pixelSpecular": null,
           "specular": null
         }
       ],
-      "alphaRef": 180,
+      "alphaRef": 100,
       "alphaTest": true,
       "annotation": "NATURE",
       "class": "Material",
       "doubleSided": true,
       "groundType": "LEAVES_THIN",
+      "invertBackFaceNormals": true,
       "mapTo": "Birch_Leaves_01",
       "materialTag0": "beamng",
       "materialTag1": "vegetation",
@@ -492,120 +311,51 @@
       "materialTag4": "east_coast_usa",
       "name": "Birch_Leaves_01",
       "persistentId": "45f63263-9705-4fcb-8c84-59e37090669f",
+      "subSurface": true,
+      "subSurfaceIntensity": 1,
       "translucentBlendOp": "None",
-      "version": 1.5
-    },
-    "beech_blocker": {
-      "Stages": [
-        {
-          "ambientOcclusionMap": "/levels/east_coast_usa/art/shapes/trees/trees_beech/t_beech_blocker_ao.data.png",
-          "baseColorFactor": [
-            0.996078491,
-            0.996078491,
-            0.996078491,
-            1
-          ],
-          "baseColorMap": "/levels/east_coast_usa/art/shapes/trees/trees_beech/t_beech_blocker_b.color.png",
-          "normalMap": "/levels/east_coast_usa/art/shapes/trees/trees_beech/t_beech_blocker_nm.normal.png",
-          "opacityMap": "/levels/east_coast_usa/art/shapes/trees/trees_beech/t_beech_blocker_o.data.png",
-          "roughnessMap": "/levels/east_coast_usa/art/shapes/trees/trees_beech/t_beech_blocker_r.data.png"
-        },
-        {
-          "baseColorFactor": null
-        },
-        {
-          "baseColorFactor": null
-        },
-        {
-          "baseColorFactor": null
-        }
-      ],
-      "alphaRef": 115,
-      "alphaTest": true,
-      "annotation": "NATURE",
-      "class": "Material",
-      "doubleSided": true,
-      "groundType": "WOOD",
-      "mapTo": "beech_blocker",
-      "materialTag0": "beamng",
-      "materialTag1": "vegetation",
-      "materialTag2": "Natural",
-      "materialTag3": "vegetation",
-      "name": "beech_blocker",
-      "persistentId": "686852d1-bdff-4086-855b-682867a406e0",
-      "version": 1.5
-    },
-    "beech_branch_01": {
-      "Stages": [
-        {
-          "ambientOcclusionMap": "/levels/east_coast_usa/art/shapes/trees/trees_beech/t_beech_branch_ao.data.png",
-          "baseColorFactor": [
-            0.996078491,
-            0.996078491,
-            0.996078491,
-            1
-          ],
-          "baseColorMap": "/levels/east_coast_usa/art/shapes/trees/trees_beech/t_beech_branch_b.color.png",
-          "normalMap": "/levels/east_coast_usa/art/shapes/trees/trees_beech/t_beech_branch_nm.normal.png",
-          "opacityMap": "/levels/east_coast_usa/art/shapes/trees/trees_beech/t_beech_branch_o.data.png",
-          "roughnessMap": "/levels/east_coast_usa/art/shapes/trees/trees_beech/t_beech_branch_r.data.png",
-          "specular": [
-            0.992156982,
-            0.992156982,
-            0.992156982,
-            1
-          ]
-        },
-        {},
-        {},
-        {}
-      ],
-      "alphaRef": 75,
-      "alphaTest": true,
-      "annotation": "NATURE",
-      "class": "Material",
-      "doubleSided": true,
-      "groundType": "WOOD",
-      "mapTo": "beech_branch_01",
-      "materialTag0": "beamng",
-      "materialTag1": "vegetation",
-      "materialTag2": "Natural",
-      "materialTag3": "vegetation",
-      "name": "beech_branch_01",
-      "persistentId": "04850e85-8d18-4173-a93b-076f274aec7a",
       "version": 1.5
     },
     "beech_leaves": {
       "Stages": [
         {
-          "ambientOcclusionMap": "/levels/east_coast_usa/art/shapes/trees/trees_beech/t_beech_leaves_ao.data.png",
+          "ambientOcclusionMap": "/assets/materials/tree/beech/t_beech_leaves/t_beech_leaves_ao.data.png",
           "baseColorFactor": [
             0.992156923,
             0.992156923,
             0.992156923,
             1
           ],
-          "baseColorMap": "/levels/east_coast_usa/art/shapes/trees/trees_beech/t_beech_leaves_b.color.png",
-          "normalMap": "/levels/east_coast_usa/art/shapes/trees/trees_beech/t_beech_leaves_nm.normal.png",
-          "opacityMap": "/levels/east_coast_usa/art/shapes/trees/trees_beech/t_beech_leaves_o.data.png",
-          "roughnessMap": "/levels/east_coast_usa/art/shapes/trees/trees_beech/t_beech_leaves_r.data.png"
+          "baseColorMap": "/assets/materials/tree/beech/t_beech_leaves/t_beech_leaves_b.color.png",
+          "normalMap": "/assets/materials/tree/beech/t_beech_leaves/t_beech_leaves_nm.normal.png",
+          "normalMapStrength": 0.5,
+          "opacityMap": "/assets/materials/tree/beech/t_beech_leaves/t_beech_leaves_o.data.png",
+          "pixelSpecular": true,
+          "roughnessMap": "/assets/materials/tree/beech/t_beech_leaves/t_beech_leaves_r.data.png"
         },
         {
-          "baseColorFactor": null
+          "baseColorFactor": null,
+          "normalMapStrength": null,
+          "pixelSpecular": null
         },
         {
-          "baseColorFactor": null
+          "baseColorFactor": null,
+          "normalMapStrength": null,
+          "pixelSpecular": null
         },
         {
-          "baseColorFactor": null
+          "baseColorFactor": null,
+          "normalMapStrength": null,
+          "pixelSpecular": null
         }
       ],
-      "alphaRef": 115,
+      "alphaRef": 105,
       "alphaTest": true,
       "annotation": "NATURE",
       "class": "Material",
       "doubleSided": true,
       "groundType": "LEAVES_THIN",
+      "invertBackFaceNormals": true,
       "mapTo": "beech_leaves",
       "materialTag0": "beamng",
       "materialTag1": "vegetation",
@@ -614,57 +364,8 @@
       "materialTag4": "east_coast_usa",
       "name": "beech_leaves",
       "persistentId": "e30d3c35-800f-4509-ac97-51eb4efe7194",
-      "version": 1.5
-    },
-    "beech_trunk": {
-      "Stages": [
-        {
-          "ambientOcclusionMap": "/levels/east_coast_usa/art/shapes/trees/trees_beech/t_beech_bark_ao.data.png",
-          "baseColorFactor": [
-            0.996078491,
-            0.996078491,
-            0.996078491,
-            1
-          ],
-          "baseColorMap": "/levels/east_coast_usa/art/shapes/trees/trees_beech/t_beech_bark_b.color.png",
-          "detailScale": [
-            1,
-            1
-          ],
-          "normalMap": "/levels/east_coast_usa/art/shapes/trees/trees_beech/t_beech_bark_nm.normal.png",
-          "pixelSpecular": true,
-          "roughnessMap": "/levels/east_coast_usa/art/shapes/trees/trees_beech/t_beech_bark_r.data.png",
-          "specular": [
-            0.149019614,
-            0.149019614,
-            0.149019614,
-            1
-          ]
-        },
-        {
-          "baseColorFactor": [
-            0.992156923,
-            0.992156923,
-            0.992156923,
-            1
-          ]
-        },
-        {},
-        {}
-      ],
-      "alphaRef": 10,
-      "alphaTest": true,
-      "annotation": "NATURE",
-      "class": "Material",
-      "groundType": "WOOD",
-      "mapTo": "beech_trunk",
-      "materialTag0": "beamng",
-      "materialTag1": "vegetation",
-      "materialTag2": "Natural",
-      "name": "beech_trunk",
-      "persistentId": "0af016fd-dc8c-45eb-80b0-edd232cad636",
-      "specularStrength0": "0.392157",
-      "translucentBlendOp": "None",
+      "subSurface": true,
+      "subSurfaceIntensity": 1,
       "version": 1.5
     },
     "eca_rocks": {
@@ -711,84 +412,314 @@
         {},
         {}
       ],
+      "annotation": "NATURE",
       "class": "Material",
-      "groundDepth": 0.3000000119,
+      "groundDepth": 0.600000024,
       "groundType": "leaves_strong",
       "mapTo": "leaves_strong",
       "name": "leaves_strong",
-      "persistentId": "26d5ba12-8be2-4f6a-ac66-c3771a08f09d"
+      "persistentId": "7e8157dc-940e-4435-937b-e934d4e42892"
     },
-    "leaves_thin": {
+    "lod_vertcol": {
       "Stages": [
-        {},
+        {
+          "vertColor": true
+        },
+        {
+          "vertColor": null
+        },
+        {
+          "vertColor": null
+        },
+        {
+          "vertColor": null
+        }
+      ],
+      "class": "Material",
+      "groundType": "ASPHALT_OLD",
+      "mapTo": "lod_vertcol",
+      "materialTag0": "beamng",
+      "materialTag1": "building",
+      "name": "lod_vertcol",
+      "persistentId": "3122f280-003f-419e-ba18-ba85683d01ed",
+      "translucentBlendOp": "None"
+    },
+    "m_birch_leaves_distant": {
+      "Stages": [
+        {
+          "ambientOcclusionMap": "/assets/materials/tree/birch/t_birch_leaves_distant/t_birch_leaves_distant_ao.data.png",
+          "baseColorMap": "/assets/materials/tree/birch/t_birch_leaves_distant/t_birch_leaves_distant_b.color.png",
+          "normalMap": "/assets/materials/tree/birch/t_birch_leaves_distant/t_birch_leaves_distant_nm.normal.png",
+          "opacityMap": "/assets/materials/tree/birch/t_birch_leaves_distant/t_birch_leaves_distant_o.data.png",
+          "roughnessMap": "/assets/materials/tree/birch/t_birch_leaves_distant/t_birch_leaves_distant_r.data.png"
+        },
         {},
         {},
         {}
       ],
+      "alphaRef": 80,
+      "alphaTest": true,
       "class": "Material",
-      "groundDepth": 0.800000012,
-      "groundType": "leaves_thin",
-      "mapTo": "leaves_thin",
-      "name": "leaves_thin",
-      "persistentId": "b3338585-c70d-4a6e-86fe-a0a33a496a25"
-    },
-    "m_beech_merged_foliage": {
+      "doubleSided": true,
+      "dynamicCubemap": true,
+      "invertBackFaceNormals": true,
+      "mapTo": "m_birch_leaves_distant",
+      "name": "m_birch_leaves_distant",
+      "subSurface": true,
+      "subSurfaceIntensity": 1,
+      "version": 1.5
+    }
+  },
+  "european_template": {
+    "beech_branch_01": {
       "Stages": [
         {
-          "colorMap": "/levels/east_coast_usa/art/shapes/trees/trees_beech/t_beech_merged_foliage_d.color.png",
-          "normalMap": "/levels/east_coast_usa/art/shapes/trees/trees_beech/t_beech_merged_foliage_nm.normal.png",
-          "useAnisotropic": true
+          "ambientOcclusionMap": "/assets/materials/tree/beech/t_beech_branch_01/t_beech_branch_ao.data.png",
+          "baseColorFactor": [
+            0.766642988,
+            0.766642988,
+            0.766642988,
+            1
+          ],
+          "baseColorMap": "/assets/materials/tree/beech/t_beech_branch_01/t_beech_branch_b.color.png",
+          "normalMap": "/assets/materials/tree/beech/t_beech_branch_01/t_beech_branch_nm.normal.png",
+          "opacityMap": "/assets/materials/tree/beech/t_beech_branch_01/t_beech_branch_o.data.png",
+          "pixelSpecular": true,
+          "roughnessMap": "/assets/materials/tree/beech/t_beech_branch_01/t_beech_branch_r.data.png",
+          "specular": [
+            0.992156982,
+            0.992156982,
+            0.992156982,
+            1
+          ]
         },
         {
-          "useAnisotropic": null
+          "baseColorFactor": null,
+          "pixelSpecular": null,
+          "specular": null
         },
         {
-          "useAnisotropic": null
+          "baseColorFactor": null,
+          "pixelSpecular": null,
+          "specular": null
         },
         {
-          "useAnisotropic": null
+          "baseColorFactor": null,
+          "pixelSpecular": null,
+          "specular": null
+        }
+      ],
+      "alphaRef": 75,
+      "alphaTest": true,
+      "annotation": "NATURE",
+      "class": "Material",
+      "doubleSided": true,
+      "groundType": "WOOD",
+      "invertBackFaceNormals": true,
+      "mapTo": "beech_branch_01",
+      "materialTag0": "beamng",
+      "materialTag1": "vegetation",
+      "materialTag2": "Natural",
+      "materialTag3": "vegetation",
+      "name": "beech_branch_01",
+      "persistentId": "04850e85-8d18-4173-a93b-076f274aec7a",
+      "subSurface": true,
+      "subSurfaceIntensity": 0.00999999978,
+      "version": 1.5
+    },
+    "beech_leaves": {
+      "Stages": [
+        {
+          "ambientOcclusionMap": "/assets/materials/tree/beech/t_beech_leaves/t_beech_leaves_ao.data.png",
+          "baseColorFactor": [
+            0.992156923,
+            0.992156923,
+            0.992156923,
+            1
+          ],
+          "baseColorMap": "/assets/materials/tree/beech/t_beech_leaves/t_beech_leaves_b.color.png",
+          "normalMap": "/assets/materials/tree/beech/t_beech_leaves/t_beech_leaves_nm.normal.png",
+          "normalMapStrength": 0.5,
+          "opacityMap": "/assets/materials/tree/beech/t_beech_leaves/t_beech_leaves_o.data.png",
+          "pixelSpecular": true,
+          "roughnessMap": "/assets/materials/tree/beech/t_beech_leaves/t_beech_leaves_r.data.png"
+        },
+        {
+          "baseColorFactor": null,
+          "normalMapStrength": null,
+          "pixelSpecular": null
+        },
+        {
+          "baseColorFactor": null,
+          "normalMapStrength": null,
+          "pixelSpecular": null
+        },
+        {
+          "baseColorFactor": null,
+          "normalMapStrength": null,
+          "pixelSpecular": null
+        }
+      ],
+      "alphaRef": 105,
+      "alphaTest": true,
+      "annotation": "NATURE",
+      "class": "Material",
+      "doubleSided": true,
+      "groundType": "LEAVES_THIN",
+      "invertBackFaceNormals": true,
+      "mapTo": "beech_leaves",
+      "materialTag0": "beamng",
+      "materialTag1": "vegetation",
+      "materialTag2": "Natural",
+      "materialTag3": "vegetation",
+      "materialTag4": "east_coast_usa",
+      "name": "beech_leaves",
+      "persistentId": "e30d3c35-800f-4509-ac97-51eb4efe7194",
+      "subSurface": true,
+      "subSurfaceIntensity": 1,
+      "version": 1.5
+    },
+    "beech_trunk": {
+      "Stages": [
+        {
+          "ambientOcclusionMap": "/assets/materials/tree/beech/t_beech_trunk/t_beech_bark_ao.data.png",
+          "baseColorFactor": [
+            0.872313976,
+            0.854497015,
+            0.757090986,
+            1
+          ],
+          "baseColorMap": "/assets/materials/tree/beech/t_beech_trunk/t_beech_bark_b.color.png",
+          "detailMap": "/assets/materials/tree/tropical/tro_tree_1_trunk/t_tropical_bark_variation_1_detail.data.png",
+          "detailScale": [
+            0.5,
+            2
+          ],
+          "normalMap": "/assets/materials/tree/beech/t_beech_trunk/t_beech_bark_nm.normal.png",
+          "pixelSpecular": true,
+          "roughnessMap": "/assets/materials/tree/beech/t_beech_trunk/t_beech_bark_r.data.png",
+          "specular": [
+            0.149019614,
+            0.149019614,
+            0.149019614,
+            1
+          ]
+        },
+        {
+          "baseColorFactor": [
+            0.992156923,
+            0.992156923,
+            0.992156923,
+            1
+          ],
+          "detailScale": null,
+          "pixelSpecular": null,
+          "specular": null
+        },
+        {
+          "baseColorFactor": null,
+          "detailScale": null,
+          "pixelSpecular": null,
+          "specular": null
+        },
+        {
+          "baseColorFactor": null,
+          "detailScale": null,
+          "pixelSpecular": null,
+          "specular": null
+        }
+      ],
+      "alphaRef": 10,
+      "alphaTest": true,
+      "annotation": "NATURE",
+      "class": "Material",
+      "groundType": "WOOD",
+      "mapTo": "beech_trunk",
+      "materialTag0": "beamng",
+      "materialTag1": "vegetation",
+      "materialTag2": "Natural",
+      "name": "beech_trunk",
+      "persistentId": "0af016fd-dc8c-45eb-80b0-edd232cad636",
+      "specularStrength0": "0.392157",
+      "translucentBlendOp": "None",
+      "version": 1.5
+    },
+    "cypress": {
+      "Stages": [
+        {
+          "ambientOcclusionMap": "/assets/materials/tree/cypress/t_cypress_leaves/t_cypress_leaves_ao.data.png",
+          "baseColorFactor": [
+            0.996078014,
+            0.996078014,
+            0.996078014,
+            1
+          ],
+          "baseColorMap": "/assets/materials/tree/cypress/t_cypress_leaves/t_cypress_leaves_b.color.png",
+          "normalMap": "/assets/materials/tree/cypress/t_cypress_leaves/t_cypress_leaves_nm.normal.png",
+          "opacityMap": "/assets/materials/tree/cypress/t_cypress_leaves/t_cypress_leaves_o.data.png",
+          "pixelSpecular": true,
+          "roughnessMap": "/assets/materials/tree/cypress/t_cypress_leaves/t_cypress_leaves_r.data.png",
+          "specular": [
+            0.992156982,
+            0.992156982,
+            0.992156982,
+            1
+          ]
+        },
+        {
+          "baseColorFactor": null,
+          "pixelSpecular": null,
+          "specular": null
+        },
+        {
+          "baseColorFactor": null,
+          "pixelSpecular": null,
+          "specular": null
+        },
+        {
+          "baseColorFactor": null,
+          "pixelSpecular": null,
+          "specular": null
         }
       ],
       "alphaRef": 100,
       "alphaTest": true,
+      "annotation": "NATURE",
       "class": "Material",
       "doubleSided": true,
-      "mapTo": "m_beech_merged_foliage",
-      "name": "m_beech_merged_foliage",
-      "translucentZWrite": true
+      "invertBackFaceNormals": true,
+      "mapTo": "cypress",
+      "materialTag0": "beamng",
+      "materialTag1": "vegetation",
+      "materialTag2": "Natural",
+      "materialTag3": "vegetation",
+      "name": "cypress",
+      "persistentId": "9db1e299-b9ca-4e8e-9e86-1dd51386c157",
+      "subSurface": true,
+      "subSurfaceIntensity": 1,
+      "translucentBlendOp": "None",
+      "version": 1.5
     },
-    "m_birch_merged_foliage": {
+    "eca_rocks": {
       "Stages": [
         {
-          "colorMap": "/levels/east_coast_usa/art/shapes/trees/trees_aspen/t_birch_merged_foliage_d.color.png",
-          "normalMap": "/levels/east_coast_usa/art/shapes/trees/trees_aspen/t_birch_merged_foliage_nm.normal.png",
-          "useAnisotropic": true
-        },
-        {
-          "useAnisotropic": null
-        },
-        {
-          "useAnisotropic": null
-        },
-        {
-          "useAnisotropic": null
-        }
-      ],
-      "alphaRef": 100,
-      "alphaTest": true,
-      "class": "Material",
-      "doubleSided": true,
-      "mapTo": "m_birch_merged_foliage",
-      "name": "m_birch_merged_foliage",
-      "translucentZWrite": true
-    },
-    "rock_01_a": {
-      "Stages": [
-        {
-          "colorMap": "levels/east_coast_usa/art/shapes/rocks/moss_rocks_01_a_d.dds",
-          "normalMap": "levels/east_coast_usa/art/shapes/rocks/moss_rocks_01_a_n.dds",
-          "specularMap": "levels/east_coast_usa/art/shapes/rocks/moss_rocks_01_a_s.dds",
-          "specularPower": 1
+          "ambientOcclusionMap": "/levels/east_coast_usa/art/shapes/rocks/t_rocks_eca_ao.data.png",
+          "baseColorFactor": [
+            1,
+            1,
+            0.999000013,
+            1
+          ],
+          "baseColorMap": "/levels/east_coast_usa/art/shapes/rocks/t_rocks_eca_b.color.png",
+          "detailMap": "/levels/east_coast_usa/art/shapes/rocks/t_rocks_eca_detail_b.data.png",
+          "detailNormalMap": "/levels/east_coast_usa/art/shapes/rocks/t_rocks_eca_detail_nm.normal.png",
+          "detailNormalMapStrength": 0.300000012,
+          "detailScale": [
+            24,
+            24
+          ],
+          "normalMap": "/levels/east_coast_usa/art/shapes/rocks/t_rocks_eca_nm.normal.png",
+          "roughnessMap": "/levels/east_coast_usa/art/shapes/rocks/t_rocks_eca_r.data.png"
         },
         {},
         {},
@@ -798,15 +729,410 @@
       "class": "Material",
       "doubleSided": true,
       "groundType": "ROCK",
-      "mapTo": "rocks_01_a",
+      "mapTo": "eca_rocks",
       "materialTag0": "beamng",
       "materialTag1": "Natural",
-      "name": "rock_01_a",
-      "persistentId": "5fe9b75a-99bf-4abf-8eaf-94d425eead15",
+      "name": "eca_rocks",
+      "persistentId": "7ed6ec7d-833f-44d7-87f4-b102ed9777d0",
+      "translucentBlendOp": "None",
+      "version": 1.5
+    },
+    "fir_bark": {
+      "Stages": [
+        {
+          "ambientOcclusionMap": "/assets/materials/tree/fir/t_fir_bark/t_fir_bark_ao.data.png",
+          "baseColorFactor": [
+            0.726626992,
+            0.726619005,
+            0.726619005,
+            1
+          ],
+          "baseColorMap": "/assets/materials/tree/fir/t_fir_bark/t_fir_bark_b.color.png",
+          "detailBaseColorMapStrength": 2,
+          "detailMap": "/assets/materials/tree/tropical/tro_tree_1_trunk/t_tropical_bark_variation_1_detail.data.png",
+          "detailScale": [
+            0.100000001,
+            0.400000006
+          ],
+          "normalMap": "/assets/materials/tree/fir/t_fir_bark/t_fir_bark_nm.normal.png",
+          "normalMapStrength": 2,
+          "roughnessMap": "/assets/materials/tree/fir/t_fir_bark/t_fir_bark_r.data.png"
+        },
+        {},
+        {},
+        {}
+      ],
+      "annotation": "NATURE",
+      "class": "Material",
+      "groundType": "WOOD",
+      "mapTo": "fir_bark",
+      "materialTag0": "vegetation",
+      "materialTag1": "beamng",
+      "materialTag2": "Natural",
+      "name": "fir_bark",
+      "persistentId": "1abfef0d-b4e7-4116-b050-5a140fd64716",
+      "specularStrength0": "0.294118",
+      "version": 1.5
+    },
+    "fir_leaves": {
+      "Stages": [
+        {
+          "ambientOcclusionMap": "/assets/materials/tree/fir/t_fir_leaves/t_fir_leaves_ao.data.png",
+          "baseColorFactor": [
+            0.996078491,
+            0.996078491,
+            0.996078491,
+            1
+          ],
+          "baseColorMap": "/assets/materials/tree/fir/t_fir_leaves/t_fir_leaves_b.color.png",
+          "detailNormalMapStrength": 5,
+          "detailScale": [
+            1,
+            1
+          ],
+          "normalMap": "/assets/materials/tree/fir/t_fir_leaves/t_fir_leaves_nm.normal.png",
+          "normalMapStrength": 1.5,
+          "opacityMap": "/assets/materials/tree/fir/t_fir_leaves/t_fir_leaves_o.data.png",
+          "pixelSpecular": true,
+          "roughnessMap": "/assets/materials/tree/fir/t_fir_leaves/t_fir_leaves_r.data.png",
+          "specular": [
+            0.916343987,
+            0.916343987,
+            0.916343987,
+            1
+          ]
+        },
+        {
+          "baseColorFactor": null,
+          "detailNormalMapStrength": null,
+          "detailScale": null,
+          "normalMapStrength": null,
+          "pixelSpecular": null,
+          "specular": null
+        },
+        {
+          "baseColorFactor": null,
+          "detailNormalMapStrength": null,
+          "detailScale": null,
+          "normalMapStrength": null,
+          "pixelSpecular": null,
+          "specular": null
+        },
+        {
+          "baseColorFactor": null,
+          "detailNormalMapStrength": null,
+          "detailScale": null,
+          "normalMapStrength": null,
+          "pixelSpecular": null,
+          "specular": null
+        }
+      ],
+      "alphaRef": 75,
+      "alphaTest": true,
+      "annotation": "NATURE",
+      "class": "Material",
+      "doubleSided": true,
+      "groundType": "LEAVES_THIN",
+      "invertBackFaceNormals": true,
+      "mapTo": "fir_leaves",
+      "materialTag0": "beamng",
+      "materialTag1": "vegetation",
+      "materialTag2": "Natural",
+      "materialTag3": "vegetation",
+      "name": "fir_leaves",
+      "persistentId": "aaf2fde2-8a41-473b-9d09-836efab2bc8c",
+      "specularStrength0": "0.294118",
+      "subSurface": true,
+      "subSurfaceIntensity": 1,
+      "version": 1.5
+    },
+    "fir_leaves_dead": {
+      "Stages": [
+        {
+          "ambientOcclusionMap": "/assets/materials/tree/fir/t_fir_leaves_dead/t_fir_leaves_dead_ao.data.png",
+          "baseColorFactor": [
+            0.727016985,
+            0.727016985,
+            0.727016985,
+            1
+          ],
+          "baseColorMap": "/assets/materials/tree/fir/t_fir_leaves_dead/t_fir_leaves_dead_b.color.png",
+          "detailNormalMapStrength": 5,
+          "detailScale": [
+            1,
+            1
+          ],
+          "normalMap": "/assets/materials/tree/fir/t_fir_leaves_dead/t_fir_leaves_dead_nm.normal.png",
+          "normalMapStrength": 1.5,
+          "opacityMap": "/assets/materials/tree/fir/t_fir_leaves_dead/t_fir_leaves_dead_o.data.png",
+          "pixelSpecular": true,
+          "roughnessMap": "/assets/materials/tree/fir/t_fir_leaves_dead/t_fir_leaves_dead_r.data.png",
+          "specular": [
+            0.859104991,
+            0.859104991,
+            0.859104991,
+            1
+          ]
+        },
+        {},
+        {},
+        {}
+      ],
+      "alphaRef": 76,
+      "alphaTest": true,
+      "annotation": "NATURE",
+      "class": "Material",
+      "doubleSided": true,
+      "groundType": "LEAVES_THIN",
+      "invertBackFaceNormals": true,
+      "mapTo": "fir_leaves_dead",
+      "materialTag0": "beamng",
+      "materialTag1": "vegetation",
+      "materialTag2": "Natural",
+      "materialTag3": "vegetation",
+      "name": "fir_leaves_dead",
+      "persistentId": "c33cdda1-8084-4884-adef-f1607ac94fa0",
+      "specularStrength0": "0.294118",
+      "subSurface": true,
+      "subSurfaceIntensity": 0.100000001,
+      "version": 1.5
+    },
+    "leaves_strong": {
+      "Stages": [
+        {},
+        {},
+        {},
+        {}
+      ],
+      "annotation": "NATURE",
+      "class": "Material",
+      "groundDepth": 0.600000024,
+      "groundType": "leaves_strong",
+      "mapTo": "leaves_strong",
+      "name": "leaves_strong",
+      "persistentId": "7e8157dc-940e-4435-937b-e934d4e42892"
+    },
+    "lod_vertcol": {
+      "Stages": [
+        {
+          "vertColor": true
+        },
+        {
+          "vertColor": null
+        },
+        {
+          "vertColor": null
+        },
+        {
+          "vertColor": null
+        }
+      ],
+      "class": "Material",
+      "groundType": "ASPHALT_OLD",
+      "mapTo": "lod_vertcol",
+      "materialTag0": "beamng",
+      "materialTag1": "building",
+      "name": "lod_vertcol",
+      "persistentId": "3122f280-003f-419e-ba18-ba85683d01ed",
       "translucentBlendOp": "None"
+    },
+    "m_beech_leaves_distant": {
+      "Stages": [
+        {
+          "ambientOcclusionMap": "/assets/materials/tree/beech/t_beech_leaves_distant/t_beech_leaves_distant_ao.data.png",
+          "baseColorMap": "/assets/materials/tree/beech/t_beech_leaves_distant/t_beech_leaves_distant_b.color.png",
+          "normalMap": "/assets/materials/tree/beech/t_beech_leaves_distant/t_beech_leaves_distant_nm.normal.png",
+          "opacityMap": "/assets/materials/tree/beech/t_beech_leaves_distant/t_beech_leaves_distant_o.data.png",
+          "roughnessMap": "/assets/materials/tree/beech/t_beech_leaves_distant/t_beech_leaves_distant_r.data.png"
+        },
+        {},
+        {},
+        {}
+      ],
+      "alphaRef": 80,
+      "alphaTest": true,
+      "class": "Material",
+      "doubleSided": true,
+      "dynamicCubemap": true,
+      "invertBackFaceNormals": true,
+      "mapTo": "m_beech_leaves_distant",
+      "name": "m_beech_leaves_distant",
+      "subSurface": true,
+      "subSurfaceIntensity": 1,
+      "version": 1.5
+    },
+    "m_cypress_distant": {
+      "Stages": [
+        {
+          "ambientOcclusionMap": "/assets/materials/tree/cypress/t_cypress_leaves_distant/t_cypress_leaves_distant_ao.data.png",
+          "baseColorMap": "/assets/materials/tree/cypress/t_cypress_leaves_distant/t_cypress_leaves_distant_b.color.png",
+          "normalMap": "/assets/materials/tree/cypress/t_cypress_leaves_distant/t_cypress_leaves_distant_nm.normal.png",
+          "opacityMap": "/assets/materials/tree/cypress/t_cypress_leaves_distant/t_cypress_leaves_distant_o.data.png",
+          "roughnessMap": "/assets/materials/tree/cypress/t_cypress_leaves_distant/t_cypress_leaves_distant_r.data.png"
+        },
+        {},
+        {},
+        {}
+      ],
+      "alphaRef": 75,
+      "alphaTest": true,
+      "class": "Material",
+      "doubleSided": true,
+      "dynamicCubemap": true,
+      "invertBackFaceNormals": true,
+      "mapTo": "m_cypress_distant",
+      "name": "m_cypress_distant",
+      "subSurface": true,
+      "subSurfaceIntensity": 1,
+      "version": 1.5
+    },
+    "m_fir_leaves_distant": {
+      "Stages": [
+        {
+          "ambientOcclusionMap": "/assets/materials/tree/fir/t_fir_leaves_distant/t_fir_leaves_distant_ao.data.png",
+          "baseColorMap": "/assets/materials/tree/fir/t_fir_leaves_distant/t_fir_leaves_distant_b.color.png",
+          "normalMap": "/assets/materials/tree/fir/t_fir_leaves_distant/t_fir_leaves_distant_nm.normal.png",
+          "opacityMap": "/assets/materials/tree/fir/t_fir_leaves_distant/t_fir_leaves_distant_o.data.png",
+          "roughnessMap": "/assets/materials/tree/fir/t_fir_leaves_distant/t_fir_leaves_distant_r.data.png"
+        },
+        {},
+        {},
+        {}
+      ],
+      "alphaRef": 65,
+      "alphaTest": true,
+      "class": "Material",
+      "doubleSided": true,
+      "dynamicCubemap": true,
+      "invertBackFaceNormals": true,
+      "mapTo": "m_fir_leaves_distant",
+      "name": "m_fir_leaves_distant",
+      "subSurface": true,
+      "subSurfaceIntensity": 1,
+      "version": 1.5
+    },
+    "m_pine_bark": {
+      "Stages": [
+        {
+          "ambientOcclusionMap": "/assets/materials/tree/t_pine/t_pine_bark/t_pine_bark_ao.data.png",
+          "baseColorMap": "/assets/materials/tree/t_pine/t_pine_bark/t_pine_bark_b.color.png",
+          "detailBaseColorMapStrength": 0.5,
+          "detailMap": "/assets/materials/tree/tropical/tro_tree_1_trunk/t_tropical_bark_variation_1_detail.data.png",
+          "detailNormalMap": "/assets/materials/tree/tropical/tro_tree_1_trunk/t_tro_bark_01_detail_nm.normal.png",
+          "detailNormalMapStrength": 0.5,
+          "detailScale": [
+            0.100000001,
+            0.400000006
+          ],
+          "normalMap": "/assets/materials/tree/t_pine/t_pine_bark/t_pine_bark_nm.normal.png",
+          "roughnessMap": "/assets/materials/tree/t_pine/t_pine_bark/t_pine_bark_r.data.png"
+        },
+        {
+          "detailBaseColorMapStrength": null,
+          "detailNormalMapStrength": null,
+          "detailScale": null
+        },
+        {
+          "detailBaseColorMapStrength": null,
+          "detailNormalMapStrength": null,
+          "detailScale": null
+        },
+        {
+          "detailBaseColorMapStrength": null,
+          "detailNormalMapStrength": null,
+          "detailScale": null
+        }
+      ],
+      "alphaRef": 0,
+      "class": "Material",
+      "mapTo": "m_pine_bark",
+      "name": "m_pine_bark",
+      "translucentBlendOp": "None",
+      "version": 1.5
     }
   },
   "hirochi_raceway": {
+    "cork_oak": {
+      "Stages": [
+        {
+          "ambientOcclusionMap": "/assets/materials/tree/cork_oak/t_cork_oak/t_cork_oak_ao.data.png",
+          "baseColorMap": "/assets/materials/tree/cork_oak/t_cork_oak_ind/t_cork_oak_ind_b.color.png",
+          "normalMap": "/assets/materials/tree/cork_oak/t_cork_oak/t_cork_oak_nm.normal.png",
+          "normalMapStrength": 2,
+          "opacityMap": "/assets/materials/tree/cork_oak/t_cork_oak/t_cork_oak_o.data.png",
+          "roughnessMap": "/assets/materials/tree/cork_oak/t_cork_oak/t_cork_oak_r.data.png"
+        },
+        {
+          "normalMapStrength": null
+        },
+        {
+          "normalMapStrength": null
+        },
+        {
+          "normalMapStrength": null
+        }
+      ],
+      "alphaRef": 100,
+      "alphaTest": true,
+      "annotation": "NATURE",
+      "class": "Material",
+      "doubleSided": true,
+      "groundType": "WOOD",
+      "invertBackFaceNormals": true,
+      "mapTo": "cork_oak",
+      "materialTag0": "beamng",
+      "materialTag1": "vegetation",
+      "materialTag2": "Natural",
+      "name": "cork_oak",
+      "persistentId": "c7c521a2-cac1-4b93-846d-64e7630ba883",
+      "subSurface": true,
+      "subSurfaceIntensity": 1,
+      "version": 1.5
+    },
+    "cork_oak_trunk": {
+      "Stages": [
+        {
+          "ambientOcclusionMap": "/assets/materials/tree/cork_oak/t_cork_oak_trunk/t_cork_oak_trunk_ao.data.png",
+          "baseColorMap": "/assets/materials/tree/cork_oak/t_cork_oak_trunk/t_cork_oak_trunk_b.color.png",
+          "detailBaseColorMapStrength": 1.5,
+          "detailMap": "/assets/materials/tree/tropical/tro_tree_1_trunk/t_tropical_bark_variation_1_detail.data.png",
+          "detailNormalMap": "/assets/materials/tree/tropical/tro_tree_1_trunk/t_tro_bark_01_detail_nm.normal.png",
+          "detailScale": [
+            0.5,
+            0.25
+          ],
+          "normalMap": "/assets/materials/tree/cork_oak/t_cork_oak_trunk/t_cork_oak_trunk_nm.normal.png",
+          "normalMapStrength": 1.5,
+          "roughnessMap": "/assets/materials/tree/cork_oak/t_cork_oak_trunk/t_cork_oak_trunk_r.data.png"
+        },
+        {
+          "detailBaseColorMapStrength": null,
+          "detailScale": null,
+          "normalMapStrength": null
+        },
+        {
+          "detailBaseColorMapStrength": null,
+          "detailScale": null,
+          "normalMapStrength": null
+        },
+        {
+          "detailBaseColorMapStrength": null,
+          "detailScale": null,
+          "normalMapStrength": null
+        }
+      ],
+      "alphaRef": 85,
+      "annotation": "NATURE",
+      "class": "Material",
+      "groundType": "WOOD",
+      "mapTo": "cork_oak_trunk",
+      "materialTag0": "beamng",
+      "materialTag1": "vegetation",
+      "materialTag2": "Natural",
+      "name": "cork_oak_trunk",
+      "persistentId": "cd93bb97-6110-4371-ba67-9a48bca824d3",
+      "version": 1.5
+    },
     "eca_rocks": {
       "Stages": [
         {
@@ -843,6 +1169,51 @@
       "translucentBlendOp": "None",
       "version": 1.5
     },
+    "holm_oak_branches": {
+      "Stages": [
+        {
+          "ambientOcclusionMap": "/assets/materials/tree/holm_oak/t_holm_oak_branches/t_holm_oak_branches_ao.data.png",
+          "baseColorMap": "/assets/materials/tree/holm_oak/t_holm_oak_branches/t_holm_oak_branches_b.color.png",
+          "detailNormalMap": "/assets/materials/tree/cork_oak/t_cork_oak_trunk/t_cork_oak_trunk_nm.normal.png",
+          "detailNormalMapStrength": 3,
+          "detailScale": [
+            2,
+            4
+          ],
+          "normalMap": "/assets/materials/tree/holm_oak/t_holm_oak_branches/t_holm_oak_branches_nm.normal.png",
+          "opacityMap": "/assets/materials/tree/holm_oak/t_holm_oak_branches/t_holm_oak_branches_o.data.png",
+          "roughnessMap": "/assets/materials/tree/holm_oak/t_holm_oak_branches/t_holm_oak_branches_r.data.png"
+        },
+        {
+          "detailNormalMapStrength": null,
+          "detailScale": null
+        },
+        {
+          "detailNormalMapStrength": null,
+          "detailScale": null
+        },
+        {
+          "detailNormalMapStrength": null,
+          "detailScale": null
+        }
+      ],
+      "alphaRef": 70,
+      "alphaTest": true,
+      "annotation": "NATURE",
+      "class": "Material",
+      "doubleSided": true,
+      "invertBackFaceNormals": true,
+      "mapTo": "holm_oak_branches",
+      "materialTag0": "beamng",
+      "materialTag1": "vegetation",
+      "materialTag2": "Natural",
+      "name": "holm_oak_branches",
+      "persistentId": "4a22acc4-61c7-4767-9174-cd83c9996e3f",
+      "specularStrength0": "0.490196",
+      "subSurface": true,
+      "subSurfaceIntensity": 0.00999999978,
+      "version": 1.5
+    },
     "leaves_strong": {
       "Stages": [
         {},
@@ -850,112 +1221,109 @@
         {},
         {}
       ],
+      "annotation": "NATURE",
       "class": "Material",
-      "groundDepth": 0.300000011920929,
+      "groundDepth": 0.600000024,
       "groundType": "leaves_strong",
       "mapTo": "leaves_strong",
       "name": "leaves_strong",
-      "persistentId": "26d5ba12-8be2-4f6a-ac66-c3771a08f09d"
+      "persistentId": "7e8157dc-940e-4435-937b-e934d4e42892"
     },
-    "leaves_thin": {
+    "m_cork_oak_distant": {
       "Stages": [
-        {},
+        {
+          "ambientOcclusionMap": "/assets/materials/tree/cork_oak/t_cork_oak_distant/t_cork_oak_distant_ao.data.png",
+          "baseColorMap": "/assets/materials/tree/cork_oak/t_cork_oak_ind_distant/t_cork_oak_ind_distant_b.color.png",
+          "normalMap": "/assets/materials/tree/cork_oak/t_cork_oak_distant/t_cork_oak_distant_nm.normal.png",
+          "opacityMap": "/assets/materials/tree/cork_oak/t_cork_oak_distant/t_cork_oak_distant_o.data.png",
+          "roughnessMap": "/assets/materials/tree/cork_oak/t_cork_oak_distant/t_cork_oak_distant_r.data.png"
+        },
         {},
         {},
         {}
       ],
+      "alphaRef": 75,
+      "alphaTest": true,
       "class": "Material",
-      "groundDepth": 0.800000012,
-      "groundType": "leaves_thin",
-      "mapTo": "leaves_thin",
-      "name": "leaves_thin",
-      "persistentId": "b3338585-c70d-4a6e-86fe-a0a33a496a25"
-    },
-    "rubbish_ground": {
-      "Stages": [
-        {},
-        {},
-        {},
-        {}
-      ],
-      "annotation": "NATURE",
-      "class": "Material",
-      "groundDepth": 0.2000000029802322,
-      "groundType": "DIRT",
-      "mapTo": "rubbish_ground",
-      "name": "rubbish_ground",
-      "persistentId": "06b5dae5-3d37-429b-8041-72cb94118ffc"
+      "doubleSided": true,
+      "dynamicCubemap": true,
+      "invertBackFaceNormals": true,
+      "mapTo": "m_cork_oak_distant",
+      "name": "m_cork_oak_distant",
+      "subSurface": true,
+      "subSurfaceIntensity": 1,
+      "version": 1.5
     }
   },
   "industrial": {
-    "Collision_mat": {
-      "Stages": [
-        {
-          "colorMap": "levels/industrial/art/shapes/Collision.dds",
-          "pixelSpecular": true,
-          "specular": [
-            0.6235290169715881,
-            0.6235290169715881,
-            0.6235290169715881,
-            2
-          ],
-          "specularPower": 1,
-          "useAnisotropic": true
-        },
-        {},
-        {},
-        {}
-      ],
-      "class": "Material",
-      "mapTo": "Collision",
-      "materialTag0": "beamng",
-      "name": "Collision_mat",
-      "persistentId": "5d53c9ee-d06b-4bc7-a2a6-2c1776501341",
-      "specularStrength0": "0.2",
-      "translucentBlendOp": "None"
-    },
     "cork_oak": {
       "Stages": [
         {
-          "ambientOcclusionMap": "/levels/Industrial/art/shapes/trees/trees_italy/t_cork_oak_ao.data.png",
-          "baseColorMap": "/levels/Industrial/art/shapes/trees/trees_italy/t_cork_oak_b.color.png",
-          "normalMap": "/levels/Industrial/art/shapes/trees/trees_italy/t_cork_oak_nm.normal.png",
-          "opacityMap": "/levels/Industrial/art/shapes/trees/trees_italy/t_cork_oak_o.data.png",
-          "roughnessMap": "/levels/Industrial/art/shapes/trees/trees_italy/t_cork_oak_r.data.png"
+          "ambientOcclusionMap": "/assets/materials/tree/cork_oak/t_cork_oak/t_cork_oak_ao.data.png",
+          "baseColorMap": "/assets/materials/tree/cork_oak/t_cork_oak_ind/t_cork_oak_ind_b.color.png",
+          "normalMap": "/assets/materials/tree/cork_oak/t_cork_oak/t_cork_oak_nm.normal.png",
+          "normalMapStrength": 2,
+          "opacityMap": "/assets/materials/tree/cork_oak/t_cork_oak/t_cork_oak_o.data.png",
+          "roughnessMap": "/assets/materials/tree/cork_oak/t_cork_oak/t_cork_oak_r.data.png"
         },
-        {},
-        {},
-        {}
+        {
+          "normalMapStrength": null
+        },
+        {
+          "normalMapStrength": null
+        },
+        {
+          "normalMapStrength": null
+        }
       ],
-      "alphaRef": 68,
+      "alphaRef": 100,
       "alphaTest": true,
       "annotation": "NATURE",
       "class": "Material",
       "doubleSided": true,
       "groundType": "WOOD",
+      "invertBackFaceNormals": true,
       "mapTo": "cork_oak",
       "materialTag0": "beamng",
       "materialTag1": "vegetation",
       "materialTag2": "Natural",
       "name": "cork_oak",
       "persistentId": "c7c521a2-cac1-4b93-846d-64e7630ba883",
+      "subSurface": true,
+      "subSurfaceIntensity": 1,
       "version": 1.5
     },
     "cork_oak_trunk": {
       "Stages": [
         {
-          "ambientOcclusionMap": "/levels/Industrial/art/shapes/trees/trees_italy/t_cork_oak_trunk_ao.data.png",
-          "baseColorMap": "/levels/Industrial/art/shapes/trees/trees_italy/t_cork_oak_trunk_b.color.png",
+          "ambientOcclusionMap": "/assets/materials/tree/cork_oak/t_cork_oak_trunk/t_cork_oak_trunk_ao.data.png",
+          "baseColorMap": "/assets/materials/tree/cork_oak/t_cork_oak_trunk/t_cork_oak_trunk_b.color.png",
+          "detailBaseColorMapStrength": 1.5,
+          "detailMap": "/assets/materials/tree/tropical/tro_tree_1_trunk/t_tropical_bark_variation_1_detail.data.png",
+          "detailNormalMap": "/assets/materials/tree/tropical/tro_tree_1_trunk/t_tro_bark_01_detail_nm.normal.png",
           "detailScale": [
-            0.200000003,
-            0.200000003
+            0.5,
+            0.25
           ],
-          "normalMap": "/levels/Industrial/art/shapes/trees/trees_italy/t_cork_oak_trunk_nm.normal.png",
-          "roughnessMap": "/levels/Industrial/art/shapes/trees/trees_italy/t_cork_oak_trunk_r.data.png"
+          "normalMap": "/assets/materials/tree/cork_oak/t_cork_oak_trunk/t_cork_oak_trunk_nm.normal.png",
+          "normalMapStrength": 1.5,
+          "roughnessMap": "/assets/materials/tree/cork_oak/t_cork_oak_trunk/t_cork_oak_trunk_r.data.png"
         },
-        {},
-        {},
-        {}
+        {
+          "detailBaseColorMapStrength": null,
+          "detailScale": null,
+          "normalMapStrength": null
+        },
+        {
+          "detailBaseColorMapStrength": null,
+          "detailScale": null,
+          "normalMapStrength": null
+        },
+        {
+          "detailBaseColorMapStrength": null,
+          "detailScale": null,
+          "normalMapStrength": null
+        }
       ],
       "alphaRef": 85,
       "annotation": "NATURE",
@@ -1006,109 +1374,40 @@
       "translucentBlendOp": "None",
       "version": 1.5
     },
-    "fluffy": {
-      "Stages": [
-        {
-          "ambientOcclusionMap": "/levels/Industrial/art/shapes/trees/trees_italy/t_fluffy_ao.data.png",
-          "baseColorMap": "/levels/Industrial/art/shapes/trees/trees_italy/t_fluffy_b.color.png",
-          "normalMap": "/levels/Industrial/art/shapes/trees/trees_italy/t_fluffy_nm.normal.png",
-          "opacityMap": "/levels/Industrial/art/shapes/trees/trees_italy/t_fluffy_o.data.png",
-          "roughnessMap": "/levels/Industrial/art/shapes/trees/trees_italy/t_fluffy_r.data.png"
-        },
-        {},
-        {},
-        {}
-      ],
-      "alphaRef": 84,
-      "alphaTest": true,
-      "annotation": "NATURE",
-      "class": "Material",
-      "doubleSided": true,
-      "mapTo": "fluffy",
-      "materialTag0": "beamng",
-      "materialTag1": "vegetation",
-      "materialTag2": "Natural",
-      "name": "fluffy",
-      "persistentId": "2b234477-6456-457f-9892-3eca0dc20716",
-      "version": 1.5
-    },
-    "generibush_leaves": {
-      "Stages": [
-        {
-          "ambientOcclusionMap": "/levels/Industrial/art/shapes/trees/trees_italy/t_generic_bush_ao.data.png",
-          "baseColorFactor": [
-            1,
-            0.999989986,
-            0.999989986,
-            1
-          ],
-          "baseColorMap": "/levels/Industrial/art/shapes/trees/trees_italy/t_generic_bush_b.color.png",
-          "normalMap": "/levels/Industrial/art/shapes/trees/trees_italy/t_generic_bush_nm.normal.png",
-          "opacityMap": "/levels/Industrial/art/shapes/trees/trees_italy/t_generic_bush_o.data.png",
-          "roughnessMap": "/levels/Industrial/art/shapes/trees/trees_italy/t_generic_bush_r.data.png"
-        },
-        {},
-        {},
-        {}
-      ],
-      "alphaRef": 84,
-      "alphaTest": true,
-      "annotation": "NATURE",
-      "class": "Material",
-      "doubleSided": true,
-      "mapTo": "generibush_leaves",
-      "materialTag0": "beamng",
-      "materialTag1": "vegetation",
-      "materialTag2": "Natural",
-      "name": "generibush_leaves",
-      "persistentId": "7c594c09-94d1-45ca-9e30-2c12d24652d4",
-      "version": 1.5
-    },
-    "holm_oak": {
-      "Stages": [
-        {
-          "ambientOcclusionMap": "/levels/Industrial/art/shapes/trees/trees_italy/t_holm_oak_ao.data.png",
-          "baseColorMap": "/levels/Industrial/art/shapes/trees/trees_italy/t_holm_oak_b.color.png",
-          "normalMap": "/levels/Industrial/art/shapes/trees/trees_italy/t_holm_oak_nm.normal.png",
-          "opacityMap": "/levels/Industrial/art/shapes/trees/trees_italy/t_holm_oak_o.data.png",
-          "pixelSpecular": true,
-          "roughnessFactor": 1,
-          "roughnessMap": "/levels/Industrial/art/shapes/trees/trees_italy/t_holm_oak_r.data.png"
-        },
-        {},
-        {},
-        {}
-      ],
-      "alphaRef": 85,
-      "alphaTest": true,
-      "annotation": "NATURE",
-      "class": "Material",
-      "doubleSided": true,
-      "mapTo": "holm_oak",
-      "materialTag0": "beamng",
-      "materialTag1": "vegetation",
-      "materialTag2": "Natural",
-      "name": "holm_oak",
-      "persistentId": "13be1f48-941a-4c2f-9b86-803fbe4f1840",
-      "version": 1.5
-    },
     "holm_oak_branches": {
       "Stages": [
         {
-          "ambientOcclusionMap": "/levels/Industrial/art/shapes/trees/trees_italy/t_holm_oak_branches_ao.data.png",
-          "baseColorMap": "/levels/Industrial/art/shapes/trees/trees_italy/t_holm_oak_branches_b.color.png",
-          "normalMap": "/levels/Industrial/art/shapes/trees/trees_italy/t_holm_oak_branches_nm.normal.png",
-          "opacityMap": "/levels/Industrial/art/shapes/trees/trees_italy/t_holm_oak_branches_o.data.png",
-          "roughnessMap": "/levels/Industrial/art/shapes/trees/trees_italy/t_holm_oak_branches_r.data.png"
+          "ambientOcclusionMap": "/assets/materials/tree/holm_oak/t_holm_oak_branches/t_holm_oak_branches_ao.data.png",
+          "baseColorMap": "/assets/materials/tree/holm_oak/t_holm_oak_branches/t_holm_oak_branches_b.color.png",
+          "detailNormalMap": "/assets/materials/tree/cork_oak/t_cork_oak_trunk/t_cork_oak_trunk_nm.normal.png",
+          "detailNormalMapStrength": 3,
+          "detailScale": [
+            2,
+            4
+          ],
+          "normalMap": "/assets/materials/tree/holm_oak/t_holm_oak_branches/t_holm_oak_branches_nm.normal.png",
+          "opacityMap": "/assets/materials/tree/holm_oak/t_holm_oak_branches/t_holm_oak_branches_o.data.png",
+          "roughnessMap": "/assets/materials/tree/holm_oak/t_holm_oak_branches/t_holm_oak_branches_r.data.png"
         },
-        {},
-        {},
-        {}
+        {
+          "detailNormalMapStrength": null,
+          "detailScale": null
+        },
+        {
+          "detailNormalMapStrength": null,
+          "detailScale": null
+        },
+        {
+          "detailNormalMapStrength": null,
+          "detailScale": null
+        }
       ],
-      "alphaRef": 100,
+      "alphaRef": 70,
       "alphaTest": true,
       "annotation": "NATURE",
       "class": "Material",
+      "doubleSided": true,
+      "invertBackFaceNormals": true,
       "mapTo": "holm_oak_branches",
       "materialTag0": "beamng",
       "materialTag1": "vegetation",
@@ -1116,37 +1415,8 @@
       "name": "holm_oak_branches",
       "persistentId": "4a22acc4-61c7-4767-9174-cd83c9996e3f",
       "specularStrength0": "0.490196",
-      "version": 1.5
-    },
-    "holm_oak_trunk": {
-      "Stages": [
-        {
-          "ambientOcclusionMap": "/levels/industrial/art/shapes/trees/trees_italy/t_holm_oak_trunk_ao.data.png",
-          "baseColorFactor": [
-            1,
-            0.999994993,
-            0.999989986,
-            1
-          ],
-          "baseColorMap": "/levels/industrial/art/shapes/trees/trees_italy/t_holm_oak_trunk_b.color.png",
-          "normalMap": "/levels/industrial/art/shapes/trees/trees_italy/t_holm_oak_trunk_nm.normal.png",
-          "roughnessMap": "/levels/industrial/art/shapes/trees/trees_italy/t_holm_oak_trunk_r.data.png"
-        },
-        {},
-        {},
-        {}
-      ],
-      "alphaRef": 85,
-      "annotation": "NATURE",
-      "class": "Material",
-      "doubleSided": true,
-      "groundType": "WOOD",
-      "mapTo": "holm_oak_trunk",
-      "materialTag0": "beamng",
-      "materialTag1": "vegetation",
-      "materialTag2": "Natural",
-      "name": "holm_oak_trunk",
-      "persistentId": "8d979c08-ecf1-4bc1-b980-d4ded72834a7",
+      "subSurface": true,
+      "subSurfaceIntensity": 0.00999999978,
       "version": 1.5
     },
     "leaves_strong": {
@@ -1156,58 +1426,61 @@
         {},
         {}
       ],
+      "annotation": "NATURE",
       "class": "Material",
-      "groundDepth": 0.6000000238418579,
+      "groundDepth": 0.600000024,
       "groundType": "leaves_strong",
       "mapTo": "leaves_strong",
       "name": "leaves_strong",
-      "persistentId": "a9095ba0-3419-4cef-abb5-6ff61acd08bd"
+      "persistentId": "7e8157dc-940e-4435-937b-e934d4e42892"
     },
-    "leaves_thin": {
-      "Stages": [
-        {},
-        {},
-        {},
-        {}
-      ],
-      "class": "Material",
-      "groundDepth": 1,
-      "groundType": "leaves_thin",
-      "mapTo": "leaves_thin",
-      "name": "leaves_thin",
-      "persistentId": "49a3f66b-12a0-496a-b6c1-44d3de52e9d5"
-    },
-    "tall_plant_vegetation": {
+    "lod_vertcol": {
       "Stages": [
         {
-          "ambientOcclusionMap": "/levels/Industrial/art/shapes/trees/trees_italy/t_tall_plant_ao.data.png",
-          "baseColorMap": "/levels/Industrial/art/shapes/trees/trees_italy/t_tall_plant_b.color.png",
-          "normalMap": "/levels/Industrial/art/shapes/trees/trees_italy/t_tall_plant_nm.normal.png",
-          "opacityMap": "/levels/Industrial/art/shapes/trees/trees_italy/t_tall_plant_o.data.png",
-          "roughnessMap": "/levels/Industrial/art/shapes/trees/trees_italy/t_tall_plant_r.data.png",
-          "specular": [
-            0.988234997,
-            0.988234997,
-            0.988234997,
-            1
-          ]
+          "vertColor": true
+        },
+        {
+          "vertColor": null
+        },
+        {
+          "vertColor": null
+        },
+        {
+          "vertColor": null
+        }
+      ],
+      "class": "Material",
+      "groundType": "ASPHALT_OLD",
+      "mapTo": "lod_vertcol",
+      "materialTag0": "beamng",
+      "materialTag1": "building",
+      "name": "lod_vertcol",
+      "persistentId": "3122f280-003f-419e-ba18-ba85683d01ed",
+      "translucentBlendOp": "None"
+    },
+    "m_cork_oak_distant": {
+      "Stages": [
+        {
+          "ambientOcclusionMap": "/assets/materials/tree/cork_oak/t_cork_oak_distant/t_cork_oak_distant_ao.data.png",
+          "baseColorMap": "/assets/materials/tree/cork_oak/t_cork_oak_ind_distant/t_cork_oak_ind_distant_b.color.png",
+          "normalMap": "/assets/materials/tree/cork_oak/t_cork_oak_distant/t_cork_oak_distant_nm.normal.png",
+          "opacityMap": "/assets/materials/tree/cork_oak/t_cork_oak_distant/t_cork_oak_distant_o.data.png",
+          "roughnessMap": "/assets/materials/tree/cork_oak/t_cork_oak_distant/t_cork_oak_distant_r.data.png"
         },
         {},
         {},
         {}
       ],
-      "alphaRef": 84,
+      "alphaRef": 75,
       "alphaTest": true,
-      "annotation": "NATURE",
       "class": "Material",
       "doubleSided": true,
-      "mapTo": "tall_plant_vegetation",
-      "materialTag0": "beamng",
-      "materialTag1": "vegetation",
-      "materialTag2": "Natural",
-      "name": "tall_plant_vegetation",
-      "persistentId": "e36fab8f-056f-4955-b44d-7a4e055c0172",
-      "specularStrength0": "0.784314",
+      "dynamicCubemap": true,
+      "invertBackFaceNormals": true,
+      "mapTo": "m_cork_oak_distant",
+      "name": "m_cork_oak_distant",
+      "subSurface": true,
+      "subSurfaceIntensity": 1,
       "version": 1.5
     }
   },
@@ -1215,21 +1488,23 @@
     "Oak_bark_01": {
       "Stages": [
         {
-          "ambientOcclusionMap": "/levels/italy/art/shapes/trees/trees_italy/t_oak_bark_ao.data.png",
+          "ambientOcclusionMap": "/assets/materials/tree/oak/t_oak_bark/t_oak_bark_ao.data.png",
           "baseColorFactor": [
             0.862744987,
             0.862744987,
             0.862744987,
             1
           ],
-          "baseColorMap": "/levels/italy/art/shapes/trees/trees_italy/t_oak_bark_b.color.png",
-          "detailNormalMapStrength": 0.5,
+          "baseColorMap": "/assets/materials/tree/oak/t_oak_bark/t_oak_bark_b.color.png",
+          "detailBaseColorMapStrength": 1.5,
+          "detailMap": "/assets/materials/tree/tropical/tro_tree_1_trunk/t_tropical_bark_variation_1_detail.data.png",
+          "detailNormalMap": "/assets/materials/tree/tropical/tro_tree_1_trunk/t_tro_bark_01_detail_nm.normal.png",
           "detailScale": [
-            1,
-            1
+            0.100000001,
+            0.5
           ],
-          "normalMap": "/levels/italy/art/shapes/trees/trees_italy/t_oak_bark_nm.normal.png",
-          "roughnessMap": "/levels/italy/art/shapes/trees/trees_italy/t_oak_bark_r.data.png"
+          "normalMap": "/assets/materials/tree/oak/t_oak_bark/t_oak_bark_nm.normal.png",
+          "roughnessMap": "/assets/materials/tree/oak/t_oak_bark/t_oak_bark_r.data.png"
         },
         {},
         {},
@@ -1249,251 +1524,125 @@
       "specularStrength0": "0.392157",
       "version": 1.5
     },
-    "SimplygonCastMaterial.001": {
-      "Stages": [
-        {
-          "ambientOcclusionMap": "/levels/italy/art/shapes/trees/trees_italy/t_cork_oak_ao.data.png",
-          "baseColorMap": "/levels/italy/art/shapes/trees/trees_italy/t_cork_oak_b.color.png",
-          "normalMap": "/levels/italy/art/shapes/trees/trees_italy/t_cork_oak_nm.normal.png",
-          "opacityMap": "/levels/italy/art/shapes/trees/trees_italy/t_cork_oak_o.data.png",
-          "roughnessMap": "/levels/italy/art/shapes/trees/trees_italy/t_cork_oak_r.data.png"
-        },
-        {},
-        {},
-        {}
-      ],
-      "alphaRef": 68,
-      "alphaTest": true,
-      "annotation": "NATURE",
-      "class": "Material",
-      "doubleSided": true,
-      "groundType": "WOOD",
-      "mapTo": "SimplygonCastMaterial.001",
-      "materialTag0": "beamng",
-      "materialTag1": "vegetation",
-      "materialTag2": "Natural",
-      "name": "SimplygonCastMaterial.001",
-      "persistentId": "c7c521a2-cac1-4b93-846d-64e7630ba883",
-      "version": 1.5
-    },
-    "cork_oak": {
-      "Stages": [
-        {
-          "ambientOcclusionMap": "/levels/italy/art/shapes/trees/trees_italy/t_cork_oak_ao.data.png",
-          "baseColorMap": "/levels/italy/art/shapes/trees/trees_italy/t_cork_oak_b.color.png",
-          "normalMap": "/levels/italy/art/shapes/trees/trees_italy/t_cork_oak_nm.normal.png",
-          "opacityMap": "/levels/italy/art/shapes/trees/trees_italy/t_cork_oak_o.data.png",
-          "roughnessMap": "/levels/italy/art/shapes/trees/trees_italy/t_cork_oak_r.data.png"
-        },
-        {},
-        {},
-        {}
-      ],
-      "alphaRef": 75,
-      "alphaTest": true,
-      "annotation": "NATURE",
-      "class": "Material",
-      "doubleSided": true,
-      "groundType": "WOOD",
-      "mapTo": "cork_oak",
-      "materialTag0": "beamng",
-      "materialTag1": "vegetation",
-      "materialTag2": "Natural",
-      "name": "cork_oak",
-      "persistentId": "c7c521a2-cac1-4b93-846d-64e7630ba883",
-      "version": 1.5
-    },
-    "cork_oak_trunk": {
-      "Stages": [
-        {
-          "ambientOcclusionMap": "/levels/italy/art/shapes/trees/trees_italy/t_cork_oak_trunk_ao.data.png",
-          "baseColorMap": "/levels/italy/art/shapes/trees/trees_italy/t_cork_oak_trunk_b.color.png",
-          "detailScale": [
-            0.200000003,
-            0.200000003
-          ],
-          "normalMap": "/levels/italy/art/shapes/trees/trees_italy/t_cork_oak_trunk_nm.normal.png",
-          "roughnessMap": "/levels/italy/art/shapes/trees/trees_italy/t_cork_oak_trunk_r.data.png"
-        },
-        {},
-        {},
-        {}
-      ],
-      "alphaRef": 85,
-      "annotation": "NATURE",
-      "class": "Material",
-      "groundType": "WOOD",
-      "mapTo": "cork_oak_trunk",
-      "materialTag0": "beamng",
-      "materialTag1": "vegetation",
-      "materialTag2": "Natural",
-      "name": "cork_oak_trunk",
-      "persistentId": "cd93bb97-6110-4371-ba67-9a48bca824d3",
-      "version": 1.5
-    },
     "cypress": {
       "Stages": [
         {
-          "colorMap": "/levels/italy/art/shapes/trees/trees_italy/t_cypress_leaves_d.color.png",
-          "minnaertConstant": -2,
-          "normalMap": "/levels/italy/art/shapes/trees/trees_italy/t_cypress_leaves_nm.normal.png",
+          "ambientOcclusionMap": "/assets/materials/tree/cypress/t_cypress_leaves/t_cypress_leaves_ao.data.png",
+          "baseColorFactor": [
+            0.996078014,
+            0.996078014,
+            0.996078014,
+            1
+          ],
+          "baseColorMap": "/assets/materials/tree/cypress/t_cypress_leaves/t_cypress_leaves_b.color.png",
+          "normalMap": "/assets/materials/tree/cypress/t_cypress_leaves/t_cypress_leaves_nm.normal.png",
+          "opacityMap": "/assets/materials/tree/cypress/t_cypress_leaves/t_cypress_leaves_o.data.png",
           "pixelSpecular": true,
-          "specularMap": "/levels/italy/art/shapes/trees/trees_italy/t_cypress_leaves_s.color.png",
-          "useAnisotropic": true
+          "roughnessMap": "/assets/materials/tree/cypress/t_cypress_leaves/t_cypress_leaves_r.data.png",
+          "specular": [
+            0.992156982,
+            0.992156982,
+            0.992156982,
+            1
+          ]
         },
         {
-          "minnaertConstant": null,
+          "baseColorFactor": null,
           "pixelSpecular": null,
-          "useAnisotropic": null
+          "specular": null
         },
         {
-          "minnaertConstant": null,
+          "baseColorFactor": null,
           "pixelSpecular": null,
-          "useAnisotropic": null
+          "specular": null
         },
         {
-          "minnaertConstant": null,
+          "baseColorFactor": null,
           "pixelSpecular": null,
-          "useAnisotropic": null
+          "specular": null
         }
       ],
-      "alphaRef": 75,
+      "alphaRef": 100,
       "alphaTest": true,
       "annotation": "NATURE",
       "class": "Material",
       "doubleSided": true,
+      "invertBackFaceNormals": true,
       "mapTo": "cypress",
       "materialTag0": "beamng",
       "materialTag1": "vegetation",
       "materialTag2": "Natural",
-      "materialTag3": "Natural",
+      "materialTag3": "vegetation",
       "name": "cypress",
       "persistentId": "9db1e299-b9ca-4e8e-9e86-1dd51386c157",
-      "translucentBlendOp": "None"
-    },
-    "fluffy": {
-      "Stages": [
-        {
-          "ambientOcclusionMap": "/levels/italy/art/shapes/trees/trees_italy/t_fluffy_ao.data.png",
-          "baseColorMap": "/levels/italy/art/shapes/trees/trees_italy/t_fluffy_b.color.png",
-          "normalMap": "/levels/italy/art/shapes/trees/trees_italy/t_fluffy_nm.normal.png",
-          "opacityMap": "/levels/italy/art/shapes/trees/trees_italy/t_fluffy_o.data.png",
-          "roughnessMap": "/levels/italy/art/shapes/trees/trees_italy/t_fluffy_r.data.png"
-        },
-        {},
-        {},
-        {}
-      ],
-      "alphaRef": 84,
-      "alphaTest": true,
-      "annotation": "NATURE",
-      "class": "Material",
-      "doubleSided": true,
-      "mapTo": "fluffy",
-      "materialTag0": "beamng",
-      "materialTag1": "vegetation",
-      "materialTag2": "Natural",
-      "name": "fluffy",
-      "persistentId": "2b234477-6456-457f-9892-3eca0dc20716",
+      "subSurface": true,
+      "subSurfaceIntensity": 1,
+      "translucentBlendOp": "None",
       "version": 1.5
     },
     "generibush_leaves": {
       "Stages": [
         {
-          "ambientOcclusionMap": "/levels/italy/art/shapes/trees/trees_italy/t_generic_bush_ao.data.png",
-          "baseColorMap": "/levels/italy/art/shapes/trees/trees_italy/t_generic_bush_b.color.png",
-          "normalMap": "/levels/italy/art/shapes/trees/trees_italy/t_generic_bush_nm.normal.png",
-          "opacityMap": "/levels/italy/art/shapes/trees/trees_italy/t_generic_bush_o.data.png",
-          "roughnessMap": "/levels/italy/art/shapes/trees/trees_italy/t_generic_bush_r.data.png"
+          "ambientOcclusionMap": "/assets/materials/foliage/bush/t_generibush_leaves/t_generic_bush_ao.data.png",
+          "baseColorMap": "/assets/materials/foliage/bush/t_generibush_leaves/t_generic_bush_b.color.png",
+          "normalMap": "/assets/materials/foliage/bush/t_generibush_leaves/t_generic_bush_nm.normal.png",
+          "opacityMap": "/assets/materials/foliage/bush/t_generibush_leaves/t_generic_bush_o.data.png",
+          "roughnessMap": "/assets/materials/foliage/bush/t_generibush_leaves/t_generic_bush_r.data.png"
         },
         {},
         {},
         {}
       ],
-      "alphaRef": 84,
+      "alphaRef": 90,
       "alphaTest": true,
       "annotation": "NATURE",
       "class": "Material",
       "doubleSided": true,
+      "invertBackFaceNormals": true,
       "mapTo": "generibush_leaves",
       "materialTag0": "beamng",
       "materialTag1": "vegetation",
       "materialTag2": "Natural",
       "name": "generibush_leaves",
       "persistentId": "7c594c09-94d1-45ca-9e30-2c12d24652d4",
-      "version": 1.5
-    },
-    "grape": {
-      "Stages": [
-        {
-          "ambientOcclusionMap": "/levels/italy/art/shapes/trees/trees_italy/t_grape_vine_ao.data.png",
-          "baseColorMap": "/levels/italy/art/shapes/trees/trees_italy/t_grape_vine_b.color.png",
-          "normalMap": "/levels/italy/art/shapes/trees/trees_italy/t_grape_vine_nm.normal.png",
-          "opacityMap": "/levels/italy/art/shapes/trees/trees_italy/t_grape_vine_o.data.png",
-          "pixelSpecular": true,
-          "roughnessMap": "/levels/italy/art/shapes/trees/trees_italy/t_grape_vine_r.data.png"
-        },
-        {},
-        {},
-        {}
-      ],
-      "alphaRef": 100,
-      "alphaTest": true,
-      "annotation": "NATURE",
-      "class": "Material",
-      "doubleSided": true,
-      "mapTo": "grape",
-      "materialTag0": "beamng",
-      "materialTag1": "vegetation",
-      "materialTag2": "Natural",
-      "name": "grape",
-      "persistentId": "1b343bde-9f79-4ace-bf07-8d72cc05963b",
-      "version": 1.5
-    },
-    "holm_oak": {
-      "Stages": [
-        {
-          "ambientOcclusionMap": "/levels/italy/art/shapes/trees/trees_italy/t_holm_oak_ao.data.png",
-          "baseColorMap": "/levels/italy/art/shapes/trees/trees_italy/t_holm_oak_b.color.png",
-          "normalMap": "/levels/italy/art/shapes/trees/trees_italy/t_holm_oak_nm.normal.png",
-          "opacityMap": "/levels/italy/art/shapes/trees/trees_italy/t_holm_oak_o.data.png",
-          "pixelSpecular": true,
-          "roughnessMap": "/levels/italy/art/shapes/trees/trees_italy/t_holm_oak_r.data.png"
-        },
-        {},
-        {},
-        {}
-      ],
-      "alphaRef": 75,
-      "alphaTest": true,
-      "annotation": "NATURE",
-      "class": "Material",
-      "doubleSided": true,
-      "mapTo": "holm_oak",
-      "materialTag0": "beamng",
-      "materialTag1": "vegetation",
-      "materialTag2": "Natural",
-      "name": "holm_oak",
-      "persistentId": "13be1f48-941a-4c2f-9b86-803fbe4f1840",
+      "subSurface": true,
+      "subSurfaceIntensity": 1,
       "version": 1.5
     },
     "holm_oak_branches": {
       "Stages": [
         {
-          "ambientOcclusionMap": "/levels/italy/art/shapes/trees/trees_italy/t_holm_oak_branches_ao.data.png",
-          "baseColorMap": "/levels/italy/art/shapes/trees/trees_italy/t_holm_oak_branches_b.color.png",
-          "normalMap": "/levels/italy/art/shapes/trees/trees_italy/t_holm_oak_branches_nm.normal.png",
-          "opacityMap": "/levels/italy/art/shapes/trees/trees_italy/t_holm_oak_branches_o.data.png",
-          "roughnessMap": "/levels/italy/art/shapes/trees/trees_italy/t_holm_oak_branches_r.data.png"
+          "ambientOcclusionMap": "/assets/materials/tree/holm_oak/t_holm_oak_branches/t_holm_oak_branches_ao.data.png",
+          "baseColorMap": "/assets/materials/tree/holm_oak/t_holm_oak_branches/t_holm_oak_branches_b.color.png",
+          "detailNormalMap": "/assets/materials/tree/cork_oak/t_cork_oak_trunk/t_cork_oak_trunk_nm.normal.png",
+          "detailNormalMapStrength": 3,
+          "detailScale": [
+            2,
+            4
+          ],
+          "normalMap": "/assets/materials/tree/holm_oak/t_holm_oak_branches/t_holm_oak_branches_nm.normal.png",
+          "opacityMap": "/assets/materials/tree/holm_oak/t_holm_oak_branches/t_holm_oak_branches_o.data.png",
+          "roughnessMap": "/assets/materials/tree/holm_oak/t_holm_oak_branches/t_holm_oak_branches_r.data.png"
         },
-        {},
-        {},
-        {}
+        {
+          "detailNormalMapStrength": null,
+          "detailScale": null
+        },
+        {
+          "detailNormalMapStrength": null,
+          "detailScale": null
+        },
+        {
+          "detailNormalMapStrength": null,
+          "detailScale": null
+        }
       ],
-      "alphaRef": 100,
+      "alphaRef": 70,
       "alphaTest": true,
       "annotation": "NATURE",
       "class": "Material",
+      "doubleSided": true,
+      "invertBackFaceNormals": true,
       "mapTo": "holm_oak_branches",
       "materialTag0": "beamng",
       "materialTag1": "vegetation",
@@ -1501,87 +1650,8 @@
       "name": "holm_oak_branches",
       "persistentId": "4a22acc4-61c7-4767-9174-cd83c9996e3f",
       "specularStrength0": "0.490196",
-      "version": 1.5
-    },
-    "holm_oak_trunk": {
-      "Stages": [
-        {
-          "ambientOcclusionMap": "/levels/italy/art/shapes/trees/trees_italy/t_holm_oak_bark_ao.data.png",
-          "baseColorFactor": [
-            1,
-            0.999989986,
-            0.999989986,
-            1
-          ],
-          "baseColorMap": "/levels/italy/art/shapes/trees/trees_italy/t_holm_oak_bark_b.color.png",
-          "normalMap": "/levels/italy/art/shapes/trees/trees_italy/t_holm_oak_bark_nm.normal.png",
-          "roughnessMap": "/levels/italy/art/shapes/trees/trees_italy/t_holm_oak_bark_r.data.png"
-        },
-        {},
-        {},
-        {}
-      ],
-      "alphaRef": 85,
-      "annotation": "NATURE",
-      "class": "Material",
-      "groundType": "WOOD",
-      "mapTo": "holm_oak_trunk",
-      "materialTag0": "beamng",
-      "materialTag1": "vegetation",
-      "materialTag2": "Natural",
-      "name": "holm_oak_trunk",
-      "persistentId": "b0d7b054-4f5d-4079-a6f2-03a972383068",
-      "version": 1.5
-    },
-    "italy_palm_1_foliage": {
-      "Stages": [
-        {
-          "ambientOcclusionMap": "/levels/italy/art/shapes/trees/trees_italy/t_fan_palm_ao.data.png",
-          "baseColorMap": "/levels/italy/art/shapes/trees/trees_italy/t_fan_palm_b.color.png",
-          "normalMap": "/levels/italy/art/shapes/trees/trees_italy/t_fan_palm_nm.normal.png",
-          "opacityMap": "/levels/italy/art/shapes/trees/trees_italy/t_fan_palm_o.data.png",
-          "pixelSpecular": true,
-          "roughnessMap": "/levels/italy/art/shapes/trees/trees_italy/t_fan_palm_r.data.png"
-        },
-        {},
-        {},
-        {}
-      ],
-      "alphaRef": 100,
-      "alphaTest": true,
-      "annotation": "NATURE",
-      "class": "Material",
-      "doubleSided": true,
-      "mapTo": "italy_palm_1_foliage",
-      "materialTag0": "beamng",
-      "materialTag1": "vegetation",
-      "materialTag2": "Natural",
-      "name": "italy_palm_1_foliage",
-      "persistentId": "ac0e844d-476e-4f02-bfa3-742f0da01a77",
-      "version": 1.5
-    },
-    "italy_palm_1_trunk": {
-      "Stages": [
-        {
-          "ambientOcclusionMap": "/levels/italy/art/shapes/trees/trees_italy/t_fan_palm_trunk_ao.data.png",
-          "baseColorMap": "/levels/italy/art/shapes/trees/trees_italy/t_fan_palm_trunk_b.color.png",
-          "normalMap": "/levels/italy/art/shapes/trees/trees_italy/t_fan_palm_trunk_nm.normal.png",
-          "roughnessMap": "/levels/italy/art/shapes/trees/trees_italy/t_fan_palm_trunk_r.data.png"
-        },
-        {},
-        {},
-        {}
-      ],
-      "alphaRef": 85,
-      "annotation": "NATURE",
-      "class": "Material",
-      "groundType": "WOOD",
-      "mapTo": "italy_palm_1_trunk",
-      "materialTag0": "beamng",
-      "materialTag1": "vegetation",
-      "materialTag2": "Natural",
-      "name": "italy_palm_1_trunk",
-      "persistentId": "3f342584-7728-4880-8262-355551202095",
+      "subSurface": true,
+      "subSurfaceIntensity": 0.00999999978,
       "version": 1.5
     },
     "italy_rocksface": {
@@ -1607,27 +1677,9 @@
           "roughnessMap": "/levels/italy/art/shapes/rocks/t_italy_rocksface_r.data.png",
           "vertColor": true
         },
-        {
-          "baseColorFactor": null,
-          "detailBaseColorMapStrength": null,
-          "detailNormalMapStrength": null,
-          "detailScale": null,
-          "vertColor": null
-        },
-        {
-          "baseColorFactor": null,
-          "detailBaseColorMapStrength": null,
-          "detailNormalMapStrength": null,
-          "detailScale": null,
-          "vertColor": null
-        },
-        {
-          "baseColorFactor": null,
-          "detailBaseColorMapStrength": null,
-          "detailNormalMapStrength": null,
-          "detailScale": null,
-          "vertColor": null
-        }
+        {},
+        {},
+        {}
       ],
       "annotation": "ROCK",
       "class": "Material",
@@ -1636,66 +1688,6 @@
       "materialTag0": "beamng",
       "materialTag1": "Natural",
       "name": "italy_rocksface",
-      "persistentId": "b0060c1a-6687-4bf1-8e8f-860ab174aeac",
-      "translucentBlendOp": "None",
-      "version": 1.5
-    },
-    "italy_rocksface_white": {
-      "Stages": [
-        {
-          "ambientOcclusionMap": "/levels/italy/art/shapes/rocks/t_italy_rocksface_ao.data.png",
-          "baseColorFactor": [
-            0.933333397,
-            0.933333397,
-            0.933333397,
-            0.00800000038
-          ],
-          "baseColorMap": "/levels/italy/art/shapes/rocks/t_marble_cut_b.color.png",
-          "detailBaseColorMapStrength": 0.25,
-          "detailMap": "/levels/italy/art/shapes/rocks/t_italy_rocksface_detail_b.data.png",
-          "detailNormalMap": "/levels/italy/art/shapes/rocks/t_italy_rocksface_detail_nm.normal.png",
-          "detailNormalMapStrength": 1.5,
-          "detailScale": [
-            22,
-            22
-          ],
-          "normalMap": "/levels/italy/art/shapes/rocks/t_italy_rocksface_nm.normal.png",
-          "normalMapStrength": 0.5,
-          "roughnessMap": "/levels/italy/art/shapes/rocks/t_italy_rocksface_r.data.png",
-          "vertColor": true
-        },
-        {
-          "baseColorFactor": null,
-          "detailBaseColorMapStrength": null,
-          "detailNormalMapStrength": null,
-          "detailScale": null,
-          "normalMapStrength": null,
-          "vertColor": null
-        },
-        {
-          "baseColorFactor": null,
-          "detailBaseColorMapStrength": null,
-          "detailNormalMapStrength": null,
-          "detailScale": null,
-          "normalMapStrength": null,
-          "vertColor": null
-        },
-        {
-          "baseColorFactor": null,
-          "detailBaseColorMapStrength": null,
-          "detailNormalMapStrength": null,
-          "detailScale": null,
-          "normalMapStrength": null,
-          "vertColor": null
-        }
-      ],
-      "annotation": "ROCK",
-      "class": "Material",
-      "groundType": "ROCK",
-      "mapTo": "italy_rocksface_white",
-      "materialTag0": "beamng",
-      "materialTag1": "Natural",
-      "name": "italy_rocksface_white",
       "persistentId": "b0060c1a-6687-4bf1-8e8f-860ab174aeac",
       "translucentBlendOp": "None",
       "version": 1.5
@@ -1713,7 +1705,7 @@
       "groundType": "leaves_strong",
       "mapTo": "leaves_strong",
       "name": "leaves_strong",
-      "persistentId": "9cc05c64-9d9f-476a-8847-70a51f40e92a"
+      "persistentId": "7e8157dc-940e-4435-937b-e934d4e42892"
     },
     "leaves_thin": {
       "Stages": [
@@ -1722,207 +1714,45 @@
         {},
         {}
       ],
-      "annotation": "NATURE",
       "class": "Material",
       "groundDepth": 1,
       "groundType": "leaves_thin",
       "mapTo": "leaves_thin",
       "name": "leaves_thin",
-      "persistentId": "8c4a4a97-e0b5-4ffb-9429-bab0f8e4969e"
+      "persistentId": "859cdbd4-7a36-4613-9344-b50a1d8745ea"
     },
-    "m_italy_merged_foliage": {
+    "lod_vertcol": {
       "Stages": [
         {
-          "colorMap": "/levels/italy/art/shapes/trees/trees_italy/t_italy_merged_foliage_d.color.png",
-          "normalMap": "/levels/italy/art/shapes/trees/trees_italy/t_italy_merged_foliage_nm.normal.png",
-          "specularMap": "/levels/italy/art/shapes/trees/trees_italy/t_italy_merged_foliage_s.color.png",
-          "useAnisotropic": true
-        },
-        {
-          "useAnisotropic": null
-        },
-        {
-          "useAnisotropic": null
-        },
-        {
-          "useAnisotropic": null
-        }
-      ],
-      "alphaRef": 80,
-      "alphaTest": true,
-      "class": "Material",
-      "doubleSided": true,
-      "mapTo": "m_italy_merged_foliage",
-      "name": "m_italy_merged_foliage",
-      "translucentZWrite": true
-    },
-    "m_marble_cut": {
-      "Stages": [
-        {
-          "ambientOcclusionMap": "/assets/materials/tileable/stone/m_marble_cut/t_marble_cut_ao.data.png",
-          "ambientOcclusionMapUseUV": null,
-          "baseColorMap": "/assets/materials/tileable/stone/m_marble_cut/t_marble_cut_b.color.png",
-          "detailMap": "/assets/materials/breakup/t_marble_cut_detail/t_marble_cut_detail_detail.data.png",
-          "detailMapUseUV": null,
-          "detailNormalMap": "/assets/materials/breakup/t_marble_cut_detail/t_marble_cut_detail_nm.normal.png",
-          "detailNormalMapStrength": 0.5,
-          "detailScale": [
-            4,
-            4
-          ],
-          "diffuseMapUseUV": null,
-          "metallicMapUseUV": null,
-          "normalDetailMapUseUV": null,
-          "normalMap": "/assets/materials/tileable/stone/m_marble_cut/t_marble_cut_nm.normal.png",
-          "normalMapUseUV": null,
-          "opacityMapUseUV": null,
-          "roughnessMap": "/assets/materials/tileable/stone/m_marble_cut/t_marble_cut_r.data.png",
-          "roughnessMapUseUV": null,
           "vertColor": true
         },
         {
-          "ambientOcclusionMapUseUV": 1,
-          "baseColorMap": "/assets/materials/breakup/t_marble_breakup/t_marble_breakup_b.color.png",
-          "detailMapUseUV": 1,
-          "detailNormalMapStrength": 0,
-          "detailScale": [
-            0.300000012,
-            0.600000024
-          ],
-          "diffuseMapUseUV": 1,
-          "metallicMapUseUV": 1,
-          "normalDetailMapUseUV": 1,
-          "normalMapUseUV": 1,
-          "opacityMap": "/assets/materials/breakup/t_marble_breakup/t_marble_breakup_o.data.png",
-          "opacityMapUseUV": 1,
-          "roughnessMapUseUV": 1,
           "vertColor": null
         },
         {
-          "ambientOcclusionMapUseUV": null,
-          "detailMapUseUV": null,
-          "detailNormalMapStrength": null,
-          "detailScale": null,
-          "diffuseMapUseUV": null,
-          "metallicMapUseUV": null,
-          "normalDetailMapUseUV": null,
-          "normalMapUseUV": null,
-          "opacityMapUseUV": null,
-          "roughnessMapUseUV": null,
           "vertColor": null
         },
         {
-          "ambientOcclusionMapUseUV": null,
-          "detailMapUseUV": null,
-          "detailNormalMapStrength": null,
-          "detailScale": null,
-          "diffuseMapUseUV": null,
-          "metallicMapUseUV": null,
-          "normalDetailMapUseUV": null,
-          "normalMapUseUV": null,
-          "opacityMapUseUV": null,
-          "roughnessMapUseUV": null,
           "vertColor": null
         }
       ],
-      "activeLayers": 2,
-      "alphaRef": 0,
-      "annotation": "ROCK",
       "class": "Material",
-      "cubemap": "cubemap_italy_reflection",
-      "groundType": "ROCK",
-      "mapTo": "m_marble_cut",
+      "groundType": "ASPHALT_OLD",
+      "mapTo": "lod_vertcol",
       "materialTag0": "beamng",
-      "materialTag1": "Natural",
-      "name": "m_marble_cut",
-      "persistentId": "b0060c1a-6687-4bf1-8e8f-860ab174aeac",
-      "translucentBlendOp": "None",
-      "version": 1.5
+      "materialTag1": "building",
+      "name": "lod_vertcol",
+      "persistentId": "3122f280-003f-419e-ba18-ba85683d01ed",
+      "translucentBlendOp": "None"
     },
-    "m_marble_cut_trim": {
+    "m_cypress_distant": {
       "Stages": [
         {
-          "ambientOcclusionMap": "/assets/materials/trim/stone/m_marble_cut_trim/t_marble_cut_trim_cracks_ao.data.png",
-          "baseColorFactor": [
-            1,
-            1,
-            1,
-            0.00800000038
-          ],
-          "baseColorMap": "/assets/materials/trim/stone/m_marble_cut_trim/t_marble_cut_trim_cracks_b.color.png",
-          "detailMap": "/assets/materials/breakup/t_marble_cut_detail/t_marble_cut_detail_detail.data.png",
-          "detailNormalMap": "/assets/materials/breakup/t_marble_cut_detail/t_marble_cut_detail_nm.normal.png",
-          "detailNormalMapStrength": 2,
-          "detailScale": [
-            4,
-            4
-          ],
-          "normalMap": "/assets/materials/trim/stone/m_marble_cut_trim/t_marble_cut_trim_cracks_nm.normal.png",
-          "opacityMap": "/assets/materials/trim/stone/m_marble_cut_trim/t_marble_cut_trim_cracks_o.data.png",
-          "paletteBaseColor": false,
-          "paletteClearCoat": false,
-          "paletteClearCoatRoughness": false,
-          "paletteMetallic": false,
-          "paletteRoughness": false,
-          "roughnessMap": "/assets/materials/trim/stone/m_marble_cut_trim/t_marble_cut_trim_cracks_r.data.png",
-          "vertColor": true
-        },
-        {
-          "baseColorFactor": null,
-          "detailNormalMapStrength": null,
-          "detailScale": null,
-          "paletteBaseColor": null,
-          "paletteClearCoat": null,
-          "paletteClearCoatRoughness": null,
-          "paletteMetallic": null,
-          "paletteRoughness": null,
-          "vertColor": null
-        },
-        {
-          "baseColorFactor": null,
-          "detailNormalMapStrength": null,
-          "detailScale": null,
-          "paletteBaseColor": null,
-          "paletteClearCoat": null,
-          "paletteClearCoatRoughness": null,
-          "paletteMetallic": null,
-          "paletteRoughness": null,
-          "vertColor": null
-        },
-        {
-          "baseColorFactor": null,
-          "detailNormalMapStrength": null,
-          "detailScale": null,
-          "paletteBaseColor": null,
-          "paletteClearCoat": null,
-          "paletteClearCoatRoughness": null,
-          "paletteMetallic": null,
-          "paletteRoughness": null,
-          "vertColor": null
-        }
-      ],
-      "annotation": "ROCK",
-      "castShadows": false,
-      "class": "Material",
-      "groundType": "ROCK",
-      "mapTo": "m_marble_cut_trim",
-      "materialTag0": "beamng",
-      "materialTag1": "Natural",
-      "name": "m_marble_cut_trim",
-      "persistentId": "b0060c1a-6687-4bf1-8e8f-860ab174aeac",
-      "translucent": true,
-      "translucentRecvShadows": true,
-      "translucentZWrite": true,
-      "version": 1.5
-    },
-    "oak_leaves_01": {
-      "Stages": [
-        {
-          "ambientOcclusionMap": "/levels/italy/art/shapes/trees/trees_italy/t_oak_leaves_ao.data.png",
-          "baseColorMap": "/levels/italy/art/shapes/trees/trees_italy/t_oak_leaves_b.color.png",
-          "normalMap": "/levels/italy/art/shapes/trees/trees_italy/t_oak_leaves_nm.normal.png",
-          "opacityMap": "/levels/italy/art/shapes/trees/trees_italy/t_oak_leaves_o.data.png",
-          "roughnessMap": "/levels/italy/art/shapes/trees/trees_italy/t_oak_leaves_r.data.png"
+          "ambientOcclusionMap": "/assets/materials/tree/cypress/t_cypress_leaves_distant/t_cypress_leaves_distant_ao.data.png",
+          "baseColorMap": "/assets/materials/tree/cypress/t_cypress_leaves_distant/t_cypress_leaves_distant_b.color.png",
+          "normalMap": "/assets/materials/tree/cypress/t_cypress_leaves_distant/t_cypress_leaves_distant_nm.normal.png",
+          "opacityMap": "/assets/materials/tree/cypress/t_cypress_leaves_distant/t_cypress_leaves_distant_o.data.png",
+          "roughnessMap": "/assets/materials/tree/cypress/t_cypress_leaves_distant/t_cypress_leaves_distant_r.data.png"
         },
         {},
         {},
@@ -1930,16 +1760,298 @@
       ],
       "alphaRef": 75,
       "alphaTest": true,
+      "class": "Material",
+      "doubleSided": true,
+      "dynamicCubemap": true,
+      "invertBackFaceNormals": true,
+      "mapTo": "m_cypress_distant",
+      "name": "m_cypress_distant",
+      "subSurface": true,
+      "subSurfaceIntensity": 1,
+      "version": 1.5
+    },
+    "m_fanpalm_leaves": {
+      "Stages": [
+        {
+          "ambientOcclusionMap": "/assets/materials/tree/palm/m_fanpalm_leaves/t_fanpalm_leaves_ao.data.png",
+          "baseColorFactor": [
+            0.996078014,
+            0.996078014,
+            0.996078014,
+            1
+          ],
+          "baseColorMap": "/assets/materials/tree/palm/m_fanpalm_leaves/t_fanpalm_leaves_b.color.png",
+          "normalMap": "/assets/materials/tree/palm/m_fanpalm_leaves/t_fanpalm_leaves_nm.normal.png",
+          "opacityMap": "/assets/materials/tree/palm/m_fanpalm_leaves/t_fanpalm_leaves_o.data.png",
+          "roughnessFactor": 0.699999988,
+          "roughnessMap": "/assets/materials/tree/palm/m_fanpalm_leaves/t_fanpalm_leaves_r.data.png",
+          "specular": [
+            0.996078014,
+            0.996078014,
+            0.996078014,
+            1
+          ]
+        },
+        {
+          "baseColorFactor": null,
+          "roughnessFactor": null,
+          "specular": null
+        },
+        {
+          "baseColorFactor": null,
+          "roughnessFactor": null,
+          "specular": null
+        },
+        {
+          "baseColorFactor": null,
+          "roughnessFactor": null,
+          "specular": null
+        }
+      ],
+      "alphaRef": 80,
+      "alphaTest": true,
+      "annotation": "NATURE",
+      "class": "Material",
+      "doubleSided": true,
+      "invertBackFaceNormals": true,
+      "mapTo": "m_fanpalm_leaves",
+      "materialTag0": "beamng",
+      "materialTag1": "vegetation",
+      "materialTag2": "Natural",
+      "name": "m_fanpalm_leaves",
+      "persistentId": "60bf62bf-86c3-4c16-99e9-5c5ba10ac8a5",
+      "subSurface": true,
+      "subSurfaceIntensity": 1,
+      "version": 1.5
+    },
+    "m_fanpalm_leaves_02": {
+      "Stages": [
+        {
+          "ambientOcclusionMap": "/assets/materials/tree/palm/m_fanpalm_leaves_02/t_fanpalm_leaves_02_o.data.png",
+          "baseColorMap": "/assets/materials/tree/palm/m_fanpalm_leaves_02/t_fanpalm_leaves_02_b.color.png",
+          "normalMap": "/assets/materials/tree/palm/m_fanpalm_leaves_02/t_fanpalm_leaves_02_nm.normal.png",
+          "opacityMap": "/assets/materials/tree/palm/m_fanpalm_leaves_02/t_fanpalm_leaves_02_o.data.png",
+          "roughnessMap": "/assets/materials/tree/palm/m_fanpalm_leaves_02/t_fanpalm_leaves_02_r.data.png"
+        },
+        {},
+        {},
+        {}
+      ],
+      "alphaRef": 70,
+      "alphaTest": true,
+      "class": "Material",
+      "doubleSided": true,
+      "invertBackFaceNormals": true,
+      "mapTo": "m_fanpalm_leaves_02",
+      "name": "m_fanpalm_leaves_02",
+      "subSurface": true,
+      "version": 1.5
+    },
+    "m_oak_leaves_02_distant": {
+      "Stages": [
+        {
+          "ambientOcclusionMap": "/assets/materials/tree/oak/t_oak_leaves_distant/t_oak_leaves_distant_ao.data.png",
+          "baseColorMap": "/assets/materials/tree/oak/t_italy_oak_leaves_02_distant/t_italy_oak_leaves_02_distant_b.color.png",
+          "normalMap": "/assets/materials/tree/oak/t_oak_leaves_distant/t_oak_leaves_distant_nm.normal.png",
+          "opacityMap": "/assets/materials/tree/oak/t_oak_leaves_distant/t_oak_leaves_distant_o.data.png",
+          "roughnessMap": "/assets/materials/tree/oak/t_oak_leaves_distant/t_oak_leaves_distant_r.data.png"
+        },
+        {},
+        {},
+        {}
+      ],
+      "alphaRef": 80,
+      "alphaTest": true,
+      "class": "Material",
+      "doubleSided": true,
+      "dynamicCubemap": true,
+      "invertBackFaceNormals": true,
+      "mapTo": "m_oak_leaves_02_distant",
+      "name": "m_oak_leaves_02_distant",
+      "subSurface": true,
+      "subSurfaceIntensity": 1,
+      "version": 1.5
+    },
+    "m_oak_leaves_distant": {
+      "Stages": [
+        {
+          "ambientOcclusionMap": "/assets/materials/tree/oak/t_oak_leaves_distant/t_oak_leaves_distant_ao.data.png",
+          "baseColorMap": "/assets/materials/tree/oak/t_italy_oak_leaves_distant/t_italy_oak_leaves_distant_b.color.png",
+          "normalMap": "/assets/materials/tree/oak/t_oak_leaves_distant/t_oak_leaves_distant_nm.normal.png",
+          "opacityMap": "/assets/materials/tree/oak/t_oak_leaves_distant/t_oak_leaves_distant_o.data.png",
+          "roughnessMap": "/assets/materials/tree/oak/t_oak_leaves_distant/t_oak_leaves_distant_r.data.png"
+        },
+        {},
+        {},
+        {}
+      ],
+      "alphaRef": 80,
+      "alphaTest": true,
+      "class": "Material",
+      "doubleSided": true,
+      "dynamicCubemap": true,
+      "invertBackFaceNormals": true,
+      "mapTo": "m_oak_leaves_distant",
+      "name": "m_oak_leaves_distant",
+      "subSurface": true,
+      "subSurfaceIntensity": 1,
+      "version": 1.5
+    },
+    "m_olive_distant": {
+      "Stages": [
+        {
+          "ambientOcclusionMap": "/assets/materials/tree/olive/t_olive_distant/t_olive_distant_ao.data.png",
+          "baseColorMap": "/assets/materials/tree/olive/t_olive_distant/t_olive_distant_b.color.png",
+          "normalMap": "/assets/materials/tree/olive/t_olive_distant/t_olive_distant_nm.normal.png",
+          "opacityMap": "/assets/materials/tree/olive/t_olive_distant/t_olive_distant_o.data.png",
+          "roughnessMap": "/assets/materials/tree/olive/t_olive_distant/t_olive_distant_r.data.png"
+        },
+        {},
+        {},
+        {}
+      ],
+      "alphaRef": 80,
+      "alphaTest": true,
+      "class": "Material",
+      "doubleSided": true,
+      "dynamicCubemap": true,
+      "invertBackFaceNormals": true,
+      "mapTo": "m_olive_distant",
+      "name": "m_olive_distant",
+      "subSurface": true,
+      "subSurfaceIntensity": 1,
+      "version": 1.5
+    },
+    "m_palm_trunk": {
+      "Stages": [
+        {
+          "ambientOcclusionMap": "/assets/materials/tree/palm/m_palm_trunk/t_palm_trunk_ao.data.png",
+          "baseColorFactor": [
+            0.825949013,
+            0.825949013,
+            0.825949013,
+            1
+          ],
+          "baseColorMap": "/assets/materials/tree/palm/m_palm_trunk/t_palm_trunk_b.color.png",
+          "detailBaseColorMapStrength": 0.100000001,
+          "detailMap": "/assets/materials/tree/eucalyptus/m_eucalyptus_bark/t_eucalyptus_bark_b.color.png",
+          "detailNormalMap": "/assets/materials/tree/eucalyptus/m_eucalyptus_bark/t_eucalyptus_bark_nm.normal.png",
+          "detailNormalMapStrength": 2,
+          "normalMap": "/assets/materials/tree/palm/m_palm_trunk/t_palm_trunk_nm.normal.png",
+          "roughnessMap": "/assets/materials/tree/palm/m_palm_trunk/t_palm_trunk_r.data.png"
+        },
+        {
+          "baseColorFactor": null,
+          "detailBaseColorMapStrength": null,
+          "detailNormalMapStrength": null
+        },
+        {
+          "baseColorFactor": null,
+          "detailBaseColorMapStrength": null,
+          "detailNormalMapStrength": null
+        },
+        {
+          "baseColorFactor": null,
+          "detailBaseColorMapStrength": null,
+          "detailNormalMapStrength": null
+        }
+      ],
+      "annotation": "NATURE",
+      "class": "Material",
+      "doubleSided": true,
+      "groundType": "WOOD",
+      "mapTo": "m_palm_trunk",
+      "materialTag0": "beamng",
+      "materialTag1": "vegetation",
+      "materialTag2": "Natural",
+      "name": "m_palm_trunk",
+      "persistentId": "be07620b-94b5-4987-88b6-7b43b24f6fb6",
+      "translucentBlendOp": "None",
+      "version": 1.5
+    },
+    "m_pine_bark": {
+      "Stages": [
+        {
+          "ambientOcclusionMap": "/assets/materials/tree/t_pine/t_pine_bark/t_pine_bark_ao.data.png",
+          "baseColorMap": "/assets/materials/tree/t_pine/t_pine_bark/t_pine_bark_b.color.png",
+          "detailBaseColorMapStrength": 0.5,
+          "detailMap": "/assets/materials/tree/tropical/tro_tree_1_trunk/t_tropical_bark_variation_1_detail.data.png",
+          "detailNormalMap": "/assets/materials/tree/tropical/tro_tree_1_trunk/t_tro_bark_01_detail_nm.normal.png",
+          "detailNormalMapStrength": 0.5,
+          "detailScale": [
+            0.100000001,
+            0.400000006
+          ],
+          "normalMap": "/assets/materials/tree/t_pine/t_pine_bark/t_pine_bark_nm.normal.png",
+          "roughnessMap": "/assets/materials/tree/t_pine/t_pine_bark/t_pine_bark_r.data.png"
+        },
+        {
+          "detailBaseColorMapStrength": null,
+          "detailNormalMapStrength": null,
+          "detailScale": null
+        },
+        {
+          "detailBaseColorMapStrength": null,
+          "detailNormalMapStrength": null,
+          "detailScale": null
+        },
+        {
+          "detailBaseColorMapStrength": null,
+          "detailNormalMapStrength": null,
+          "detailScale": null
+        }
+      ],
+      "alphaRef": 0,
+      "class": "Material",
+      "mapTo": "m_pine_bark",
+      "name": "m_pine_bark",
+      "translucentBlendOp": "None",
+      "version": 1.5
+    },
+    "oak_leaves_01": {
+      "Stages": [
+        {
+          "ambientOcclusionMap": "/assets/materials/tree/oak/t_oak_leaves_01/t_oak_leaves_ao.data.png",
+          "baseColorMap": "/assets/materials/tree/oak/t_italy_oak_leaves/t_italy_oak_leaves_b.color.png",
+          "normalMap": "/assets/materials/tree/oak/t_oak_leaves_01/t_oak_leaves_nm.normal.png",
+          "opacityMap": "/assets/materials/tree/oak/t_oak_leaves_01/t_oak_leaves_o.data.png",
+          "pixelSpecular": true,
+          "roughnessMap": "/assets/materials/tree/oak/t_oak_leaves_01/t_oak_leaves_r.data.png",
+          "specular": [
+            0.894329011,
+            0.894329011,
+            0.894329011,
+            1
+          ]
+        },
+        {
+          "pixelSpecular": null,
+          "specular": null
+        },
+        {
+          "pixelSpecular": null,
+          "specular": null
+        },
+        {
+          "pixelSpecular": null,
+          "specular": null
+        }
+      ],
+      "alphaRef": 110,
+      "alphaTest": true,
       "annotation": "NATURE",
       "class": "Material",
       "doubleSided": true,
       "groundType": "LEAVES_THIN",
+      "invertBackFaceNormals": true,
       "mapTo": "oak_leaves_01",
       "materialTag0": "beamng",
       "materialTag1": "vegetation",
       "materialTag2": "Natural",
       "name": "oak_leaves_01",
       "persistentId": "8e283949-b0df-43fd-9dbd-108b9b743618",
+      "subSurface": true,
+      "subSurfaceIntensity": 1,
       "translucentBlendOp": "None",
       "translucentZWrite": true,
       "version": 1.5
@@ -1947,97 +2059,156 @@
     "oak_leaves_02": {
       "Stages": [
         {
-          "ambientOcclusionMap": "/levels/italy/art/shapes/trees/trees_italy/t_oak_leaves_02_ao.data.png",
-          "baseColorMap": "/levels/italy/art/shapes/trees/trees_italy/t_oak_leaves_02_b.color.png",
-          "normalMap": "/levels/italy/art/shapes/trees/trees_italy/t_oak_leaves_02_nm.normal.png",
-          "opacityMap": "/levels/italy/art/shapes/trees/trees_italy/t_oak_leaves_02_o.data.png",
+          "ambientOcclusionMap": "/assets/materials/tree/oak/t_oak_leaves_01/t_oak_leaves_ao.data.png",
+          "baseColorMap": "/assets/materials/tree/oak/t_italy_oak_leaves_02/t_italy_oak_leaves_02_b.color.png",
+          "normalMap": "/assets/materials/tree/oak/t_oak_leaves_01/t_oak_leaves_nm.normal.png",
+          "opacityMap": "/assets/materials/tree/oak/t_oak_leaves_01/t_oak_leaves_o.data.png",
           "pixelSpecular": true,
-          "roughnessMap": "/levels/italy/art/shapes/trees/trees_italy/t_oak_leaves_02_r.data.png"
+          "roughnessMap": "/assets/materials/tree/oak/t_oak_leaves_01/t_oak_leaves_r.data.png"
         },
-        {},
-        {},
-        {}
+        {
+          "pixelSpecular": null
+        },
+        {
+          "pixelSpecular": null
+        },
+        {
+          "pixelSpecular": null
+        }
       ],
-      "alphaRef": 75,
+      "alphaRef": 110,
       "alphaTest": true,
       "annotation": "NATURE",
       "class": "Material",
       "doubleSided": true,
       "groundType": "LEAVES_THIN",
+      "invertBackFaceNormals": true,
       "mapTo": "oak_leaves_02",
       "materialTag0": "beamng",
       "materialTag1": "vegetation",
       "materialTag2": "Natural",
       "name": "oak_leaves_02",
       "persistentId": "21c59c4c-3e55-4591-a9f3-9e1652ff7679",
+      "subSurface": true,
+      "subSurfaceIntensity": 1,
       "translucentZWrite": true,
       "version": 1.5
     },
     "olive": {
       "Stages": [
         {
-          "ambientOcclusionMap": "/levels/italy/art/shapes/trees/trees_italy/t_olive_ao.data.png",
-          "baseColorMap": "/levels/italy/art/shapes/trees/trees_italy/t_olive_b.color.png",
-          "normalMap": "/levels/italy/art/shapes/trees/trees_italy/t_olive_nm.normal.png",
-          "opacityMap": "/levels/italy/art/shapes/trees/trees_italy/t_olive_o.data.png",
+          "ambientOcclusionMap": "/assets/materials/tree/olive/t_olive/t_olive_ao.data.png",
+          "baseColorMap": "/assets/materials/tree/olive/t_olive/t_olive_b.color.png",
+          "normalMap": "/assets/materials/tree/olive/t_olive/t_olive_nm.normal.png",
+          "normalMapStrength": 2,
+          "opacityMap": "/assets/materials/tree/olive/t_olive/t_olive_o.data.png",
           "pixelSpecular": true,
-          "roughnessFactor": 1,
-          "roughnessMap": "/levels/italy/art/shapes/trees/trees_italy/t_olive_r.data.png"
+          "roughnessFactor": 0.686999977,
+          "roughnessMap": "/assets/materials/tree/olive/t_olive/t_olive_r.data.png"
         },
-        {},
-        {},
-        {}
+        {
+          "normalMapStrength": null,
+          "pixelSpecular": null,
+          "roughnessFactor": null
+        },
+        {
+          "normalMapStrength": null,
+          "pixelSpecular": null,
+          "roughnessFactor": null
+        },
+        {
+          "normalMapStrength": null,
+          "pixelSpecular": null,
+          "roughnessFactor": null
+        }
       ],
-      "alphaRef": 85,
+      "alphaRef": 130,
       "alphaTest": true,
       "annotation": "NATURE",
       "class": "Material",
       "doubleSided": true,
+      "invertBackFaceNormals": true,
       "mapTo": "olive",
       "materialTag0": "beamng",
       "materialTag1": "vegetation",
       "materialTag2": "Natural",
       "name": "olive",
       "persistentId": "186db53d-a920-4f77-b434-4a83761f3fe5",
+      "subSurface": true,
+      "subSurfaceIntensity": 1,
       "version": 1.5
     },
     "olive_branches": {
       "Stages": [
         {
-          "ambientOcclusionMap": "/levels/italy/art/shapes/trees/trees_italy/t_olive_branches_ao.data.png",
-          "baseColorMap": "/levels/italy/art/shapes/trees/trees_italy/t_olive_branches_b.color.png",
-          "normalMap": "/levels/italy/art/shapes/trees/trees_italy/t_olive_branches_nm.normal.png",
-          "opacityMap": "/levels/italy/art/shapes/trees/trees_italy/t_olive_branches_o.data.png",
+          "ambientOcclusionMap": "/assets/materials/tree/olive/t_olive_branches/t_olive_branches_ao.data.png",
+          "baseColorMap": "/assets/materials/tree/olive/t_olive_branches/t_olive_branches_b.color.png",
+          "detailNormalMap": "/assets/materials/tree/cork_oak/t_cork_oak_trunk/t_cork_oak_trunk_nm.normal.png",
+          "detailScale": [
+            2,
+            4
+          ],
+          "normalMap": "/assets/materials/tree/olive/t_olive_branches/t_olive_branches_nm.normal.png",
+          "opacityMap": "/assets/materials/tree/olive/t_olive_branches/t_olive_branches_o.data.png",
           "pixelSpecular": true,
-          "roughnessMap": "/levels/italy/art/shapes/trees/trees_italy/t_olive_branches_r.data.png"
+          "roughnessMap": "/assets/materials/tree/olive/t_olive_branches/t_olive_branches_r.data.png"
         },
-        {},
-        {},
-        {}
+        {
+          "detailScale": null,
+          "pixelSpecular": null
+        },
+        {
+          "detailScale": null,
+          "pixelSpecular": null
+        },
+        {
+          "detailScale": null,
+          "pixelSpecular": null
+        }
       ],
-      "alphaRef": 100,
+      "alphaRef": 70,
       "alphaTest": true,
       "annotation": "NATURE",
       "class": "Material",
+      "doubleSided": true,
+      "invertBackFaceNormals": true,
       "mapTo": "olive_branches",
       "materialTag0": "beamng",
       "materialTag1": "vegetation",
       "materialTag2": "Natural",
       "name": "olive_branches",
       "persistentId": "14719570-3402-46e0-ae7d-df40658493d4",
+      "subSurface": true,
+      "subSurfaceIntensity": 0.100000001,
       "version": 1.5
     },
     "olive_trunk": {
       "Stages": [
         {
-          "ambientOcclusionMap": "/levels/italy/art/shapes/trees/trees_italy/t_olive_trunk_ao.data.png",
-          "baseColorMap": "/levels/italy/art/shapes/trees/trees_italy/t_olive_trunk_b.color.png",
-          "normalMap": "/levels/italy/art/shapes/trees/trees_italy/t_olive_trunk_nm.normal.png",
-          "roughnessMap": "/levels/italy/art/shapes/trees/trees_italy/t_olive_trunk_r.data.png"
+          "ambientOcclusionMap": "/assets/materials/tree/olive/olive_trunk/t_olive_trunk_ao.data.png",
+          "baseColorMap": "/assets/materials/tree/olive/olive_trunk/t_olive_trunk_b.color.png",
+          "detailMap": "/assets/materials/tree/tropical/tro_tree_1_trunk/t_tropical_bark_variation_1_detail.data.png",
+          "detailNormalMap": "/assets/materials/tree/tropical/tro_tree_1_trunk/t_tro_bark_01_detail_nm.normal.png",
+          "detailNormalMapStrength": 2,
+          "detailScale": [
+            3,
+            3
+          ],
+          "normalMap": "/assets/materials/tree/olive/olive_trunk/t_olive_trunk_nm.normal.png",
+          "roughnessMap": "/assets/materials/tree/olive/olive_trunk/t_olive_trunk_r.data.png"
         },
-        {},
-        {},
-        {}
+        {
+          "detailNormalMapStrength": null,
+          "detailScale": null
+        },
+        {
+          "detailNormalMapStrength": null,
+          "detailScale": null
+        },
+        {
+          "detailNormalMapStrength": null,
+          "detailScale": null
+        }
       ],
       "alphaRef": 85,
       "annotation": "NATURE",
@@ -2051,81 +2222,46 @@
       "persistentId": "107e77e9-250a-4837-bf1d-df00789e43e7",
       "version": 1.5
     },
-    "photogrammetry_rock": {
-      "Stages": [
-        {
-          "colorMap": "levels/italy/art/shapes/rocks/photogrammetry_rock_d",
-          "detailMap": "levels/italy/art/shapes/rocks/photogrammetry_rock_overlay.dds",
-          "detailNormalMap": "levels/italy/art/shapes/rocks/photogrammetry_rock_overlay_n.dds",
-          "detailScale": [
-            6,
-            6
-          ],
-          "normalMap": "levels/italy/art/shapes/rocks/photogrammetry_rock_n",
-          "specularMap": "levels/italy/art/shapes/rocks/photogrammetry_rock_s.dds"
-        },
-        {},
-        {},
-        {}
-      ],
-      "class": "Material",
-      "doubleSided": true,
-      "groundType": "ROCK",
-      "mapTo": "photogrammetry_rock",
-      "materialTag0": "beamng",
-      "materialTag1": "Natural",
-      "name": "photogrammetry_rock",
-      "persistentId": "560006e8-24d4-4e09-8f9d-82b3e3531d2a",
-      "translucentBlendOp": "None"
-    },
-    "rock_01_a": {
-      "Stages": [
-        {
-          "colorMap": "/levels/italy/art/shapes/rocks/rocks_01_a_d",
-          "normalMap": "/levels/italy/art/shapes/rocks/rocks_01_a_n",
-          "specularMap": "/levels/italy/art/shapes/rocks/rocks_01_a_s.dds"
-        },
-        {},
-        {},
-        {}
-      ],
-      "class": "Material",
-      "doubleSided": true,
-      "groundType": "ROCK",
-      "mapTo": "rocks_01_a",
-      "materialTag0": "beamng",
-      "materialTag1": "Natural",
-      "name": "rock_01_a",
-      "persistentId": "db6de66e-9f23-4d5b-8754-7092d3593919",
-      "translucentBlendOp": "None"
-    },
     "scots_pine": {
       "Stages": [
         {
-          "ambientOcclusionMap": "/levels/italy/art/shapes/trees/trees_italy/t_scots_pine_ao.data.png",
+          "ambientOcclusionMap": "/assets/materials/tree/scots_pine/t_scots_pine/t_scots_pine_ao.data.png",
           "baseColorFactor": [
             0.999989986,
             1,
             0.999994993,
             1
           ],
-          "baseColorMap": "/levels/italy/art/shapes/trees/trees_italy/t_scots_pine_b.color.png",
+          "baseColorMap": "/assets/materials/tree/scots_pine/t_scots_pine/t_scots_pine_b.color.png",
           "minnaertConstant": -2,
-          "normalMap": "/levels/italy/art/shapes/trees/trees_italy/t_scots_pine_nm.normal.png",
-          "opacityMap": "/levels/italy/art/shapes/trees/trees_italy/t_scots_pine_o.data.png",
+          "normalMap": "/assets/materials/tree/scots_pine/t_scots_pine/t_scots_pine_nm.normal.png",
+          "opacityMap": "/assets/materials/tree/scots_pine/t_scots_pine/t_scots_pine_o.data.png",
           "pixelSpecular": true,
-          "roughnessMap": "/levels/italy/art/shapes/trees/trees_italy/t_scots_pine_r.data.png"
+          "roughnessMap": "/assets/materials/tree/scots_pine/t_scots_pine/t_scots_pine_r.data.png"
         },
-        {},
-        {},
-        {}
+        {
+          "baseColorFactor": null,
+          "minnaertConstant": null,
+          "pixelSpecular": null
+        },
+        {
+          "baseColorFactor": null,
+          "minnaertConstant": null,
+          "pixelSpecular": null
+        },
+        {
+          "baseColorFactor": null,
+          "minnaertConstant": null,
+          "pixelSpecular": null
+        }
       ],
-      "alphaRef": 93,
+      "alphaRef": 80,
       "alphaTest": true,
       "annotation": "NATURE",
       "class": "Material",
       "doubleSided": true,
       "groundType": "FOLIAGE_THIN",
+      "invertBackFaceNormals": true,
       "mapTo": "scots_pine",
       "materialTag0": "beamng",
       "materialTag1": "vegetation",
@@ -2133,51 +2269,96 @@
       "materialTag3": "Natural",
       "name": "scots_pine",
       "persistentId": "e8f32c57-88d9-4695-808b-6282d597aade",
+      "subSurface": true,
+      "subSurfaceIntensity": 1,
       "version": 1.5
     },
     "scots_pine_branches": {
       "Stages": [
         {
-          "ambientOcclusionMap": "/levels/italy/art/shapes/trees/trees_italy/t_scots_pine_branches_o.data.png",
           "baseColorFactor": [
-            0.996078014,
-            0.996078014,
-            0.996078014,
+            0.449629992,
+            0.449629992,
+            0.449629992,
             1
           ],
-          "baseColorMap": "/levels/italy/art/shapes/trees/trees_italy/t_scots_pine_branches_b.color.png",
-          "normalMap": "/levels/italy/art/shapes/trees/trees_italy/t_scots_pine_branches_nm.normal.png",
-          "opacityMap": "/levels/italy/art/shapes/trees/trees_italy/t_scots_pine_branches_o.data.png",
-          "roughnessMap": "/levels/italy/art/shapes/trees/trees_italy/t_scots_pine_branches_r.data.png"
+          "baseColorMap": "/assets/materials/tree/scots_pine/t_scots_pine_branches/t_scots_pine_branches_b.color.png",
+          "detailBaseColorMapStrength": 2,
+          "detailMap": "/assets/materials/tree/tropical/tro_tree_1_trunk/t_tropical_bark_variation_1_detail.data.png",
+          "detailNormalMap": "/assets/materials/tree/cork_oak/t_cork_oak_trunk/t_cork_oak_trunk_nm.normal.png",
+          "detailNormalMapStrength": 3,
+          "normalMap": "/assets/materials/tree/scots_pine/t_scots_pine_branches/t_scots_pine_branches_nm.normal.png",
+          "opacityMap": "/assets/materials/tree/scots_pine/t_scots_pine_branches/t_scots_pine_branches_o.data.png",
+          "roughnessMap": "/assets/materials/tree/scots_pine/t_scots_pine_branches/t_scots_pine_branches_r.data.png"
         },
-        {},
-        {},
-        {}
+        {
+          "baseColorFactor": null,
+          "detailBaseColorMapStrength": null,
+          "detailNormalMapStrength": null
+        },
+        {
+          "baseColorFactor": null,
+          "detailBaseColorMapStrength": null,
+          "detailNormalMapStrength": null
+        },
+        {
+          "baseColorFactor": null,
+          "detailBaseColorMapStrength": null,
+          "detailNormalMapStrength": null
+        }
       ],
-      "alphaRef": 100,
+      "alphaRef": 80,
       "alphaTest": true,
       "annotation": "NATURE",
       "class": "Material",
       "groundType": "FOLIAGE_THIN",
+      "invertBackFaceNormals": true,
       "mapTo": "scots_pine_branches",
       "materialTag0": "beamng",
       "materialTag1": "vegetation",
       "materialTag2": "Natural",
       "name": "scots_pine_branches",
       "persistentId": "132fad37-3917-4fd8-afda-5da8d13e4497",
+      "subSurface": true,
+      "subSurfaceIntensity": 0.00999999978,
       "version": 1.5
     },
     "scots_pine_trunk": {
       "Stages": [
         {
-          "ambientOcclusionMap": "/levels/italy/art/shapes/trees/trees_italy/t_scots_pine_bark_ao.data.png",
-          "baseColorMap": "/levels/italy/art/shapes/trees/trees_italy/t_scots_pine_bark_b.color.png",
-          "normalMap": "/levels/italy/art/shapes/trees/trees_italy/t_scots_pine_bark_nm.normal.png",
-          "roughnessMap": "/levels/italy/art/shapes/trees/trees_italy/t_scots_pine_bark_r.data.png"
+          "ambientOcclusionMap": "/assets/materials/tree/scots_pine/t_scots_pine_trunk/t_scots_pine_bark_ao.data.png",
+          "baseColorFactor": [
+            0.674180984,
+            0.674180984,
+            0.674180984,
+            1
+          ],
+          "baseColorMap": "/assets/materials/tree/scots_pine/t_scots_pine_trunk/t_scots_pine_bark_b.color.png",
+          "detailMap": "/assets/materials/tree/tropical/tro_tree_1_trunk/t_tropical_bark_variation_1_detail.data.png",
+          "detailNormalMap": "/assets/materials/tree/t_pine/t_pine_bark/t_pine_bark_nm.normal.png",
+          "detailNormalMapStrength": 3,
+          "detailScale": [
+            5,
+            0.75
+          ],
+          "normalMap": "/assets/materials/tree/scots_pine/t_scots_pine_trunk/t_scots_pine_bark_nm.normal.png",
+          "roughnessMap": "/assets/materials/tree/scots_pine/t_scots_pine_trunk/t_scots_pine_bark_r.data.png"
         },
-        {},
-        {},
-        {}
+        {
+          "baseColorFactor": null,
+          "detailNormalMapStrength": null,
+          "detailScale": null
+        },
+        {
+          "baseColorFactor": null,
+          "detailNormalMapStrength": null,
+          "detailScale": null
+        },
+        {
+          "baseColorFactor": null,
+          "detailNormalMapStrength": null,
+          "detailScale": null
+        }
       ],
       "alphaRef": 85,
       "annotation": "NATURE",
@@ -2189,117 +2370,6 @@
       "materialTag2": "Natural",
       "name": "scots_pine_trunk",
       "persistentId": "69c92e20-11c6-4cd9-95ab-db7b46525f14",
-      "version": 1.5
-    },
-    "scraggly": {
-      "Stages": [
-        {
-          "ambientOcclusionMap": "/levels/italy/art/shapes/trees/trees_italy/t_scraggly_ao.data.png",
-          "baseColorMap": "/levels/italy/art/shapes/trees/trees_italy/t_scraggly_b.color.png",
-          "normalMap": "/levels/italy/art/shapes/trees/trees_italy/t_scraggly_nm.normal.png",
-          "opacityMap": "/levels/italy/art/shapes/trees/trees_italy/t_scraggly_o.data.png",
-          "roughnessMap": "/levels/italy/art/shapes/trees/trees_italy/t_scraggly_r.data.png"
-        },
-        {},
-        {},
-        {}
-      ],
-      "alphaRef": 85,
-      "alphaTest": true,
-      "annotation": "NATURE",
-      "class": "Material",
-      "doubleSided": true,
-      "mapTo": "scraggly",
-      "materialTag0": "beamng",
-      "materialTag1": "vegetation",
-      "materialTag2": "Natural",
-      "name": "scraggly",
-      "persistentId": "423e5923-5036-4224-a59c-39b9de9062b0",
-      "version": 1.5
-    },
-    "scraggly_branches": {
-      "Stages": [
-        {
-          "ambientOcclusionMap": "/levels/italy/art/shapes/trees/trees_italy/t_scraggly_branches_ao.data.png",
-          "baseColorMap": "/levels/italy/art/shapes/trees/trees_italy/t_scraggly_branches_b.color.png",
-          "normalMap": "/levels/italy/art/shapes/trees/trees_italy/t_scraggly_branches_nm.normal.png",
-          "opacityMap": "/levels/italy/art/shapes/trees/trees_italy/t_scraggly_branches_o.data.png",
-          "roughnessMap": "/levels/italy/art/shapes/trees/trees_italy/t_scraggly_branches_r.data.png"
-        },
-        {},
-        {},
-        {}
-      ],
-      "alphaRef": 100,
-      "alphaTest": true,
-      "annotation": "NATURE",
-      "class": "Material",
-      "mapTo": "scraggly_branches",
-      "materialTag0": "beamng",
-      "materialTag1": "vegetation",
-      "materialTag2": "Natural",
-      "name": "scraggly_branches",
-      "persistentId": "c5dbc7fd-bfad-4640-a8f3-92099724de6a",
-      "version": 1.5
-    },
-    "tall_plant_vegetation": {
-      "Stages": [
-        {
-          "ambientOcclusionMap": "/levels/italy/art/shapes/trees/trees_italy/t_tall_plant_ao.data.png",
-          "baseColorMap": "/levels/italy/art/shapes/trees/trees_italy/t_tall_plant_b.color.png",
-          "normalMap": "/levels/italy/art/shapes/trees/trees_italy/t_tall_plant_nm.normal.png",
-          "opacityMap": "/levels/italy/art/shapes/trees/trees_italy/t_tall_plant_o.data.png",
-          "roughnessMap": "/levels/italy/art/shapes/trees/trees_italy/t_tall_plant_r.data.png",
-          "specular": [
-            0.988234997,
-            0.988234997,
-            0.988234997,
-            1
-          ]
-        },
-        {},
-        {},
-        {}
-      ],
-      "alphaRef": 84,
-      "alphaTest": true,
-      "annotation": "NATURE",
-      "class": "Material",
-      "doubleSided": true,
-      "mapTo": "tall_plant_vegetation",
-      "materialTag0": "beamng",
-      "materialTag1": "vegetation",
-      "materialTag2": "Natural",
-      "name": "tall_plant_vegetation",
-      "persistentId": "e36fab8f-056f-4955-b44d-7a4e055c0172",
-      "specularStrength0": "0.784314",
-      "version": 1.5
-    },
-    "test_render_scots_pine_lod": {
-      "Stages": [
-        {
-          "ambientOcclusionMap": "/levels/italy/art/shapes/trees/trees_italy/t_cork_oak_ao.data.png",
-          "baseColorMap": "/levels/italy/art/shapes/trees/trees_italy/t_cork_oak_b.color.png",
-          "normalMap": "/levels/italy/art/shapes/trees/trees_italy/t_cork_oak_nm.normal.png",
-          "opacityMap": "/levels/italy/art/shapes/trees/trees_italy/t_cork_oak_o.data.png",
-          "roughnessMap": "/levels/italy/art/shapes/trees/trees_italy/t_cork_oak_r.data.png"
-        },
-        {},
-        {},
-        {}
-      ],
-      "alphaRef": 68,
-      "alphaTest": true,
-      "annotation": "NATURE",
-      "class": "Material",
-      "doubleSided": true,
-      "groundType": "WOOD",
-      "mapTo": "test_render_scots_pine_lod",
-      "materialTag0": "beamng",
-      "materialTag1": "vegetation",
-      "materialTag2": "Natural",
-      "name": "test_render_scots_pine_lod",
-      "persistentId": "c7c521a2-cac1-4b93-846d-64e7630ba883",
       "version": 1.5
     }
   },
@@ -2341,33 +2411,45 @@
       "mapTo": "deserttree_branches",
       "name": "deserttree_branches",
       "persistentId": "81b8e171-c128-47a2-a436-25160022dcbe",
+      "subSurface": true,
+      "subSurfaceIntensity": 0.00999999978,
       "version": 1.5
     },
     "deserttree_leaves": {
       "Stages": [
         {
-          "baseColorMap": "/levels/johnson_valley/art/shapes/trees/deserttrees/t_desert_tree_leaves_b.color.png",
+          "ambientOcclusionMap": "/assets/materials/foliage/bush/t_deserttree_leaves/t_desert_tree_leaves_ao.data.png",
+          "baseColorMap": "/assets/materials/foliage/bush/t_deserttree_leaves/t_desert_tree_leaves_b.color.png",
           "detailScale": [
             1,
             1
           ],
-          "normalMap": "/levels/johnson_valley/art/shapes/trees/deserttrees/t_desert_tree_leaves_nm.normal.png",
-          "opacityMap": "/levels/johnson_valley/art/shapes/trees/deserttrees/t_desert_tree_leaves_o.data.png",
-          "roughnessMap": "/levels/johnson_valley/art/shapes/trees/deserttrees/t_desert_tree_leaves_r.data.png"
+          "normalMap": "/assets/materials/foliage/bush/t_deserttree_leaves/t_desert_tree_leaves_nm.normal.png",
+          "opacityMap": "/assets/materials/foliage/bush/t_deserttree_leaves/t_desert_tree_leaves_o.data.png",
+          "roughnessMap": "/assets/materials/foliage/bush/t_deserttree_leaves/t_desert_tree_leaves_r.data.png"
         },
-        {},
-        {},
-        {}
+        {
+          "detailScale": null
+        },
+        {
+          "detailScale": null
+        },
+        {
+          "detailScale": null
+        }
       ],
-      "alphaRef": 65,
+      "alphaRef": 60,
       "alphaTest": true,
       "annotation": "NATURE",
       "class": "Material",
       "doubleSided": true,
       "groundType": "LEAVES_STRONG",
+      "invertBackFaceNormals": true,
       "mapTo": "deserttree_leaves",
       "name": "deserttree_leaves",
       "persistentId": "f0eacfe6-2ffc-4692-8ba8-565e439cca7d",
+      "subSurface": true,
+      "subSurfaceIntensity": 1,
       "version": 1.5
     },
     "deserttree_trunk": {
@@ -2402,12 +2484,13 @@
         {},
         {}
       ],
+      "annotation": "NATURE",
       "class": "Material",
-      "groundDepth": 0.6000000238418579,
+      "groundDepth": 0.600000024,
       "groundType": "leaves_strong",
       "mapTo": "leaves_strong",
       "name": "leaves_strong",
-      "persistentId": "6e16535c-0325-497d-9e5f-073c601fadb8"
+      "persistentId": "7e8157dc-940e-4435-937b-e934d4e42892"
     },
     "leaves_thin": {
       "Stages": [
@@ -2421,7 +2504,7 @@
       "groundType": "leaves_thin",
       "mapTo": "leaves_thin",
       "name": "leaves_thin",
-      "persistentId": "fd68c03b-68ae-4e0a-850e-a66f02004d54"
+      "persistentId": "859cdbd4-7a36-4613-9344-b50a1d8745ea"
     },
     "rocks_desert_ca": {
       "Stages": [
@@ -2459,6 +2542,33 @@
     }
   },
   "jungle": {
+    "grass_field": {
+      "Stages": [
+        {
+          "ambientOcclusionMap": "/assets/materials/foliage/grass/t_grass_green_short_01/t_grass_green_short_01_ao.data.png",
+          "baseColorMap": "/assets/materials/foliage/grass/t_grass_green_short_02/t_grass_green_short_02_b.color.png",
+          "normalMap": "/assets/materials/foliage/grass/t_grass_green_short_01/t_grass_green_short_01_nm.normal.png",
+          "opacityMap": "/assets/materials/foliage/grass/t_grass_green_short_01/t_grass_green_short_01_o.data.png",
+          "roughnessMap": "/assets/materials/foliage/grass/t_grass_green_short_01/t_grass_green_short_01_r.data.png"
+        },
+        {},
+        {},
+        {}
+      ],
+      "alphaRef": 60,
+      "alphaTest": true,
+      "class": "Material",
+      "doubleSided": true,
+      "mapTo": "grass_field",
+      "materialTag0": "beamng",
+      "materialTag1": "vegetation",
+      "materialTag2": "vegetation",
+      "name": "grass_field",
+      "persistentId": "042e6281-839c-4e43-86d3-3993a2ccf809",
+      "subSurface": true,
+      "subSurfaceIntensity": 1,
+      "version": 1.5
+    },
     "jri_rocks": {
       "Stages": [
         {
@@ -2495,12 +2605,13 @@
         {},
         {}
       ],
+      "annotation": "NATURE",
       "class": "Material",
-      "groundDepth": 0.6000000238418579,
+      "groundDepth": 0.600000024,
       "groundType": "leaves_strong",
       "mapTo": "leaves_strong",
       "name": "leaves_strong",
-      "persistentId": "49bee012-5de0-49bd-820e-cf0d22fee404"
+      "persistentId": "7e8157dc-940e-4435-937b-e934d4e42892"
     },
     "leaves_thin": {
       "Stages": [
@@ -2514,45 +2625,346 @@
       "groundType": "leaves_thin",
       "mapTo": "leaves_thin",
       "name": "leaves_thin",
-      "persistentId": "22b40212-2b6c-446c-9f64-8d00233026fe"
+      "persistentId": "859cdbd4-7a36-4613-9344-b50a1d8745ea"
     },
-    "vegetation_palm_01": {
+    "tro_tree_1_branches": {
       "Stages": [
         {
-          "colorMap": "levels/jungle_rock_island/art/shapes/trees/trees_palm/vegetation_palm_01_d.dds",
-          "diffuseColor": [
-            0.9960780143737792,
-            0.9960780143737792,
-            0.9960780143737792,
-            1
-          ],
-          "normalMap": "levels/jungle_rock_island/art/shapes/trees/trees_palm/vegetation_palm_01_n.dds",
-          "specular": [
-            0.9960780143737792,
-            0.9960780143737792,
-            0.9960780143737792,
-            1
-          ],
-          "specularMap": "levels/jungle_rock_island/art/shapes/trees/trees_palm/vegetation_palm_01_s.dds",
-          "specularPower": 21,
-          "useAnisotropic": true
+          "ambientOcclusionMap": "/levels/jungle_rock_island/art/shapes/trees/trees_tropical_1/t_tro_branch_01_ao.data.png",
+          "baseColorMap": "/levels/jungle_rock_island/art/shapes/trees/trees_tropical_1/t_tro_branch_01_b.color.png",
+          "normalMap": "/levels/jungle_rock_island/art/shapes/trees/trees_tropical_1/t_tro_branch_01_nm.normal.png",
+          "opacityMap": "/levels/jungle_rock_island/art/shapes/trees/trees_tropical_1/t_tro_branch_01_o.data.png",
+          "roughnessMap": "/levels/jungle_rock_island/art/shapes/trees/trees_tropical_1/t_tro_branch_01_r.data.png"
         },
         {},
         {},
         {}
       ],
-      "alphaRef": 107,
+      "alphaRef": 51,
+      "alphaTest": true,
+      "class": "Material",
+      "doubleSided": true,
+      "groundType": "LEAVES_STRONG",
+      "mapTo": "tro_tree_1_branches",
+      "materialTag0": "beamng",
+      "materialTag1": "vegetation",
+      "materialTag2": "Natural",
+      "materialTag3": "vegetation",
+      "name": "tro_tree_1_branches",
+      "persistentId": "b2047208-0c7e-4353-a7f5-75076636f86a",
+      "version": 1.5
+    },
+    "tro_tree_1_leaves": {
+      "Stages": [
+        {
+          "ambientOcclusionMap": "/levels/jungle_rock_island/art/shapes/trees/trees_tropical_1/t_tro_tree_01_leaves_ao.data.png",
+          "baseColorMap": "/levels/jungle_rock_island/art/shapes/trees/trees_tropical_1/t_tro_tree_01_leaves_b.color.png",
+          "normalMap": "/levels/jungle_rock_island/art/shapes/trees/trees_tropical_1/t_tro_tree_01_leaves_nm.normal.png",
+          "opacityMap": "/levels/jungle_rock_island/art/shapes/trees/trees_tropical_1/t_tro_tree_01_leaves_o.data.png",
+          "pixelSpecular": true,
+          "roughnessMap": "/levels/jungle_rock_island/art/shapes/trees/trees_tropical_1/t_tro_tree_01_leaves_r.data.png"
+        },
+        {
+          "pixelSpecular": null
+        },
+        {
+          "pixelSpecular": null
+        },
+        {
+          "pixelSpecular": null
+        }
+      ],
+      "alphaRef": 60,
       "alphaTest": true,
       "class": "Material",
       "doubleSided": true,
       "groundType": "LEAVES_THIN",
-      "mapTo": "vegetation_palm_01",
+      "invertBackFaceNormals": true,
+      "mapTo": "tro_tree_1_leaves",
       "materialTag0": "beamng",
       "materialTag1": "vegetation",
       "materialTag2": "Natural",
-      "name": "vegetation_palm_01",
-      "persistentId": "cb15d84f-2551-4b3d-b836-a5b9b82f26d1",
-      "specularStrength0": "0.490196"
+      "materialTag3": "vegetation",
+      "name": "tro_tree_1_leaves",
+      "persistentId": "c2658ff7-544c-4f52-a1fe-d692a66bb4a8",
+      "specularStrength0": "0.882353",
+      "subSurface": true,
+      "subSurfaceIntensity": 0.699999988,
+      "translucentBlendOp": "None",
+      "version": 1.5
+    },
+    "tro_tree_1_leaves_02": {
+      "Stages": [
+        {
+          "ambientOcclusionMap": "/levels/jungle_rock_island/art/shapes/trees/trees_tropical_1/t_tro_tree_01_leaves_02_ao.data.png",
+          "baseColorFactor": [
+            0.999998987,
+            1,
+            0.999989986,
+            1
+          ],
+          "baseColorMap": "/levels/jungle_rock_island/art/shapes/trees/trees_tropical_1/t_tro_tree_01_leaves_02_b.color.png",
+          "normalMap": "/levels/jungle_rock_island/art/shapes/trees/trees_tropical_1/t_tro_tree_01_leaves_02_nm.normal.png",
+          "opacityMap": "/levels/jungle_rock_island/art/shapes/trees/trees_tropical_1/t_tro_tree_01_leaves_02_o.data.png",
+          "pixelSpecular": true,
+          "roughnessFactor": 0.800000012,
+          "roughnessMap": "/levels/jungle_rock_island/art/shapes/trees/trees_tropical_1/t_tro_tree_01_leaves_02_r.data.png"
+        },
+        {
+          "baseColorFactor": null,
+          "pixelSpecular": null,
+          "roughnessFactor": null
+        },
+        {
+          "baseColorFactor": null,
+          "pixelSpecular": null,
+          "roughnessFactor": null
+        },
+        {
+          "baseColorFactor": null,
+          "pixelSpecular": null,
+          "roughnessFactor": null
+        }
+      ],
+      "alphaRef": 90,
+      "alphaTest": true,
+      "class": "Material",
+      "doubleSided": true,
+      "groundType": "LEAVES_THIN",
+      "mapTo": "tro_tree_1_leaves_02",
+      "materialTag0": "beamng",
+      "materialTag1": "vegetation",
+      "materialTag2": "Natural",
+      "materialTag3": "vegetation",
+      "name": "tro_tree_1_leaves_02",
+      "persistentId": "6aa12e70-710b-4195-9519-49fe03bbb1ca",
+      "specularStrength0": "0.882353",
+      "subSurfaceIntensity": 0.708999991,
+      "version": 1.5
+    },
+    "tro_tree_1_trunk": {
+      "Stages": [
+        {
+          "ambientOcclusionMap": "/levels/jungle_rock_island/art/shapes/trees/trees_tropical_1/t_tro_bark_01_ao.data.png",
+          "baseColorFactor": [
+            1,
+            0.999994993,
+            0.999989986,
+            1
+          ],
+          "baseColorMap": "/levels/jungle_rock_island/art/shapes/trees/trees_tropical_1/t_tro_bark_01_b.color.png",
+          "detailMap": "/levels/jungle_rock_island/art/shapes/trees/trees_tropical_1/t_tro_bark_01_detail.data.png",
+          "detailNormalMap": "/levels/jungle_rock_island/art/shapes/trees/trees_tropical_1/t_tro_bark_01_detail_nm.normal.png",
+          "detailScale": [
+            0.400000006,
+            0.400000006
+          ],
+          "normalMap": "/levels/jungle_rock_island/art/shapes/trees/trees_tropical_1/t_tro_bark_01_nm.normal.png",
+          "pixelSpecular": true,
+          "roughnessMap": "/levels/jungle_rock_island/art/shapes/trees/trees_tropical_1/t_tro_bark_01_r.data.png"
+        },
+        {},
+        {},
+        {}
+      ],
+      "class": "Material",
+      "groundType": "WOOD",
+      "mapTo": "tro_tree_1_trunk",
+      "materialTag0": "beamng",
+      "materialTag1": "vegetation",
+      "materialTag2": "Natural",
+      "name": "tro_tree_1_trunk",
+      "persistentId": "07db6a08-f02a-444e-bd6c-2d99b4c497d3",
+      "specularStrength0": "0.392157",
+      "version": 1.5
+    },
+    "tro_tree_2_branch": {
+      "Stages": [
+        {
+          "ambientOcclusionMap": "/levels/jungle_rock_island/art/shapes/trees/trees_tropical_2/t_tro_branch_02_ao.data.png",
+          "baseColorMap": "/levels/jungle_rock_island/art/shapes/trees/trees_tropical_2/t_tro_branch_02_b.color.png",
+          "normalMap": "/levels/jungle_rock_island/art/shapes/trees/trees_tropical_2/t_tro_branch_02_nm.normal.png",
+          "opacityMap": "/levels/jungle_rock_island/art/shapes/trees/trees_tropical_2/t_tro_branch_02_o.data.png",
+          "roughnessMap": "/levels/jungle_rock_island/art/shapes/trees/trees_tropical_2/t_tro_branch_02_r.data.png"
+        },
+        {},
+        {},
+        {}
+      ],
+      "alphaRef": 50,
+      "alphaTest": true,
+      "class": "Material",
+      "doubleSided": true,
+      "invertBackFaceNormals": true,
+      "mapTo": "tro_tree_2_branch",
+      "name": "tro_tree_2_branch",
+      "persistentId": "464db57a-d113-4e98-96d6-4b8fac6a3756",
+      "subSurface": true,
+      "subSurfaceIntensity": 0.0500000007,
+      "version": 1.5
+    },
+    "tro_tree_2_leaves": {
+      "Stages": [
+        {
+          "ambientOcclusionMap": "/levels/jungle_rock_island/art/shapes/trees/trees_tropical_2/t_tro_tree_02_leaves_ao.data.png",
+          "baseColorFactor": [
+            1,
+            0.999989986,
+            0.999989986,
+            1
+          ],
+          "baseColorMap": "/levels/jungle_rock_island/art/shapes/trees/trees_tropical_2/t_tro_tree_02_leaves_b.color.png",
+          "detailNormalMap": "/levels/jungle_rock_island/art/shapes/trees/trees_tropical_2/detail_normal_filler.normal.png",
+          "detailScale": [
+            1,
+            1
+          ],
+          "normalMap": "/levels/jungle_rock_island/art/shapes/trees/trees_tropical_2/t_tro_tree_02_leaves_nm.normal.png",
+          "opacityMap": "/levels/jungle_rock_island/art/shapes/trees/trees_tropical_2/t_tro_tree_02_leaves_o.data.png",
+          "roughnessFactor": 0.809000015,
+          "roughnessMap": "/levels/jungle_rock_island/art/shapes/trees/trees_tropical_2/t_tro_tree_02_leaves_r.data.png"
+        },
+        {
+          "baseColorFactor": null,
+          "detailScale": null,
+          "roughnessFactor": null
+        },
+        {
+          "baseColorFactor": null,
+          "detailScale": null,
+          "roughnessFactor": null
+        },
+        {
+          "baseColorFactor": null,
+          "detailScale": null,
+          "roughnessFactor": null
+        }
+      ],
+      "alphaRef": 54,
+      "alphaTest": true,
+      "class": "Material",
+      "doubleSided": true,
+      "groundType": "LEAVES_THIN",
+      "invertBackFaceNormals": true,
+      "mapTo": "tro_tree_2_leaves",
+      "materialTag0": "beamng",
+      "materialTag1": "vegetation",
+      "materialTag2": "Natural",
+      "materialTag3": "vegetation",
+      "name": "tro_tree_2_leaves",
+      "persistentId": "e55db336-77d2-4d52-91d1-e281b92694dd",
+      "specularStrength0": "0.490196",
+      "subSurface": true,
+      "subSurfaceIntensity": 1,
+      "version": 1.5
+    },
+    "tro_tree_2_trunk": {
+      "Stages": [
+        {
+          "ambientOcclusionMap": "/levels/jungle_rock_island/art/shapes/trees/trees_tropical_2/t_tro_bark_02_ao.data.png",
+          "baseColorFactor": [
+            1,
+            0.999994993,
+            0.999989986,
+            1
+          ],
+          "baseColorMap": "/levels/jungle_rock_island/art/shapes/trees/trees_tropical_2/t_tro_bark_02_b.color.png",
+          "detailNormalMap": "/levels/jungle_rock_island/art/shapes/trees/trees_tropical_1/t_tro_bark_01_detail_nm.normal.png",
+          "detailScale": [
+            1,
+            0.200000003
+          ],
+          "normalMap": "/levels/jungle_rock_island/art/shapes/trees/trees_tropical_2/t_tro_bark_02_nm.normal.png",
+          "roughnessMap": "/levels/jungle_rock_island/art/shapes/trees/trees_tropical_2/t_tro_bark_02_r.data.png"
+        },
+        {},
+        {},
+        {}
+      ],
+      "class": "Material",
+      "groundType": "WOOD",
+      "mapTo": "tro_tree_2_trunk",
+      "materialTag0": "beamng",
+      "materialTag1": "vegetation",
+      "materialTag2": "Natural",
+      "name": "tro_tree_2_trunk",
+      "persistentId": "cae0c72c-aad0-4672-9842-1c9e18a60dc7",
+      "specularStrength0": "1.56863",
+      "version": 1.5
+    },
+    "tro_tree_leaves_filler": {
+      "Stages": [
+        {
+          "ambientOcclusionMap": "/levels/jungle_rock_island/art/shapes/trees/trees_tropical_2/t_tro_tree_02_leaves_ao.data.png",
+          "baseColorFactor": [
+            1,
+            0.999989986,
+            0.999989986,
+            1
+          ],
+          "baseColorMap": "/levels/jungle_rock_island/art/shapes/trees/trees_tropical_2/t_tro_filler_leaves_b.color.png",
+          "detailNormalMap": "/levels/jungle_rock_island/art/shapes/trees/trees_tropical_2/detail_normal_filler.normal.png",
+          "normalMap": "/levels/jungle_rock_island/art/shapes/trees/trees_tropical_2/t_tro_filler_leaves_nm.normal.png",
+          "opacityMap": "/levels/jungle_rock_island/art/shapes/trees/trees_tropical_2/t_tro_filler_leaves_o.data.png",
+          "roughnessMap": "/levels/jungle_rock_island/art/shapes/trees/trees_tropical_2/t_tro_filler_leaves_r.data.png"
+        },
+        {
+          "baseColorFactor": null
+        },
+        {
+          "baseColorFactor": null
+        },
+        {
+          "baseColorFactor": null
+        }
+      ],
+      "alphaRef": 140,
+      "alphaTest": true,
+      "class": "Material",
+      "doubleSided": true,
+      "groundType": "LEAVES_THIN",
+      "invertBackFaceNormals": true,
+      "mapTo": "tro_tree_leaves_filler",
+      "materialTag0": "beamng",
+      "materialTag1": "vegetation",
+      "materialTag2": "Natural",
+      "materialTag3": "vegetation",
+      "name": "tro_tree_leaves_filler",
+      "persistentId": "aa385e7f-5e42-44bf-bdde-ad752416c969",
+      "specularStrength0": "0.490196",
+      "subSurface": true,
+      "subSurfaceIntensity": 1,
+      "version": 1.5
+    },
+    "tro_vines_2d": {
+      "Stages": [
+        {
+          "ambientOcclusionMap": "/levels/jungle_rock_island/art/shapes/trees/vines_tropical/t_tro_vines_ao.data.png",
+          "baseColorMap": "/levels/jungle_rock_island/art/shapes/trees/vines_tropical/t_tro_vines_b.color.png",
+          "normalMap": "/levels/jungle_rock_island/art/shapes/trees/vines_tropical/t_tro_vines_nm.normal.png",
+          "opacityMap": "/levels/jungle_rock_island/art/shapes/trees/vines_tropical/t_tro_vines_o.data.png",
+          "roughnessMap": "/levels/jungle_rock_island/art/shapes/trees/vines_tropical/t_tro_vines_r.data.png"
+        },
+        {},
+        {},
+        {}
+      ],
+      "alphaRef": 67,
+      "alphaTest": true,
+      "class": "Material",
+      "doubleSided": true,
+      "groundType": "LEAVES_THIN",
+      "invertBackFaceNormals": true,
+      "mapTo": "tro_vines_2d",
+      "materialTag0": "beamng",
+      "materialTag1": "vegetation",
+      "materialTag2": "Natural",
+      "materialTag3": "vegetation",
+      "name": "tro_vines_2d",
+      "persistentId": "8f27fa7a-0e23-42ba-9733-d483850a283f",
+      "subSurface": true,
+      "subSurfaceIntensity": 0.0700000003,
+      "version": 1.5
     },
     "vegetation_palm_02": {
       "Stages": [
@@ -2575,15 +2987,25 @@
             1
           ]
         },
-        {},
-        {},
-        {}
+        {
+          "baseColorFactor": null,
+          "specular": null
+        },
+        {
+          "baseColorFactor": null,
+          "specular": null
+        },
+        {
+          "baseColorFactor": null,
+          "specular": null
+        }
       ],
       "alphaRef": 107,
       "alphaTest": true,
       "class": "Material",
       "doubleSided": true,
       "groundType": "LEAVES_THIN",
+      "invertBackFaceNormals": true,
       "mapTo": "vegetation_palm_02",
       "materialTag0": "beamng",
       "materialTag1": "vegetation",
@@ -2591,6 +3013,8 @@
       "name": "vegetation_palm_02",
       "persistentId": "1d354a68-8e65-4a5c-aebb-67a19064a348",
       "specularStrength0": "0.490196",
+      "subSurface": true,
+      "subSurfaceIntensity": 0.800000012,
       "version": 1.5
     },
     "vegetation_palm_02_single_side": {
@@ -2636,41 +3060,6 @@
       "persistentId": "d0722c25-2c54-47e9-b96a-1aaa5ae57d12",
       "specularStrength0": "0.490196",
       "version": 1.5
-    },
-    "vegetation_palm_bark_01": {
-      "Stages": [
-        {
-          "colorMap": "levels/jungle_rock_island/art/shapes/trees/trees_palm/vegetation_palm_bark_01_d.dds",
-          "detailMap": "levels/jungle_rock_island/art/shapes/trees/trees_palm/detail_grunge_palm_01.dds",
-          "detailNormalMap": "levels/jungle_rock_island/art/shapes/trees/trees_palm/vegetation_palm_bark_01_n.dds",
-          "detailNormalMapStrength": 1.200000047683716,
-          "detailScale": [
-            0.1000000014901161,
-            0.1000000014901161
-          ],
-          "diffuseColor": [
-            0.9960780143737792,
-            0.9960780143737792,
-            0.9960780143737792,
-            1
-          ],
-          "normalMap": "levels/jungle_rock_island/art/shapes/trees/trees_palm/vegetation_palm_bark_01_n.dds",
-          "useAnisotropic": true
-        },
-        {},
-        {},
-        {}
-      ],
-      "class": "Material",
-      "doubleSided": true,
-      "groundType": "WOOD",
-      "mapTo": "vegetation_palm_bark_01",
-      "materialTag0": "beamng",
-      "materialTag1": "vegetation",
-      "materialTag2": "Natural",
-      "name": "vegetation_palm_bark_01",
-      "persistentId": "bedcd81d-ffeb-413c-ae63-4bd4f49d98ae",
-      "translucentBlendOp": "None"
     },
     "vegetation_palm_trunk": {
       "Stages": [
@@ -2722,6 +3111,473 @@
     }
   },
   "small_island": {
+    "juniper_bark": {
+      "Stages": [
+        {
+          "ambientOcclusionMap": "/assets/materials/tree/juniper/t_juniper_bark/t_juniper_bark_ao.data.png",
+          "baseColorMap": "/assets/materials/tree/juniper/t_juniper_bark/t_juniper_bark_b.color.png",
+          "detailBaseColorMapStrength": 0.5,
+          "detailMap": "/assets/materials/tree/tropical/tro_tree_1_trunk/t_tropical_bark_variation_1_detail.data.png",
+          "detailNormalMap": "/assets/materials/tree/tropical/tro_tree_1_trunk/t_tro_bark_01_detail_nm.normal.png",
+          "detailNormalMapStrength": 2,
+          "detailScale": [
+            2,
+            0.5
+          ],
+          "normalMap": "/assets/materials/tree/juniper/t_juniper_bark/t_juniper_bark_nm.normal.png",
+          "normalMapStrength": 1.5,
+          "pixelSpecular": true,
+          "roughnessMap": "/assets/materials/tree/juniper/t_juniper_bark/t_juniper_bark_r.data.png",
+          "specular": [
+            0.203921586,
+            0.203921586,
+            0.203921586,
+            1
+          ]
+        },
+        {
+          "detailBaseColorMapStrength": null,
+          "detailNormalMapStrength": null,
+          "detailScale": null,
+          "normalMapStrength": null,
+          "pixelSpecular": null,
+          "specular": null
+        },
+        {
+          "detailBaseColorMapStrength": null,
+          "detailNormalMapStrength": null,
+          "detailScale": null,
+          "normalMapStrength": null,
+          "pixelSpecular": null,
+          "specular": null
+        },
+        {
+          "detailBaseColorMapStrength": null,
+          "detailNormalMapStrength": null,
+          "detailScale": null,
+          "normalMapStrength": null,
+          "pixelSpecular": null,
+          "specular": null
+        }
+      ],
+      "alphaRef": 70,
+      "alphaTest": true,
+      "class": "Material",
+      "groundType": "WOOD",
+      "mapTo": "juniper_bark",
+      "materialTag0": "beamng",
+      "materialTag1": "vegetation",
+      "materialTag2": "utah",
+      "materialTag3": "Natural",
+      "name": "juniper_bark",
+      "persistentId": "b8449213-9476-4eac-a87f-13bfb6a3918a",
+      "subSurfaceIntensity": 1,
+      "version": 1.5
+    },
+    "juniper_dry": {
+      "Stages": [
+        {
+          "ambientOcclusionMap": "/assets/materials/tree/juniper/t_juniper_dry/t_juniper_dry_ao.data.png",
+          "baseColorMap": "/assets/materials/tree/juniper/t_juniper_dry/t_juniper_dry_b.color.png",
+          "detailNormalMapStrength": 0.5,
+          "detailScale": [
+            1,
+            1
+          ],
+          "normalMap": "/assets/materials/tree/juniper/t_juniper_dry/t_juniper_dry_nm.normal.png",
+          "opacityMap": "/assets/materials/tree/juniper/t_juniper_dry/t_juniper_dry_o.data.png",
+          "pixelSpecular": true,
+          "roughnessFactor": 0.848999977,
+          "roughnessMap": "/assets/materials/tree/juniper/t_juniper_dry/t_juniper_dry_r.data.png",
+          "specular": [
+            0.145098045,
+            0.145098045,
+            0.145098045,
+            1
+          ]
+        },
+        {
+          "detailNormalMapStrength": null,
+          "detailScale": null,
+          "pixelSpecular": null,
+          "roughnessFactor": null,
+          "specular": null
+        },
+        {
+          "detailNormalMapStrength": null,
+          "detailScale": null,
+          "pixelSpecular": null,
+          "roughnessFactor": null,
+          "specular": null
+        },
+        {
+          "detailNormalMapStrength": null,
+          "detailScale": null,
+          "pixelSpecular": null,
+          "roughnessFactor": null,
+          "specular": null
+        }
+      ],
+      "alphaRef": 80,
+      "alphaTest": true,
+      "class": "Material",
+      "doubleSided": true,
+      "groundType": "WOOD",
+      "invertBackFaceNormals": true,
+      "mapTo": "juniper_dry",
+      "materialTag0": "beamng",
+      "materialTag1": "vegetation",
+      "materialTag2": "utah",
+      "materialTag3": "Natural",
+      "name": "juniper_dry",
+      "persistentId": "52f0ff93-a2ae-42c2-b3e7-bc5403cca5b8",
+      "subSurface": true,
+      "subSurfaceIntensity": 0.699999988,
+      "version": 1.5
+    },
+    "juniper_leave_01": {
+      "Stages": [
+        {
+          "ambientOcclusionMap": "/assets/materials/tree/juniper/t_juniper_leave_01/t_juniper_leaves_ao.data.png",
+          "baseColorMap": "/assets/materials/tree/juniper/t_juniper_leave_01/t_juniper_leaves_b.color.png",
+          "detailScale": [
+            1,
+            1
+          ],
+          "normalMap": "/assets/materials/tree/juniper/t_juniper_leave_01/t_juniper_leaves_nm.normal.png",
+          "normalMapStrength": 0.5,
+          "opacityMap": "/assets/materials/tree/juniper/t_juniper_leave_01/t_juniper_leaves_o.data.png",
+          "pixelSpecular": true,
+          "roughnessMap": "/assets/materials/tree/juniper/t_juniper_leave_01/t_juniper_leaves_r.data.png",
+          "specular": [
+            0.156862751,
+            0.156862751,
+            0.156862751,
+            1
+          ]
+        },
+        {
+          "detailScale": null,
+          "normalMapStrength": null,
+          "pixelSpecular": null,
+          "specular": null
+        },
+        {
+          "detailScale": null,
+          "normalMapStrength": null,
+          "pixelSpecular": null,
+          "specular": null
+        },
+        {
+          "detailScale": null,
+          "normalMapStrength": null,
+          "pixelSpecular": null,
+          "specular": null
+        }
+      ],
+      "alphaRef": 140,
+      "alphaTest": true,
+      "class": "Material",
+      "doubleSided": true,
+      "groundType": "LEAVES_THIN",
+      "invertBackFaceNormals": true,
+      "mapTo": "juniper_leave_01",
+      "materialTag0": "beamng",
+      "materialTag1": "vegetation",
+      "materialTag2": "utah",
+      "materialTag3": "Natural",
+      "name": "juniper_leave_01",
+      "persistentId": "734109e6-9338-4ebd-a9da-f8135d06ff3e",
+      "subSurface": true,
+      "subSurfaceIntensity": 1,
+      "translucentBlendOp": "None",
+      "version": 1.5
+    },
+    "leaves_strong": {
+      "Stages": [
+        {},
+        {},
+        {},
+        {}
+      ],
+      "annotation": "NATURE",
+      "class": "Material",
+      "groundDepth": 0.600000024,
+      "groundType": "leaves_strong",
+      "mapTo": "leaves_strong",
+      "name": "leaves_strong",
+      "persistentId": "7e8157dc-940e-4435-937b-e934d4e42892"
+    },
+    "m_juniper_leaves_01_distant": {
+      "Stages": [
+        {
+          "ambientOcclusionMap": "/assets/materials/tree/juniper/t_juniper_leave_01_distant/t_juniper_leaves_distant_ao.data.png",
+          "baseColorMap": "/assets/materials/tree/juniper/t_juniper_leave_01_distant/t_juniper_leaves_distant_b.color.png",
+          "normalMap": "/assets/materials/tree/juniper/t_juniper_leave_01_distant/t_juniper_leaves_distant_nm.normal.png",
+          "opacityMap": "/assets/materials/tree/juniper/t_juniper_leave_01_distant/t_juniper_leaves_distant_o.data.png",
+          "roughnessMap": "/assets/materials/tree/juniper/t_juniper_leave_01_distant/t_juniper_leaves_distant_r.data.png"
+        },
+        {},
+        {},
+        {}
+      ],
+      "alphaRef": 80,
+      "alphaTest": true,
+      "class": "Material",
+      "doubleSided": true,
+      "dynamicCubemap": true,
+      "invertBackFaceNormals": true,
+      "mapTo": "m_juniper_leaves_01_distant",
+      "name": "m_juniper_leaves_01_distant",
+      "subSurface": true,
+      "subSurfaceIntensity": 1,
+      "version": 1.5
+    }
+  },
+  "utah": {
+    "juniper_bark": {
+      "Stages": [
+        {
+          "ambientOcclusionMap": "/assets/materials/tree/juniper/t_juniper_bark/t_juniper_bark_ao.data.png",
+          "baseColorMap": "/assets/materials/tree/juniper/t_juniper_bark/t_juniper_bark_b.color.png",
+          "detailBaseColorMapStrength": 0.5,
+          "detailMap": "/assets/materials/tree/tropical/tro_tree_1_trunk/t_tropical_bark_variation_1_detail.data.png",
+          "detailNormalMap": "/assets/materials/tree/tropical/tro_tree_1_trunk/t_tro_bark_01_detail_nm.normal.png",
+          "detailNormalMapStrength": 2,
+          "detailScale": [
+            2,
+            0.5
+          ],
+          "normalMap": "/assets/materials/tree/juniper/t_juniper_bark/t_juniper_bark_nm.normal.png",
+          "normalMapStrength": 1.5,
+          "pixelSpecular": true,
+          "roughnessMap": "/assets/materials/tree/juniper/t_juniper_bark/t_juniper_bark_r.data.png",
+          "specular": [
+            0.203921586,
+            0.203921586,
+            0.203921586,
+            1
+          ]
+        },
+        {
+          "detailBaseColorMapStrength": null,
+          "detailNormalMapStrength": null,
+          "detailScale": null,
+          "normalMapStrength": null,
+          "pixelSpecular": null,
+          "specular": null
+        },
+        {
+          "detailBaseColorMapStrength": null,
+          "detailNormalMapStrength": null,
+          "detailScale": null,
+          "normalMapStrength": null,
+          "pixelSpecular": null,
+          "specular": null
+        },
+        {
+          "detailBaseColorMapStrength": null,
+          "detailNormalMapStrength": null,
+          "detailScale": null,
+          "normalMapStrength": null,
+          "pixelSpecular": null,
+          "specular": null
+        }
+      ],
+      "alphaRef": 70,
+      "alphaTest": true,
+      "class": "Material",
+      "groundType": "WOOD",
+      "mapTo": "juniper_bark",
+      "materialTag0": "beamng",
+      "materialTag1": "vegetation",
+      "materialTag2": "utah",
+      "materialTag3": "Natural",
+      "name": "juniper_bark",
+      "persistentId": "b8449213-9476-4eac-a87f-13bfb6a3918a",
+      "subSurfaceIntensity": 1,
+      "version": 1.5
+    },
+    "juniper_dry": {
+      "Stages": [
+        {
+          "ambientOcclusionMap": "/assets/materials/tree/juniper/t_juniper_dry/t_juniper_dry_ao.data.png",
+          "baseColorMap": "/assets/materials/tree/juniper/t_juniper_dry/t_juniper_dry_b.color.png",
+          "detailNormalMapStrength": 0.5,
+          "detailScale": [
+            1,
+            1
+          ],
+          "normalMap": "/assets/materials/tree/juniper/t_juniper_dry/t_juniper_dry_nm.normal.png",
+          "opacityMap": "/assets/materials/tree/juniper/t_juniper_dry/t_juniper_dry_o.data.png",
+          "pixelSpecular": true,
+          "roughnessFactor": 0.848999977,
+          "roughnessMap": "/assets/materials/tree/juniper/t_juniper_dry/t_juniper_dry_r.data.png",
+          "specular": [
+            0.145098045,
+            0.145098045,
+            0.145098045,
+            1
+          ]
+        },
+        {
+          "detailNormalMapStrength": null,
+          "detailScale": null,
+          "pixelSpecular": null,
+          "roughnessFactor": null,
+          "specular": null
+        },
+        {
+          "detailNormalMapStrength": null,
+          "detailScale": null,
+          "pixelSpecular": null,
+          "roughnessFactor": null,
+          "specular": null
+        },
+        {
+          "detailNormalMapStrength": null,
+          "detailScale": null,
+          "pixelSpecular": null,
+          "roughnessFactor": null,
+          "specular": null
+        }
+      ],
+      "alphaRef": 80,
+      "alphaTest": true,
+      "class": "Material",
+      "doubleSided": true,
+      "groundType": "WOOD",
+      "invertBackFaceNormals": true,
+      "mapTo": "juniper_dry",
+      "materialTag0": "beamng",
+      "materialTag1": "vegetation",
+      "materialTag2": "utah",
+      "materialTag3": "Natural",
+      "name": "juniper_dry",
+      "persistentId": "52f0ff93-a2ae-42c2-b3e7-bc5403cca5b8",
+      "subSurface": true,
+      "subSurfaceIntensity": 0.699999988,
+      "version": 1.5
+    },
+    "juniper_leave_01": {
+      "Stages": [
+        {
+          "ambientOcclusionMap": "/assets/materials/tree/juniper/t_juniper_leave_01/t_juniper_leaves_ao.data.png",
+          "baseColorMap": "/assets/materials/tree/juniper/t_juniper_leave_01/t_juniper_leaves_b.color.png",
+          "detailScale": [
+            1,
+            1
+          ],
+          "normalMap": "/assets/materials/tree/juniper/t_juniper_leave_01/t_juniper_leaves_nm.normal.png",
+          "normalMapStrength": 0.5,
+          "opacityMap": "/assets/materials/tree/juniper/t_juniper_leave_01/t_juniper_leaves_o.data.png",
+          "pixelSpecular": true,
+          "roughnessMap": "/assets/materials/tree/juniper/t_juniper_leave_01/t_juniper_leaves_r.data.png",
+          "specular": [
+            0.156862751,
+            0.156862751,
+            0.156862751,
+            1
+          ]
+        },
+        {
+          "detailScale": null,
+          "normalMapStrength": null,
+          "pixelSpecular": null,
+          "specular": null
+        },
+        {
+          "detailScale": null,
+          "normalMapStrength": null,
+          "pixelSpecular": null,
+          "specular": null
+        },
+        {
+          "detailScale": null,
+          "normalMapStrength": null,
+          "pixelSpecular": null,
+          "specular": null
+        }
+      ],
+      "alphaRef": 140,
+      "alphaTest": true,
+      "class": "Material",
+      "doubleSided": true,
+      "groundType": "LEAVES_THIN",
+      "invertBackFaceNormals": true,
+      "mapTo": "juniper_leave_01",
+      "materialTag0": "beamng",
+      "materialTag1": "vegetation",
+      "materialTag2": "utah",
+      "materialTag3": "Natural",
+      "name": "juniper_leave_01",
+      "persistentId": "734109e6-9338-4ebd-a9da-f8135d06ff3e",
+      "subSurface": true,
+      "subSurfaceIntensity": 1,
+      "translucentBlendOp": "None",
+      "version": 1.5
+    },
+    "leaves_strong": {
+      "Stages": [
+        {},
+        {},
+        {},
+        {}
+      ],
+      "annotation": "NATURE",
+      "class": "Material",
+      "groundDepth": 0.600000024,
+      "groundType": "leaves_strong",
+      "mapTo": "leaves_strong",
+      "name": "leaves_strong",
+      "persistentId": "7e8157dc-940e-4435-937b-e934d4e42892"
+    },
+    "m_juniper_leaves_01_distant": {
+      "Stages": [
+        {
+          "ambientOcclusionMap": "/assets/materials/tree/juniper/t_juniper_leave_01_distant/t_juniper_leaves_distant_ao.data.png",
+          "baseColorMap": "/assets/materials/tree/juniper/t_juniper_leave_01_distant/t_juniper_leaves_distant_b.color.png",
+          "normalMap": "/assets/materials/tree/juniper/t_juniper_leave_01_distant/t_juniper_leaves_distant_nm.normal.png",
+          "opacityMap": "/assets/materials/tree/juniper/t_juniper_leave_01_distant/t_juniper_leaves_distant_o.data.png",
+          "roughnessMap": "/assets/materials/tree/juniper/t_juniper_leave_01_distant/t_juniper_leaves_distant_r.data.png"
+        },
+        {},
+        {},
+        {}
+      ],
+      "alphaRef": 80,
+      "alphaTest": true,
+      "class": "Material",
+      "doubleSided": true,
+      "dynamicCubemap": true,
+      "invertBackFaceNormals": true,
+      "mapTo": "m_juniper_leaves_01_distant",
+      "name": "m_juniper_leaves_01_distant",
+      "subSurface": true,
+      "subSurfaceIntensity": 1,
+      "version": 1.5
+    },
+    "utah_rocks_a": {
+      "Stages": [
+        {
+          "colorMap": "/levels/GridMap/art/shapes/rocks/utah_rocks_a_d.dds",
+          "normalMap": "/levels/GridMap/art/shapes/rocks/utah_rocks_a_n.dds",
+          "specularPower": 1
+        },
+        {},
+        {},
+        {}
+      ],
+      "class": "Material",
+      "groundType": "ROCK",
+      "mapTo": "utah_rocks_a",
+      "materialTag0": "beamng",
+      "materialTag1": "Natural",
+      "name": "utah_rocks_a",
+      "persistentId": "020ff0de-c97e-4cc6-a82b-8d26c23f7016"
+    }
+  },
+  "west_coast": {
     "branches_strong": {
       "Stages": [
         {},
@@ -2736,200 +3592,82 @@
       "name": "branches_strong",
       "persistentId": "fd68c03b-68ae-4e0a-850e-a66f02004d54"
     },
-    "juniper_bark": {
+    "deserttree_branches": {
       "Stages": [
         {
-          "ambientOcclusionMap": "/levels/small_island/art/shapes/trees/Juniper/t_juniper_bark_ao.data.png",
-          "baseColorMap": "/levels/small_island/art/shapes/trees/Juniper/t_juniper_bark_b.color.png",
-          "normalMap": "/levels/small_island/art/shapes/trees/Juniper/t_juniper_bark_nm.normal.png",
-          "pixelSpecular": true,
-          "roughnessMap": "/levels/small_island/art/shapes/trees/Juniper/t_juniper_bark_r.data.png",
-          "specular": [
-            0.203921586,
-            0.203921586,
-            0.203921586,
-            1
-          ]
+          "ambientOcclusionMap": "/levels/johnson_valley/art/shapes/trees/deserttrees/t_desert_tree_branches_ao.data.png",
+          "baseColorMap": "/levels/johnson_valley/art/shapes/trees/deserttrees/t_desert_tree_branches_b.color.png",
+          "normalMap": "/levels/johnson_valley/art/shapes/trees/deserttrees/t_desert_tree_branches_nm.normal.png",
+          "opacityMap": "/levels/johnson_valley/art/shapes/trees/deserttrees/t_desert_tree_branches_o.data.png",
+          "roughnessMap": "/levels/johnson_valley/art/shapes/trees/deserttrees/t_desert_tree_branches_r.data.png"
         },
         {},
         {},
         {}
       ],
-      "alphaRef": 70,
+      "alphaRef": 65,
       "alphaTest": true,
+      "annotation": "NATURE",
       "class": "Material",
-      "groundType": "WOOD",
-      "mapTo": "juniper_bark",
-      "materialTag0": "beamng",
-      "materialTag1": "vegetation",
-      "materialTag2": "utah",
-      "materialTag3": "Natural",
-      "name": "juniper_bark",
-      "persistentId": "b8449213-9476-4eac-a87f-13bfb6a3918a",
+      "doubleSided": true,
+      "groundType": "FOREST",
+      "invertBackFaceNormals": true,
+      "mapTo": "deserttree_branches",
+      "name": "deserttree_branches",
+      "persistentId": "81b8e171-c128-47a2-a436-25160022dcbe",
+      "subSurface": true,
+      "subSurfaceIntensity": 0.00999999978,
       "version": 1.5
     },
-    "juniper_dry": {
+    "deserttree_leaves": {
       "Stages": [
         {
-          "ambientOcclusionMap": "/levels/small_island/art/shapes/trees/Juniper/t_juniper_dry_ao.data.png",
-          "baseColorMap": "/levels/small_island/art/shapes/trees/Juniper/t_juniper_dry_b.color.png",
-          "detailNormalMap": "/levels/small_island/art/shapes/trees/Juniper/t_juniper_dry_detail_nm.normal.png",
-          "detailNormalMapStrength": 0.5,
+          "ambientOcclusionMap": "/assets/materials/foliage/bush/t_deserttree_leaves/t_desert_tree_leaves_ao.data.png",
+          "baseColorMap": "/assets/materials/foliage/bush/t_deserttree_leaves/t_desert_tree_leaves_b.color.png",
           "detailScale": [
             1,
             1
           ],
-          "normalMap": "/levels/small_island/art/shapes/trees/Juniper/t_juniper_dry_nm.normal.png",
-          "opacityMap": "/levels/small_island/art/shapes/trees/Juniper/t_juniper_dry_o.data.png",
-          "pixelSpecular": true,
-          "roughnessFactor": 0.848999977,
-          "roughnessMap": "/levels/small_island/art/shapes/trees/Juniper/t_juniper_dry_r.data.png",
-          "specular": [
-            0.145098045,
-            0.145098045,
-            0.145098045,
-            1
-          ]
+          "normalMap": "/assets/materials/foliage/bush/t_deserttree_leaves/t_desert_tree_leaves_nm.normal.png",
+          "opacityMap": "/assets/materials/foliage/bush/t_deserttree_leaves/t_desert_tree_leaves_o.data.png",
+          "roughnessMap": "/assets/materials/foliage/bush/t_deserttree_leaves/t_desert_tree_leaves_r.data.png"
         },
-        {},
-        {},
-        {}
+        {
+          "detailScale": null
+        },
+        {
+          "detailScale": null
+        },
+        {
+          "detailScale": null
+        }
       ],
-      "alphaRef": 70,
+      "alphaRef": 60,
       "alphaTest": true,
+      "annotation": "NATURE",
       "class": "Material",
       "doubleSided": true,
-      "groundType": "WOOD",
-      "mapTo": "juniper_dry",
-      "materialTag0": "beamng",
-      "materialTag1": "vegetation",
-      "materialTag2": "utah",
-      "materialTag3": "Natural",
-      "name": "juniper_dry",
-      "persistentId": "52f0ff93-a2ae-42c2-b3e7-bc5403cca5b8",
+      "groundType": "LEAVES_STRONG",
+      "invertBackFaceNormals": true,
+      "mapTo": "deserttree_leaves",
+      "name": "deserttree_leaves",
+      "persistentId": "f0eacfe6-2ffc-4692-8ba8-565e439cca7d",
+      "subSurface": true,
+      "subSurfaceIntensity": 1,
       "version": 1.5
     },
-    "juniper_leave_01": {
+    "deserttree_trunk": {
       "Stages": [
         {
-          "ambientOcclusionMap": "/levels/small_island/art/shapes/trees/Juniper/t_juniper_leaves_ao.data.png",
-          "baseColorMap": "/levels/small_island/art/shapes/trees/Juniper/t_juniper_leaves_b.color.png",
-          "detailNormalMap": "/levels/small_island/art/shapes/trees/Juniper/t_juniper_leaves_detail_nm.normal.png",
-          "detailScale": [
-            1,
-            1
-          ],
-          "normalMap": "/levels/small_island/art/shapes/trees/Juniper/t_juniper_leaves_nm.normal.png",
-          "opacityMap": "/levels/small_island/art/shapes/trees/Juniper/t_juniper_leaves_o.data.png",
-          "pixelSpecular": true,
-          "roughnessFactor": 0.851000011,
-          "roughnessMap": "/levels/small_island/art/shapes/trees/Juniper/t_juniper_leaves_r.data.png",
-          "specular": [
-            0.156862751,
-            0.156862751,
-            0.156862751,
-            1
-          ]
-        },
-        {},
-        {},
-        {}
-      ],
-      "alphaRef": 90,
-      "alphaTest": true,
-      "class": "Material",
-      "doubleSided": true,
-      "groundType": "LEAVES_THIN",
-      "mapTo": "juniper_leave_01",
-      "materialTag0": "beamng",
-      "materialTag1": "vegetation",
-      "materialTag2": "utah",
-      "materialTag3": "Natural",
-      "name": "juniper_leave_01",
-      "persistentId": "734109e6-9338-4ebd-a9da-f8135d06ff3e",
-      "translucentBlendOp": "None",
-      "version": 1.5
-    },
-    "juniper_leave_02": {
-      "Stages": [
-        {
-          "ambientOcclusionMap": "/levels/small_island/art/shapes/trees/Juniper/t_juniper_leaves_02_ao.data.png",
-          "baseColorMap": "/levels/small_island/art/shapes/trees/Juniper/t_juniper_leaves_02_b.color.png",
-          "detailNormalMap": "/levels/small_island/art/shapes/trees/Juniper/t_juniper_leaves_02_detail_nm.normal.png",
-          "detailScale": [
-            1,
-            1
-          ],
-          "normalMap": "/levels/small_island/art/shapes/trees/Juniper/t_juniper_leaves_02_nm.normal.png",
-          "opacityMap": "/levels/small_island/art/shapes/trees/Juniper/t_juniper_leaves_02_o.data.png",
-          "pixelSpecular": true,
-          "roughnessFactor": 0.848999977,
-          "roughnessMap": "/levels/small_island/art/shapes/trees/Juniper/t_juniper_leaves_02_r.data.png",
-          "specular": [
-            0.137254909,
-            0.137254909,
-            0.137254909,
-            1
-          ]
-        },
-        {},
-        {},
-        {}
-      ],
-      "alphaRef": 100,
-      "alphaTest": true,
-      "class": "Material",
-      "doubleSided": true,
-      "groundType": "LEAVES_THIN",
-      "mapTo": "juniper_leave_02",
-      "materialTag0": "beamng",
-      "materialTag1": "vegetation",
-      "materialTag2": "utah",
-      "materialTag3": "Natural",
-      "name": "juniper_leave_02",
-      "persistentId": "8251fc74-fabb-4fcb-ac33-0a55f737ab69",
-      "version": 1.5
-    },
-    "leaves_strong": {
-      "Stages": [
-        {},
-        {},
-        {},
-        {}
-      ],
-      "class": "Material",
-      "groundDepth": 0.6000000238418579,
-      "groundType": "leaves_strong",
-      "mapTo": "leaves_strong",
-      "name": "leaves_strong",
-      "persistentId": "c2b0f3c2-bb8d-45cc-96e7-4da2e1f18483"
-    },
-    "leaves_thin": {
-      "Stages": [
-        {},
-        {},
-        {},
-        {}
-      ],
-      "class": "Material",
-      "groundDepth": 1,
-      "groundType": "leaves_thin",
-      "mapTo": "leaves_thin",
-      "name": "leaves_thin",
-      "persistentId": "da694a69-0bb7-41e8-829f-2392272df20a"
-    }
-  },
-  "utah": {
-    "cliff_repeat_low": {
-      "Stages": [
-        {
-          "colorMap": "game:levels/Utah/art/shapes/rocks/cliff_repeat_low_d.dds",
+          "ambientOcclusionMap": "/levels/johnson_valley/art/shapes/trees/deserttrees/t_desert_tree_trunk_ao.data.png",
+          "baseColorMap": "/levels/johnson_valley/art/shapes/trees/deserttrees/t_desert_tree_trunk_b.color.png",
+          "detailNormalMap": "/levels/johnson_valley/art/shapes/trees/deserttrees/t_desert_tree_trunk_nm.normal.png",
           "detailScale": [
             8,
             8
           ],
-          "normalMap": "game:levels/Utah/art/shapes/rocks/cliff_repeat_low_n.dds",
-          "useAnisotropic": true
+          "normalMap": "/levels/johnson_valley/art/shapes/trees/deserttrees/t_desert_tree_trunk_nm.normal.png",
+          "roughnessMap": "/levels/johnson_valley/art/shapes/trees/deserttrees/t_desert_tree_trunk_r.data.png"
         },
         {},
         {},
@@ -2937,305 +3675,12 @@
       ],
       "annotation": "NATURE",
       "class": "Material",
-      "groundType": "ROCK",
-      "mapTo": "cliff_repeat_low",
-      "materialTag0": "Utah",
-      "name": "cliff_repeat_low",
-      "persistentId": "f32ddba9-97fd-4fcd-a575-bac3f67d912b",
-      "specularStrength0": "0.490196"
-    },
-    "juniper_bark": {
-      "Stages": [
-        {
-          "ambientOcclusionMap": "/levels/utah/art/shapes/trees/Juniper/t_juniper_bark_ao.data.png",
-          "baseColorMap": "/levels/utah/art/shapes/trees/Juniper/t_juniper_bark_b.color.png",
-          "normalMap": "/levels/utah/art/shapes/trees/Juniper/t_juniper_bark_nm.normal.png",
-          "pixelSpecular": true,
-          "roughnessMap": "/levels/utah/art/shapes/trees/Juniper/t_juniper_bark_r.data.png",
-          "specular": [
-            0.203921586,
-            0.203921586,
-            0.203921586,
-            1
-          ]
-        },
-        {},
-        {},
-        {}
-      ],
-      "alphaRef": 70,
-      "alphaTest": true,
-      "class": "Material",
-      "groundType": "WOOD",
-      "mapTo": "juniper_bark",
-      "materialTag0": "beamng",
-      "materialTag1": "vegetation",
-      "materialTag2": "utah",
-      "materialTag3": "Natural",
-      "name": "juniper_bark",
-      "persistentId": "b8449213-9476-4eac-a87f-13bfb6a3918a",
+      "groundType": "FOREST",
+      "mapTo": "deserttree_trunk",
+      "name": "deserttree_trunk",
+      "persistentId": "59793931-81a3-4a73-8348-8c5e7b1e4877",
       "version": 1.5
     },
-    "juniper_dry": {
-      "Stages": [
-        {
-          "ambientOcclusionMap": "/levels/utah/art/shapes/trees/Juniper/t_juniper_dry_ao.data.png",
-          "baseColorMap": "/levels/utah/art/shapes/trees/Juniper/t_juniper_dry_b.color.png",
-          "detailNormalMap": "/levels/utah/art/shapes/trees/Juniper/t_juniper_dry_detail_nm.normal.png",
-          "detailNormalMapStrength": 0.5,
-          "detailScale": [
-            1,
-            1
-          ],
-          "normalMap": "/levels/utah/art/shapes/trees/Juniper/t_juniper_dry_nm.normal.png",
-          "opacityMap": "/levels/utah/art/shapes/trees/Juniper/t_juniper_dry_o.data.png",
-          "pixelSpecular": true,
-          "roughnessFactor": 0.848999977,
-          "roughnessMap": "/levels/utah/art/shapes/trees/Juniper/t_juniper_dry_r.data.png",
-          "specular": [
-            0.145098045,
-            0.145098045,
-            0.145098045,
-            1
-          ]
-        },
-        {},
-        {},
-        {}
-      ],
-      "alphaRef": 70,
-      "alphaTest": true,
-      "class": "Material",
-      "doubleSided": true,
-      "groundType": "WOOD",
-      "mapTo": "juniper_dry",
-      "materialTag0": "beamng",
-      "materialTag1": "vegetation",
-      "materialTag2": "utah",
-      "materialTag3": "Natural",
-      "name": "juniper_dry",
-      "persistentId": "52f0ff93-a2ae-42c2-b3e7-bc5403cca5b8",
-      "version": 1.5
-    },
-    "juniper_leave_01": {
-      "Stages": [
-        {
-          "ambientOcclusionMap": "/levels/utah/art/shapes/trees/Juniper/t_juniper_leaves_ao.data.png",
-          "baseColorMap": "/levels/utah/art/shapes/trees/Juniper/t_juniper_leaves_b.color.png",
-          "detailNormalMap": "/levels/utah/art/shapes/trees/Juniper/t_juniper_leaves_detail_nm.normal.png",
-          "detailScale": [
-            1,
-            1
-          ],
-          "normalMap": "/levels/utah/art/shapes/trees/Juniper/t_juniper_leaves_nm.normal.png",
-          "opacityMap": "/levels/utah/art/shapes/trees/Juniper/t_juniper_leaves_o.data.png",
-          "pixelSpecular": true,
-          "roughnessFactor": 0.851000011,
-          "roughnessMap": "/levels/utah/art/shapes/trees/Juniper/t_juniper_leaves_r.data.png",
-          "specular": [
-            0.156862751,
-            0.156862751,
-            0.156862751,
-            1
-          ]
-        },
-        {},
-        {},
-        {}
-      ],
-      "alphaRef": 90,
-      "alphaTest": true,
-      "class": "Material",
-      "doubleSided": true,
-      "groundType": "LEAVES_THIN",
-      "mapTo": "juniper_leave_01",
-      "materialTag0": "beamng",
-      "materialTag1": "vegetation",
-      "materialTag2": "utah",
-      "materialTag3": "Natural",
-      "name": "juniper_leave_01",
-      "persistentId": "734109e6-9338-4ebd-a9da-f8135d06ff3e",
-      "translucentBlendOp": "None",
-      "version": 1.5
-    },
-    "juniper_leave_02": {
-      "Stages": [
-        {
-          "ambientOcclusionMap": "/levels/utah/art/shapes/trees/Juniper/t_juniper_leaves_02_ao.data.png",
-          "baseColorMap": "/levels/utah/art/shapes/trees/Juniper/t_juniper_leaves_02_b.color.png",
-          "detailNormalMap": "/levels/utah/art/shapes/trees/Juniper/t_juniper_leaves_02_detail_nm.normal.png",
-          "detailScale": [
-            1,
-            1
-          ],
-          "normalMap": "/levels/utah/art/shapes/trees/Juniper/t_juniper_leaves_02_nm.normal.png",
-          "opacityMap": "/levels/utah/art/shapes/trees/Juniper/t_juniper_leaves_02_o.data.png",
-          "pixelSpecular": true,
-          "roughnessFactor": 0.848999977,
-          "roughnessMap": "/levels/utah/art/shapes/trees/Juniper/t_juniper_leaves_02_r.data.png",
-          "specular": [
-            0.137254909,
-            0.137254909,
-            0.137254909,
-            1
-          ]
-        },
-        {},
-        {},
-        {}
-      ],
-      "alphaRef": 100,
-      "alphaTest": true,
-      "class": "Material",
-      "doubleSided": true,
-      "groundType": "LEAVES_THIN",
-      "mapTo": "juniper_leave_02",
-      "materialTag0": "beamng",
-      "materialTag1": "vegetation",
-      "materialTag2": "utah",
-      "materialTag3": "Natural",
-      "name": "juniper_leave_02",
-      "persistentId": "8251fc74-fabb-4fcb-ac33-0a55f737ab69",
-      "version": 1.5
-    },
-    "leaves_strong": {
-      "Stages": [
-        {},
-        {},
-        {},
-        {}
-      ],
-      "class": "Material",
-      "groundDepth": 0.6000000238418579,
-      "groundType": "leaves_strong",
-      "mapTo": "leaves_strong",
-      "name": "leaves_strong",
-      "persistentId": "2bb24a8e-beea-4ff4-a54d-d1022b0fff03"
-    },
-    "leaves_thin": {
-      "Stages": [
-        {},
-        {},
-        {},
-        {}
-      ],
-      "class": "Material",
-      "groundDepth": 1,
-      "groundType": "leaves_thin",
-      "mapTo": "leaves_thin",
-      "name": "leaves_thin",
-      "persistentId": "1c902c24-14e7-404d-a2f1-4771d41088bf"
-    },
-    "rocks_01_a_mat": {
-      "Stages": [
-        {
-          "colorMap": "levels/Utah/art/shapes/rocks/rocks_01_a_d.dds",
-          "detailScale": [
-            1,
-            1
-          ],
-          "diffuseColor": [
-            0.811765015,
-            0.725489974,
-            0.666666985,
-            2
-          ],
-          "normalMap": "levels/Utah/art/shapes/rocks/rocks_01_a_n.dds",
-          "specular": [
-            0.533333004,
-            0.533333004,
-            0.533333004,
-            2
-          ],
-          "useAnisotropic": true
-        },
-        {
-          "detailScale": null,
-          "diffuseColor": null,
-          "specular": null,
-          "useAnisotropic": null
-        },
-        {
-          "detailScale": null,
-          "diffuseColor": null,
-          "specular": null,
-          "useAnisotropic": null
-        },
-        {
-          "detailScale": null,
-          "diffuseColor": null,
-          "specular": null,
-          "useAnisotropic": null
-        }
-      ],
-      "class": "Material",
-      "groundType": "ROCK",
-      "mapTo": "rocks_01_a_mat",
-      "materialTag0": "Utah",
-      "name": "rocks_01_a_mat",
-      "persistentId": "9b4c18b1-7aa9-43a0-8cf0-fa512f1c47d1"
-    },
-    "utah_rocks_a": {
-      "Stages": [
-        {
-          "colorMap": "levels/Utah/art/shapes/rocks/utah_rocks_a_d.dds",
-          "normalMap": "levels/Utah/art/shapes/rocks/utah_rocks_a_n.dds",
-          "specularPower": 1
-        },
-        {},
-        {},
-        {}
-      ],
-      "class": "Material",
-      "groundType": "ROCK",
-      "mapTo": "utah_rocks_a",
-      "materialTag0": "Utah",
-      "name": "utah_rocks_a",
-      "persistentId": "77440828-8f3e-483c-af40-4750a449dd5b"
-    },
-    "utah_rocks_b": {
-      "Stages": [
-        {
-          "ambientOcclusionMap": "/levels/Utah/art/shapes/rocks/t_rocks_utah_ao.data.png",
-          "baseColorFactor": [
-            1,
-            0.999993026,
-            0.999989986,
-            1
-          ],
-          "baseColorMap": "/levels/Utah/art/shapes/rocks/t_rocks_utah_b.color.png",
-          "detailMap": "/levels/Utah/art/shapes/rocks/t_rocks_utah_detail_b.data.png",
-          "detailNormalMap": "/levels/Utah/art/shapes/rocks/t_rocks_utah_detail_nm.normal.png",
-          "detailScale": [
-            32,
-            32
-          ],
-          "normalMap": "/levels/Utah/art/shapes/rocks/t_rocks_utah_nm.normal.png",
-          "roughnessMap": "/levels/Utah/art/shapes/rocks/t_rocks_utah_r.data.png",
-          "specular": [
-            0.396077991,
-            0.396077991,
-            0.396077991,
-            0.00800000038
-          ]
-        },
-        {},
-        {},
-        {}
-      ],
-      "class": "Material",
-      "groundType": "ROCK",
-      "mapTo": "utah_rocks_b",
-      "materialTag0": "Utah",
-      "materialTag1": "rock",
-      "materialTag2": "east_coast_usa",
-      "name": "utah_rocks_b",
-      "persistentId": "2dac091c-1fea-467a-808f-610c8ea8b7b0",
-      "specularStrength0": "0.490196",
-      "version": 1.5
-    }
-  },
-  "west_coast": {
     "eca_rocks": {
       "Stages": [
         {
@@ -3273,62 +3718,6 @@
       "translucentBlendOp": "None",
       "version": 1.5
     },
-    "grasses1": {
-      "Stages": [
-        {
-          "colorMap": "/levels/west_coast_usa/art/shapes/trees/grasses1_d.dds",
-          "diffuseColor": [
-            0.996078014,
-            0.996078014,
-            0.996078014,
-            1
-          ],
-          "normalMap": "/levels/west_coast_usa/art/shapes/trees/grasses1_n.dds",
-          "pixelSpecular": true,
-          "roughnessFactor": 0.621950269,
-          "specular": [
-            0.992156982,
-            0.992156982,
-            0.992156982,
-            1
-          ],
-          "specularMap": "/levels/west_coast_usa/art/shapes/trees/grasses1_s.dds",
-          "useAnisotropic": true
-        },
-        {
-          "diffuseColor": null,
-          "pixelSpecular": null,
-          "roughnessFactor": null,
-          "specular": null,
-          "useAnisotropic": null
-        },
-        {
-          "diffuseColor": null,
-          "pixelSpecular": null,
-          "roughnessFactor": null,
-          "specular": null,
-          "useAnisotropic": null
-        },
-        {
-          "diffuseColor": null,
-          "pixelSpecular": null,
-          "roughnessFactor": null,
-          "specular": null,
-          "useAnisotropic": null
-        }
-      ],
-      "alphaRef": 128,
-      "alphaTest": true,
-      "annotation": "NATURE",
-      "class": "Material",
-      "mapTo": "grasses1",
-      "materialTag0": "beamng",
-      "materialTag1": "vegetation",
-      "materialTag2": "Natural",
-      "materialTag3": "vegetation",
-      "name": "grasses1",
-      "persistentId": "7ed1047f-c737-4d89-90b7-1b1d3c58decd"
-    },
     "leaves_strong": {
       "Stages": [
         {},
@@ -3336,12 +3725,13 @@
         {},
         {}
       ],
+      "annotation": "NATURE",
       "class": "Material",
       "groundDepth": 0.600000024,
       "groundType": "leaves_strong",
       "mapTo": "leaves_strong",
       "name": "leaves_strong",
-      "persistentId": "a9095ba0-3419-4cef-abb5-6ff61acd08bd"
+      "persistentId": "7e8157dc-940e-4435-937b-e934d4e42892"
     },
     "leaves_thin": {
       "Stages": [
@@ -3355,79 +3745,31 @@
       "groundType": "leaves_thin",
       "mapTo": "leaves_thin",
       "name": "leaves_thin",
-      "persistentId": "49a3f66b-12a0-496a-b6c1-44d3de52e9d5"
+      "persistentId": "859cdbd4-7a36-4613-9344-b50a1d8745ea"
     },
-    "wca_cliff": {
+    "lod_vertcol": {
       "Stages": [
         {
-          "ambientOcclusionMap": "/levels/west_coast_usa/art/shapes/rocks/t_macro_cliff_ao.data.png",
-          "baseColorFactor": [
-            0.930895984,
-            0.930885971,
-            0.930885971,
-            1
-          ],
-          "baseColorMap": "/levels/west_coast_usa/art/shapes/rocks/t_macro_cliff_b.color.png",
-          "detailMap": "/levels/west_coast_usa/art/shapes/rocks/t_rock_detail.data.png",
-          "detailNormalMap": "/levels/west_coast_usa/art/shapes/rocks/t_rock_nm.normal.png",
-          "detailNormalMapStrength": 0.699999988,
-          "detailScale": [
-            4.61000013,
-            4.61000013
-          ],
-          "normalMap": "/levels/west_coast_usa/art/shapes/rocks/t_macro_cliff_nm.normal.png",
-          "opacityMap": "/levels/west_coast_usa/art/shapes/rocks/t_rock_o.data.png",
-          "opacityMapUseUV": 1,
-          "pixelSpecular": true,
-          "roughnessMap": "/levels/west_coast_usa/art/shapes/rocks/t_wca_cliff_r.data.png",
           "vertColor": true
+        },
+        {
+          "vertColor": null
+        },
+        {
+          "vertColor": null
+        },
+        {
+          "vertColor": null
         }
       ],
-      "alphaRef": 0,
-      "alphaTest": true,
-      "annotation": "ROCK",
       "class": "Material",
-      "dynamicCubemap": true,
-      "groundType": "ROCK",
-      "mapTo": "wca_cliff",
+      "groundType": "ASPHALT_OLD",
+      "mapTo": "lod_vertcol",
       "materialTag0": "beamng",
-      "materialTag1": "rock",
-      "name": "wca_cliff",
-      "persistentId": "65b5c08e-4e7b-4aeb-ae98-134546710ea8",
-      "translucentBlendOp": "None",
-      "version": 1.5
-    },
-    "wca_rock": {
-      "Stages": [
-        {
-          "ambientOcclusionMap": "/levels/west_coast_usa/art/shapes/rocks/t_wca_rock_ao.data.png",
-          "baseColorMap": "/levels/west_coast_usa/art/shapes/rocks/t_wca_rock_b.color.png",
-          "detailMap": "/levels/west_coast_usa/art/shapes/rocks/t_rocks_pac_detail_d.data.png",
-          "detailNormalMap": "/levels/west_coast_usa/art/shapes/rocks/t_rocks_pac_detail_n.normal.png",
-          "detailNormalMapStrength": 0.300000012,
-          "detailScale": [
-            8,
-            8
-          ],
-          "normalMap": "/levels/west_coast_usa/art/shapes/rocks/t_wca_rock_nm.normal.png",
-          "pixelSpecular": true,
-          "roughnessMap": "/levels/west_coast_usa/art/shapes/rocks/t_wca_rock_r.data.png"
-        },
-        {},
-        {},
-        {}
-      ],
-      "alphaRef": 0,
-      "annotation": "ROCK",
-      "class": "Material",
-      "groundType": "ROCK",
-      "mapTo": "wca_rock1",
-      "materialTag0": "beamng",
-      "materialTag1": "rock",
-      "name": "wca_rock",
-      "persistentId": "4daf2183-966f-4c37-9bf3-904c3212febb",
-      "translucentBlendOp": "None",
-      "version": 1.5
+      "materialTag1": "building",
+      "name": "lod_vertcol",
+      "persistentId": "3122f280-003f-419e-ba18-ba85683d01ed",
+      "translucentBlendOp": "None"
     }
   }
 }
