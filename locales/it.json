@@ -18,6 +18,7 @@
     "disclaimer": "Avvertenza",
     "contact": "Contatti",
     "discord": "Official Discord",
+    "github": "GitHub",
     "stack": "Stack tecnologico",
     "switchToLightMode": "Passa a Modalità Chiara",
     "switchToDarkMode": "Passa a Modalità Scura",
@@ -38,6 +39,7 @@
     "inputHint": "Mouse e Tastiera Consigliati"
   },
   "map": {
+    "editInOsm": "Modifica in OpenStreetMap",
     "latitude": "Latitudine",
     "longitude": "Longitudine",
     "selectLocation": "Seleziona una posizione...",
