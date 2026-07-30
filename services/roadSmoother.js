@@ -86,10 +86,15 @@ function sampleHeight(heightMap, width, height, px, py) {
     const h01 = heightMap[y1 * width + x0];
     const h11 = heightMap[y1 * width + x1];
 
-    // Simple fallback if NO_DATA_VALUE
-    if (h00 === NO_DATA_VALUE || h10 === NO_DATA_VALUE || h01 === NO_DATA_VALUE || h11 === NO_DATA_VALUE) {
-        return h00;
-    }
+    // Average valid corners when some are NO_DATA; fall back to full bilinear
+    // when all four corners are valid.
+    let sum = 0, count = 0;
+    if (h00 !== NO_DATA_VALUE) { sum += h00; count++; }
+    if (h10 !== NO_DATA_VALUE) { sum += h10; count++; }
+    if (h01 !== NO_DATA_VALUE) { sum += h01; count++; }
+    if (h11 !== NO_DATA_VALUE) { sum += h11; count++; }
+    if (count === 0) return NO_DATA_VALUE;
+    if (count < 4) return sum / count;
 
     const dx = cx - x0;
     const dy = cy - y0;

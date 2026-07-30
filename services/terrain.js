@@ -120,7 +120,7 @@ const convertHeightMapToMeters = (heightMap, scale) => {
 
 const decodeTerrariumHeight = (r, g, b) => {
   const h = r * 256 + g + b / 256 - 32768;
-  return h <= -32760 ? NO_DATA_VALUE : h;
+  return h === -32768 ? NO_DATA_VALUE : h;
 };
 
 const getSatelliteZoomForProcessingMpp = (processingMetersPerPixel = 1) => {
@@ -464,20 +464,14 @@ let gpxzRateLimitInfo = null;
 // fetchGPXZRaw() calls at once, so without a shared gate the aggregate request
 // rate is (fetchConcurrency × per-tile chunks) — far over the plan's rps and a
 // guaranteed source of 429s. This gate spaces request *starts* globally so the
-// combined rate across every tile stays under the plan limit. It is reserve-
-// then-await (synchronous slot reservation), which is safe because JS is
-// single-threaded — two callers can't interleave between the read and write.
+// combined rate across every tile stays under the plan limit. The reserve-then-
+// await pattern is safe: the read and write of gpxzNextSlotAt happen in the same
+// synchronous block before any yield, so two callers cannot interleave.
 let gpxzNextSlotAt = 0;
 
-/**
- * Wait for the next globally-paced GPXZ request slot. Spacing is derived from
- * the probed plan rps with a small safety margin; falls back to 1 rps until the
- * plan is known.
- */
 const acquireGpxzSlot = async (signal) => {
-  const rps = Math.max(1, Number(gpxzRateLimitInfo?.rps) || 1);
-  // 10% headroom under the advertised rps absorbs timing jitter and the
-  // server's own window accounting, which otherwise still trips occasional 429s.
+  const plan = gpxzRateLimitInfo;
+  const rps = Math.max(1, Number(plan?.rps) || 1);
   const minIntervalMs = Math.ceil(1000 / (rps * 0.9));
   const now = performance.now();
   const startAt = Math.max(now, gpxzNextSlotAt);

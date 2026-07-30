@@ -154,19 +154,23 @@ watch(
 const { onBeforeRender } = useLoop();
 
 // Material patching needs a full scene traversal — don't pay for it every
-// frame. Re-patch when the top-level scene graph changes (new terrain/OSM
-// group swapped in) and on a periodic fallback for materials created deeper
+// frame. Re-patch when a top-level scene child is swapped in (terrain/OSM
+// group replaced) and on a periodic fallback for materials recreated deeper
 // in the tree (e.g. the terrain material :key swap).
 let patchFrameCounter = 0;
-let lastSceneChildCount = -1;
-const PATCH_EVERY_N_FRAMES = 30;
+let lastSceneChildRefs = new Set();
+const PATCH_EVERY_N_FRAMES = 15;
 
 onBeforeRender(() => {
   if (!csm.value) return;
   patchFrameCounter += 1;
-  const childCount = scene.value ? scene.value.children.length : 0;
-  if (childCount !== lastSceneChildCount || patchFrameCounter % PATCH_EVERY_N_FRAMES === 0) {
-    lastSceneChildCount = childCount;
+  const children = scene.value ? scene.value.children : [];
+  const childRefsChanged = children.length !== lastSceneChildRefs.size
+    || children.some(c => !lastSceneChildRefs.has(c));
+  if (childRefsChanged || patchFrameCounter % PATCH_EVERY_N_FRAMES === 0) {
+    if (childRefsChanged) {
+      lastSceneChildRefs = new Set(children);
+    }
     patchMaterials();
   }
   csm.value.update();
