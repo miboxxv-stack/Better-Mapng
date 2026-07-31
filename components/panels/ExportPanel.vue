@@ -456,7 +456,7 @@
             <p>
               {{ t('exportPanel.cleanupToolNotice') }}
               <a
-                href="https://github.com/alexkleinwaechter/BeamNG_LevelCleanUp/releases/tag/1.5.5"
+                href="https://github.com/alexkleinwaechter/BeamNG_LevelCleanUp/releases/latest"
                 target="_blank"
                 rel="noopener noreferrer"
                 class="font-semibold text-[#FF6600] underline underline-offset-2 hover:text-[#e85d00] transition-colors"
