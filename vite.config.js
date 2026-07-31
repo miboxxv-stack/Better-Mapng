@@ -5,7 +5,10 @@ import { execSync } from 'child_process';
 
 const nowIso = new Date().toISOString();
 const buildBranch = String(
-  process.env.CF_PAGES_BRANCH
+  // Workers Builds is what actually deploys both domains — without this the
+  // branch is unknown in CI, so neither build can claim its own line below.
+  process.env.WORKERS_CI_BRANCH
+  || process.env.CF_PAGES_BRANCH
   || process.env.GITHUB_REF_NAME
   || process.env.CI_COMMIT_REF_NAME
   || process.env.VERCEL_GIT_COMMIT_REF
@@ -37,7 +40,8 @@ const commitHash = (() => {
   const headHash = git('git rev-parse --short HEAD');
   if (headHash) return headHash;
   return (
-    process.env.CF_PAGES_COMMIT_SHA?.slice(0, 7)
+    process.env.WORKERS_CI_COMMIT_SHA?.slice(0, 7)
+    || process.env.CF_PAGES_COMMIT_SHA?.slice(0, 7)
     || process.env.GITHUB_SHA?.slice(0, 7)
     || process.env.CI_COMMIT_SHA?.slice(0, 7)
     || process.env.VERCEL_GIT_COMMIT_SHA?.slice(0, 7)

@@ -71,8 +71,8 @@
           <Moon v-else :size="14" />
         </BaseButton>
       </div>
-      <span class="block text-[10px] text-gray-400 dark:text-gray-500 leading-tight px-2">Main: {{ t('sidebar.build', { hash: buildMainHash, time: buildMainTime }) }}</span>
-      <span class="block text-[10px] text-gray-400 dark:text-gray-500 leading-tight px-2">Dev: {{ t('sidebar.build', { hash: buildDevHash, time: buildDevTime }) }}</span>
+      <span v-if="isProductionHost" class="block text-[10px] text-gray-400 dark:text-gray-500 leading-tight px-2">Main: {{ t('sidebar.build', { hash: buildMainHash, time: buildMainTime }) }}</span>
+      <span v-else class="block text-[10px] text-gray-400 dark:text-gray-500 leading-tight px-2">Dev: {{ t('sidebar.build', { hash: buildDevHash, time: buildDevTime }) }}</span>
     </div>
   </aside>
 </template>
@@ -88,6 +88,14 @@ import { CircleHelp, Sun, Moon, Code } from 'lucide-vue-next';
 
 const { t, locale } = useI18n({ useScope: 'global' });
 const locales = computed(() => getSupportedLocales());
+
+// Show only the build line that matches where the app is running: mapng.com
+// tracks main, everything else (dev.mapng.com, localhost, preview URLs) tracks
+// dev. Showing both meant one line always described a deployment the user
+// wasn't looking at. Hostname rather than build-time branch, so a locally
+// served production bundle still reports as dev.
+const isProductionHost = typeof window !== 'undefined'
+  && /^(www\.)?mapng\.com$/i.test(window.location.hostname);
 
 defineProps({
   batchMode: { type: Boolean, default: false },
