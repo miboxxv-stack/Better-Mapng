@@ -395,7 +395,13 @@ export const resampleToMeterGrid = async (
         const h11 = raster[i11];
 
         if (!Number.isFinite(h00) || !Number.isFinite(h10) || !Number.isFinite(h01) || !Number.isFinite(h11)) return noDataVal;
-        if (h00 === noDataVal || h10 === noDataVal || h01 === noDataVal || h11 === noDataVal) return noDataVal;
+        let validSum = 0, validCnt = 0;
+        if (h00 !== noDataVal) { validSum += h00; validCnt++; }
+        if (h10 !== noDataVal) { validSum += h10; validCnt++; }
+        if (h01 !== noDataVal) { validSum += h01; validCnt++; }
+        if (h11 !== noDataVal) { validSum += h11; validCnt++; }
+        if (validCnt === 0) return noDataVal;
+        if (validCnt < 4) return validSum / validCnt;
 
         const interp = (1 - dy) * ((1 - dx) * h00 + dx * h10) + dy * ((1 - dx) * h01 + dx * h11);
         return Number.isFinite(interp) ? interp : noDataVal;
