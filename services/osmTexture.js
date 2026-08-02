@@ -747,8 +747,9 @@ const getLaneLayout = (tags) => {
   const explicitNoOneway = tags.oneway === "no" || tags.oneway === "0";
   const explicitYesOneway =
     tags.oneway === "yes" || tags.oneway === "1" || tags.oneway === "true";
-  const impliedLinkOneway =
+  const impliedOneway =
     [
+      "motorway",
       "motorway_link",
       "trunk_link",
       "primary_link",
@@ -757,7 +758,7 @@ const getLaneLayout = (tags) => {
     ].includes(highway) && !explicitNoOneway;
   const isOneWay =
     explicitYesOneway ||
-    impliedLinkOneway;
+    impliedOneway;
   const laneCounts = inferLaneCounts(tags, isOneWay, highway);
   const lanesT = laneCounts.lanesTotal;
   const lanesF = laneCounts.lanesForward;

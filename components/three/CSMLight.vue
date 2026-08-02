@@ -159,7 +159,7 @@ const { onBeforeRender } = useLoop();
 // in the tree (e.g. the terrain material :key swap).
 let patchFrameCounter = 0;
 let lastSceneChildRefs = new Set();
-const PATCH_EVERY_N_FRAMES = 15;
+const PATCH_EVERY_N_FRAMES = 30;
 
 onBeforeRender(() => {
   if (!csm.value) return;

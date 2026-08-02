@@ -114,7 +114,12 @@ const clipLineString = (points, bounds) => {
 const buildQuery = (bounds) => {
   const bbox = `${bounds.south},${bounds.west},${bounds.north},${bounds.east}`;
 
-  // Query timeout, maxsize, and filtered tag set tuned for public Overpass mirrors.
+  // Timeout is 30s, matching the timeoutSec that getOSMQueryParameters advertises
+  // and records into export metadata.
+  // Maxsize reduced to 128 MB — 512 MB was triggering server-side rejection.
+  // Query trimmed: removed redundant/rare keys (seamark, tidal, harbour subtypes,
+  // vegetation, crop, orchard, vineyard, material) that overlap with natural/landuse
+  // and add significant response weight with minimal 3D rendering value.
   return `
 [out:json][timeout:30][maxsize:134217728];
 (
