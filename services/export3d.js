@@ -3,7 +3,7 @@ import { mergeGeometries } from "three/examples/jsm/utils/BufferGeometryUtils.js
 import { GLTFExporter } from "three/examples/jsm/exporters/GLTFExporter.js";
 import JSZip from "jszip";
 import { textures } from "./textureGenerator.js";
-import { createMetricProjector } from "./geoUtils.js";
+
 import { fetchSurroundingTiles, POSITIONS } from "./surroundingTiles.js";
 import { ColladaExporter } from './ColladaExporter.js';
 
@@ -33,19 +33,21 @@ export const computeMetersPerUnit = (data) => {
 
 // Cached per-dataset projection and constants to avoid recomputation
 let _cachedDataId = null;
-let _cachedProjector = null;
 let _cachedUnitsPerMeter = 0;
 let _cachedMinHeight = 0;
 let _cachedWidth = 0;
 let _cachedHeight = 0;
 let _cachedHeightMap = null;
+let _cachedWest = 0;
+let _cachedEast = 0;
+let _cachedSouth = 0;
+let _cachedNorth = 0;
 
 const _ensureCache = (data) => {
   // Use bounds as identity — same bounds = same projection
   const dataId = `${data.bounds.north},${data.bounds.south},${data.bounds.east},${data.bounds.west},${data.width},${data.height}`;
   if (_cachedDataId !== dataId) {
     _cachedDataId = dataId;
-    _cachedProjector = createMetricProjector(data.bounds, data.width, data.height);
     const latRad = (((data.bounds.north + data.bounds.south) / 2) * Math.PI) / 180;
     const metersPerDegree = 111320 * Math.cos(latRad);
     const realWidthMeters = (data.bounds.east - data.bounds.west) * metersPerDegree;
@@ -54,6 +56,10 @@ const _ensureCache = (data) => {
     _cachedWidth = data.width;
     _cachedHeight = data.height;
     _cachedHeightMap = data.heightMap;
+    _cachedWest = data.bounds.west;
+    _cachedEast = data.bounds.east;
+    _cachedSouth = data.bounds.south;
+    _cachedNorth = data.bounds.north;
   }
 };
 
@@ -64,10 +70,9 @@ const getTerrainHeight = (data, lat, lng) => {
 
 const latLngToScene = (data, lat, lng) => {
   _ensureCache(data);
-  const p = _cachedProjector(lat, lng);
 
-  const u = p.x / (_cachedWidth - 1);
-  const v = p.y / (_cachedHeight - 1);
+  const u = (lng - _cachedWest) / (_cachedEast - _cachedWest);
+  const v = (_cachedNorth - lat) / (_cachedNorth - _cachedSouth);
 
   const sceneX = u * SCENE_SIZE - SCENE_SIZE / 2;
   const sceneZ = v * SCENE_SIZE - SCENE_SIZE / 2;
@@ -79,9 +84,8 @@ const latLngToScene = (data, lat, lng) => {
 const _tmpSceneVec = new THREE.Vector3();
 const latLngToSceneFast = (data, lat, lng) => {
   _ensureCache(data);
-  const p = _cachedProjector(lat, lng);
-  const u = p.x / (_cachedWidth - 1);
-  const v = p.y / (_cachedHeight - 1);
+  const u = (lng - _cachedWest) / (_cachedEast - _cachedWest);
+  const v = (_cachedNorth - lat) / (_cachedNorth - _cachedSouth);
   _tmpSceneVec.x = u * SCENE_SIZE - SCENE_SIZE / 2;
   _tmpSceneVec.y = 0;
   _tmpSceneVec.z = v * SCENE_SIZE - SCENE_SIZE / 2;
