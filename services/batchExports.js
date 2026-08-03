@@ -63,6 +63,10 @@ export function generateHeightmapBlob(terrainData, normalization = null) {
 
   for (let i = 0; i < heightMap.length; i++) {
     const h = heightMap[i];
+    if (!Number.isFinite(h)) {
+      data[i] = 0;
+      continue;
+    }
     let val = range > 0 ? Math.floor(((h - minHeight) / range) * 65535) : 0;
     data[i] = Math.max(0, Math.min(65535, val));
   }

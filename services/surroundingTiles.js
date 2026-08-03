@@ -635,8 +635,13 @@ export const downloadSurroundingTilesZip = async (
     const hData = new Uint16Array(outputSize * outputSize);
 
     for (let j = 0; j < data.heightMap.length; j++) {
+      const h = data.heightMap[j];
+      if (!Number.isFinite(h)) {
+        hData[j] = 0;
+        continue;
+      }
       let val = range > 0
-        ? Math.floor(((data.heightMap[j] - data.minHeight) / range) * 65535)
+        ? Math.floor(((h - data.minHeight) / range) * 65535)
         : 0;
       hData[j] = Math.max(0, Math.min(65535, val));
     }
