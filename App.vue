@@ -441,12 +441,6 @@ const setBatchMode = (value) => {
 
 // Attempt to get user location on load
 onMounted(() => {
-  if (isDarkMode.value) {
-    document.documentElement.classList.add('dark');
-  } else {
-    document.documentElement.classList.remove('dark');
-  }
-
   window.addEventListener('keydown', handleGlobalDevToggleKey);
 
 });
