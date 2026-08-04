@@ -67,7 +67,8 @@ const getWorker = () => {
     };
     worker.onerror = (e) => {
       console.error('[LazClient] Worker error:', e);
-      for (const p of pending.values()) p.reject(new Error('LAZ worker error: ' + (e.message || 'unknown')));
+      const detail = e.message || (e.filename ? `${e.filename}:${e.lineno}` : 'unknown');
+      for (const p of pending.values()) p.reject(new Error('LAZ worker error: ' + detail));
       pending.clear();
       worker.terminate();
       worker = null;
