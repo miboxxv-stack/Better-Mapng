@@ -75,7 +75,10 @@ export default {
           headers: responseHeaders,
         });
       } catch (e) {
-        return new Response(JSON.stringify({ error: 'Proxy error', message: e.message }), {
+        const message = e && typeof e === 'object' && 'message' in e
+          ? String(e.message)
+          : String(e);
+        return new Response(JSON.stringify({ error: 'Proxy error', message }), {
           status: 502,
           headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' },
         });
