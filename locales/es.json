@@ -677,6 +677,8 @@
     "processingTerrain": "Procesando terreno",
     "highResolutionWait": "La resolucion alta (2048+) puede tardar 1-2 minutos.",
     "veryLargeAreaWait": "Area muy grande (4k/8k). Espera por favor...",
+    "batchCacheCleared": "Cache de lote limpiada.",
+    "batchCacheClearFailed": "No se pudo limpiar la cache de lote.",
     "status": {
       "addingOsm": "Agregando datos OSM al terreno existente...",
       "rendering3d": "Renderizando escena 3D...",
@@ -687,8 +689,6 @@
     "error": {
       "fetchOsm": "No se pudieron obtener los datos OSM.",
       "fetchTerrain": "No se pudieron obtener datos del terreno. El area solicitada puede ser demasiado grande o el servicio no esta disponible.",
-      "batchCacheCleared": "Cache de lote limpiada.",
-      "batchCacheClearFailed": "No se pudo limpiar la cache de lote.",
       "usgsFallback": "Los datos USGS 1m para esta zona faltan o estan corruptos. Se usara el dataset Terrarium Estandar.\n\nLa salida se mantiene en la malla de procesamiento actual de la app.",
       "kron86Fallback": "Los datos NMT EVRF2007 solo estan disponibles para mosaicos compatibles de Polonia. Se usara el dataset Terrarium Estandar."
     }

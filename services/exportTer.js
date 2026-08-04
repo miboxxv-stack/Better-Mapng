@@ -14,7 +14,18 @@ export async function exportTer(terrainData, {
   layerMap: customLayerMap = null,
   materialNames: customMaterialNames = null,
 } = {}) {
-  const { width, height, heightMap, minHeight, maxHeight } = terrainData;
+  const width = Number(terrainData?.width);
+  const height = Number(terrainData?.height);
+  const heightMap = terrainData?.heightMap;
+  const minHeight = Number(terrainData?.minHeight);
+  const maxHeight = Number(terrainData?.maxHeight);
+
+  if (!Number.isFinite(width) || width < 1 || !Number.isFinite(height) || height < 1) {
+    throw new Error(`Invalid terrain dimensions: ${width}x${height}`);
+  }
+  if (!(heightMap instanceof Float32Array) || heightMap.length < width * height) {
+    throw new Error('Heightmap is missing or undersized');
+  }
 
   // BeamNG terrains must be square power-of-two — clip down to fit.
   const squareSize = Math.min(width, height);

@@ -910,10 +910,10 @@ const handleClearSavedBatch = () => {
 const handleClearBatchCache = async () => {
   try {
     await clearBatchClientCache();
-    alert(t('app.error.batchCacheCleared'));
+    alert(t('app.batchCacheCleared'));
   } catch (error) {
     console.error('[Batch] Failed to clear cache:', error);
-    alert(t('app.error.batchCacheClearFailed'));
+    alert(t('app.batchCacheClearFailed'));
   }
 };
 
