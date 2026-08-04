@@ -7,8 +7,14 @@ const DEFAULT_CENTER = { lat: 35.1983, lng: -111.6513 };
 const sanitizeCenter = (candidate) => {
   const lat = Number(candidate?.lat);
   const lng = Number(candidate?.lng);
-  if (!Number.isFinite(lat) || !Number.isFinite(lng)) return { ...DEFAULT_CENTER };
-  if (lat < -90 || lat > 90 || lng < -180 || lng > 180) return { ...DEFAULT_CENTER };
+  if (!Number.isFinite(lat) || !Number.isFinite(lng)) {
+    console.warn('[Center] Saved center is non-finite, resetting to default.', candidate);
+    return { ...DEFAULT_CENTER };
+  }
+  if (lat < -90 || lat > 90 || lng < -180 || lng > 180) {
+    console.warn('[Center] Saved center out of range, resetting to default.', candidate);
+    return { ...DEFAULT_CENTER };
+  }
   return { lat, lng };
 };
 
