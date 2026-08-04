@@ -47,12 +47,11 @@ export const createRateLimiter = ({ minIntervalMs = 0, concurrency = 1 } = {}) =
   return {
     schedule(task) {
       return queue.enqueue(async () => {
-        const now = performance.now();
-        const wait = Math.max(0, minIntervalMs - (now - lastStart));
+        const wait = Math.max(0, lastStart + minIntervalMs - performance.now());
         if (wait > 0) {
           await new Promise(r => setTimeout(r, wait));
         }
-        lastStart = performance.now();
+        lastStart = Math.max(lastStart + minIntervalMs, performance.now());
         return task();
       });
     },
