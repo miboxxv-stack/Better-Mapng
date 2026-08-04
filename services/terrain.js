@@ -2090,6 +2090,7 @@ export const loadTerrainFromLaz = async (
       const pct = total > 0 ? Math.round(current / total * 100) : 0;
       onProgress?.(status || `Processing point cloud… ${pct}%`);
     },
+    signal,
   );
 
   const lazUnit = resolveElevationUnitScale(lazData, elevationUnitOverride);

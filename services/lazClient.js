@@ -88,8 +88,10 @@ const getWorker = () => {
  * @param {number}   height     - Output grid height
  * @param {object?}  targetBounds - Optional WGS84 bounds {north,south,east,west}
  * @param {function} onProgress - (current, total, status?) callback
+ * @param {AbortSignal} [signal]
  */
-export const rasterizeLazOffThread = async (lazMeta, center, width, height, targetBounds, onProgress) => {
+export const rasterizeLazOffThread = async (lazMeta, center, width, height, targetBounds, onProgress, signal) => {
+  signal?.throwIfAborted();
   const w = getWorker();
   if (!w) return Promise.reject(new Error('LAZ worker unavailable'));
 
@@ -129,8 +131,18 @@ export const rasterizeLazOffThread = async (lazMeta, center, width, height, targ
     };
   });
 
+  if (signal?.aborted) return Promise.reject(signal.reason);
+
   const id = ++messageId;
   return new Promise((resolve, reject) => {
+    if (signal) {
+      signal.throwIfAborted();
+      const onAbort = () => {
+        pending.delete(id);
+        reject(signal.reason);
+      };
+      signal.addEventListener('abort', onAbort, { once: true });
+    }
     pending.set(id, { resolve, reject, onProgress });
     w.postMessage({
       id,
