@@ -1005,8 +1005,7 @@ async function pMap(items, mapper, concurrency, signal) {
       try {
         results[i] = await mapper(items[i]);
       } catch (e) {
-        console.error(`Error processing item ${i}`, e);
-        // @ts-ignore - basic error handling
+        if (e?.name !== 'AbortError') console.error(`Error processing item ${i}`, e);
         results[i] = null;
       }
     }
