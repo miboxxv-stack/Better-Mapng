@@ -729,6 +729,8 @@
     "processingTerrain": "Processing Terrain",
     "highResolutionWait": "High resolution (2048+) may take 1-2 minutes.",
     "veryLargeAreaWait": "Very large area (4k/8k). Please wait...",
+    "batchCacheCleared": "Batch cache cleared.",
+    "batchCacheClearFailed": "Failed to clear batch cache.",
     "status": {
       "addingOsm": "Adding OSM data to existing terrain...",
       "rendering3d": "Rendering 3D scene...",
@@ -739,8 +741,6 @@
     "error": {
       "fetchOsm": "Failed to fetch OSM data.",
       "fetchTerrain": "Failed to fetch terrain data. The requested area might be too large or service is down.",
-      "batchCacheCleared": "Batch cache cleared.",
-      "batchCacheClearFailed": "Failed to clear batch cache.",
       "usgsFallback": "USGS 1m data for this area was missing or corrupt. Falling back to the Standard Terrarium dataset.\n\nOutput remains on the app's current processing grid.",
       "kron86Fallback": "NMT EVRF2007 data is only available for supported Poland tiles. Falling back to the Standard Terrarium dataset."
     }
