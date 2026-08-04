@@ -49,30 +49,37 @@ export default {
       const upstreamUrl = `${origin}${upstreamPath}${url.search}`;
       const isNominatimOrigin = origin.includes('nominatim');
       const requestOrigin = `${url.protocol}//${url.host}`;
-      const upstream = await fetch(upstreamUrl, {
-        method: 'GET',
-        headers: {
-          'Accept': request.headers.get('Accept') || 'application/json',
-          ...(request.headers.get('Accept-Language')
-            ? { 'Accept-Language': request.headers.get('Accept-Language') }
-            : {}),
-          ...(isNominatimOrigin
-            ? {
-                // Identify the app to align with Nominatim usage policy and reduce 403 blocks.
-                'User-Agent': 'mapng/1.0 (+https://mapng.dev; contact: nikkiluzader@gmail.com)',
-                'Referer': requestOrigin,
-              }
-            : {}),
-        },
-      });
 
-      const responseHeaders = new Headers(upstream.headers);
-      responseHeaders.set('Access-Control-Allow-Origin', '*');
-      return new Response(upstream.body, {
-        status: upstream.status,
-        statusText: upstream.statusText,
-        headers: responseHeaders,
-      });
+      try {
+        const upstream = await fetch(upstreamUrl, {
+          method: 'GET',
+          headers: {
+            'Accept': request.headers.get('Accept') || 'application/json',
+            ...(request.headers.get('Accept-Language')
+              ? { 'Accept-Language': request.headers.get('Accept-Language') }
+              : {}),
+            ...(isNominatimOrigin
+              ? {
+                  'User-Agent': 'mapng/1.0 (+https://mapng.dev; contact: nikkiluzader@gmail.com)',
+                  'Referer': requestOrigin,
+                }
+              : {}),
+          },
+        });
+
+        const responseHeaders = new Headers(upstream.headers);
+        responseHeaders.set('Access-Control-Allow-Origin', '*');
+        return new Response(upstream.body, {
+          status: upstream.status,
+          statusText: upstream.statusText,
+          headers: responseHeaders,
+        });
+      } catch (e) {
+        return new Response(JSON.stringify({ error: 'Proxy error', message: e.message }), {
+          status: 502,
+          headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' },
+        });
+      }
     };
 
     if (url.pathname.startsWith('/api/nominatim-osm/')) {
