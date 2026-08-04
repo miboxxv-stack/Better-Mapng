@@ -132,19 +132,30 @@ export const rasterizeLazOffThread = async (lazMeta, center, width, height, targ
     };
   });
 
-  if (signal?.aborted) return Promise.reject(signal.reason);
+  if (signal?.aborted) return Promise.reject(new DOMException('Aborted', 'AbortError'));
 
   const id = ++messageId;
   return new Promise((resolve, reject) => {
+    let onAbort;
     if (signal) {
       signal.throwIfAborted();
-      const onAbort = () => {
+      onAbort = () => {
         pending.delete(id);
-        reject(signal.reason);
+        reject(new DOMException('Aborted', 'AbortError'));
       };
       signal.addEventListener('abort', onAbort, { once: true });
     }
-    pending.set(id, { resolve, reject, onProgress });
+    pending.set(id, {
+      resolve: (value) => {
+        if (onAbort) signal.removeEventListener('abort', onAbort);
+        resolve(value);
+      },
+      reject: (err) => {
+        if (onAbort) signal.removeEventListener('abort', onAbort);
+        reject(err);
+      },
+      onProgress,
+    });
     w.postMessage({
       id,
       type: 'rasterize',
