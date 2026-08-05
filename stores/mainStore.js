@@ -7,8 +7,14 @@ const DEFAULT_CENTER = { lat: 35.1983, lng: -111.6513 };
 const sanitizeCenter = (candidate) => {
   const lat = Number(candidate?.lat);
   const lng = Number(candidate?.lng);
-  if (!Number.isFinite(lat) || !Number.isFinite(lng)) return { ...DEFAULT_CENTER };
-  if (lat < -90 || lat > 90 || lng < -180 || lng > 180) return { ...DEFAULT_CENTER };
+  if (!Number.isFinite(lat) || !Number.isFinite(lng)) {
+    console.warn('[Center] Saved center is non-finite, resetting to default.', candidate);
+    return { ...DEFAULT_CENTER };
+  }
+  if (lat < -90 || lat > 90 || lng < -180 || lng > 180) {
+    console.warn('[Center] Saved center out of range, resetting to default.', candidate);
+    return { ...DEFAULT_CENTER };
+  }
   return { lat, lng };
 };
 
@@ -24,6 +30,14 @@ export const useMainStore = defineStore('main', () => {
   const zoom = ref(parseInt(localStorage.getItem('mapng_zoom')) || 13);
   const resolution = ref(parseInt(localStorage.getItem('mapng_resolution')) || 1024);
   const isDarkMode = ref(localStorage.getItem('theme') === 'dark');
+  if (typeof document !== 'undefined') {
+    if (isDarkMode.value) {
+      document.documentElement.classList.add('dark');
+    } else {
+      document.documentElement.classList.remove('dark');
+    }
+  }
+
   const batchMode = ref(localStorage.getItem('mapng_batch_mode') === 'true');
 
   if (batchMode.value && Number(resolution.value) > 8192) {

@@ -55,6 +55,9 @@ function estimateMetersPerPixel(terrainData) {
   if (Number.isFinite(terrainData?.metersPerPixel) && terrainData.metersPerPixel > 0) {
     return terrainData.metersPerPixel;
   }
+  if (Number.isFinite(terrainData?.processingMetersPerPixel) && terrainData.processingMetersPerPixel > 0) {
+    return terrainData.processingMetersPerPixel;
+  }
 
   const { bounds, width } = terrainData;
   if (!bounds || !width) return 1;

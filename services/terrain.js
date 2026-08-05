@@ -1107,8 +1107,7 @@ async function pMap(items, mapper, concurrency, signal) {
       try {
         results[i] = await mapper(items[i]);
       } catch (e) {
-        console.error(`Error processing item ${i}`, e);
-        // @ts-ignore - basic error handling
+        if (e?.name !== 'AbortError') console.error(`Error processing item ${i}`, e);
         results[i] = null;
       }
     }
@@ -2236,6 +2235,7 @@ export const loadTerrainFromLaz = async (
       const pct = total > 0 ? Math.round(current / total * 100) : 0;
       onProgress?.(status || `Processing point cloud… ${pct}%`);
     },
+    signal,
   );
 
   const lazUnit = resolveElevationUnitScale(lazData, elevationUnitOverride);

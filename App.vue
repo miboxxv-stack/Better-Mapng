@@ -464,12 +464,6 @@ const setBatchMode = (value) => {
 
 // Attempt to get user location on load
 onMounted(() => {
-  if (isDarkMode.value) {
-    document.documentElement.classList.add('dark');
-  } else {
-    document.documentElement.classList.remove('dark');
-  }
-
   window.addEventListener('keydown', handleGlobalDevToggleKey);
 
 });
@@ -1012,10 +1006,10 @@ const handleClearSavedBatch = () => {
 const handleClearBatchCache = async () => {
   try {
     await clearBatchClientCache();
-    alert(t('app.error.batchCacheCleared'));
+    alert(t('app.batchCacheCleared'));
   } catch (error) {
     console.error('[Batch] Failed to clear cache:', error);
-    alert(t('app.error.batchCacheClearFailed'));
+    alert(t('app.batchCacheClearFailed'));
   }
 };
 

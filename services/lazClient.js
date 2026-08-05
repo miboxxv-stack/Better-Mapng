@@ -67,7 +67,8 @@ const getWorker = () => {
     };
     worker.onerror = (e) => {
       console.error('[LazClient] Worker error:', e);
-      for (const p of pending.values()) p.reject(new Error('LAZ worker error: ' + (e.message || 'unknown')));
+      const detail = e.message || (e.filename ? `${e.filename}:${e.lineno}` : 'unknown');
+      for (const p of pending.values()) p.reject(new Error('LAZ worker error: ' + detail));
       pending.clear();
       worker.terminate();
       worker = null;
@@ -88,8 +89,10 @@ const getWorker = () => {
  * @param {number}   height     - Output grid height
  * @param {object?}  targetBounds - Optional WGS84 bounds {north,south,east,west}
  * @param {function} onProgress - (current, total, status?) callback
+ * @param {AbortSignal} [signal]
  */
-export const rasterizeLazOffThread = async (lazMeta, center, width, height, targetBounds, onProgress) => {
+export const rasterizeLazOffThread = async (lazMeta, center, width, height, targetBounds, onProgress, signal) => {
+  signal?.throwIfAborted();
   const w = getWorker();
   if (!w) return Promise.reject(new Error('LAZ worker unavailable'));
 
@@ -129,9 +132,30 @@ export const rasterizeLazOffThread = async (lazMeta, center, width, height, targ
     };
   });
 
+  if (signal?.aborted) return Promise.reject(new DOMException('Aborted', 'AbortError'));
+
   const id = ++messageId;
   return new Promise((resolve, reject) => {
-    pending.set(id, { resolve, reject, onProgress });
+    let onAbort;
+    if (signal) {
+      signal.throwIfAborted();
+      onAbort = () => {
+        pending.delete(id);
+        reject(new DOMException('Aborted', 'AbortError'));
+      };
+      signal.addEventListener('abort', onAbort, { once: true });
+    }
+    pending.set(id, {
+      resolve: (value) => {
+        if (onAbort) signal.removeEventListener('abort', onAbort);
+        resolve(value);
+      },
+      reject: (err) => {
+        if (onAbort) signal.removeEventListener('abort', onAbort);
+        reject(err);
+      },
+      onProgress,
+    });
     w.postMessage({
       id,
       type: 'rasterize',

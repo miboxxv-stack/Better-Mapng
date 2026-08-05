@@ -702,6 +702,8 @@
     "processingTerrain": "Przetwarzanie terenu",
     "highResolutionWait": "Wysoka rozdzielczość (2048+) może trwać 1-2 minuty.",
     "veryLargeAreaWait": "Bardzo duży obszar (4k/8k). Proszę czekać...",
+    "batchCacheCleared": "Pamięć podręczna zadania wsadowego wyczyszczona.",
+    "batchCacheClearFailed": "Nie udało się wyczyścić pamięci podręcznej zadania wsadowego.",
     "status": {
       "addingOsm": "Dodawanie danych OSM do istniejącego terenu...",
       "rendering3d": "Renderowanie sceny 3D...",
@@ -712,8 +714,6 @@
     "error": {
       "fetchOsm": "Nie udało się pobrać danych OSM.",
       "fetchTerrain": "Nie udało się pobrać danych terenu. Żądany obszar może być zbyt duży lub usługa jest niedostępna.",
-      "batchCacheCleared": "Pamięć podręczna zadania wsadowego wyczyszczona.",
-      "batchCacheClearFailed": "Nie udało się wyczyścić pamięci podręcznej zadania wsadowego.",
       "usgsFallback": "Dane USGS 1m dla tego obszaru były brakujące lub uszkodzone. Powrót do standardowego zestawu danych Terrarium.\n\nWyjście pozostaje na aktualnej siatce przetwarzania aplikacji.",
       "kron86Fallback": "Dane NMT EVRF2007 są dostępne tylko dla obsługiwanych kafli w Polsce. Powrót do standardowego zestawu danych Terrarium."
     }
