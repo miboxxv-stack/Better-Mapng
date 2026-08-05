@@ -188,6 +188,24 @@ const canvasFromRgbaBuffer = async (width, height, rgbaBuffer) => {
 };
 
 /**
+ * Build the gap-fill payload for a resample message: geo-referenced rasters
+ * (e.g. GPXZ hires chunks) that the worker samples wherever the primary source
+ * has no data. The Terrarium mosaic travels separately as `fallback`.
+ */
+const buildGapFillPayload = (gapFillData, transferables) => {
+    if (!Array.isArray(gapFillData) || gapFillData.length === 0) {
+        return { gapFillTiles: null, gapFillEpsgDefs: null };
+    }
+    const { tiles, epsgDefs } = prepareTiles(gapFillData);
+    const gapFillTiles = tiles.map((t) => {
+        const raster = new Float32Array(t.raster);
+        transferables.push(raster.buffer);
+        return { ...t, raster };
+    });
+    return { gapFillTiles, gapFillEpsgDefs: epsgDefs };
+};
+
+/**
  * Prepare serializable tile metadata from GeoTIFF image objects.
  * Called on main thread to extract data the worker needs.
  */
@@ -222,7 +240,13 @@ const prepareTiles = (sourceData) => {
             originY: image.getOrigin()[1],
             resX: image.getResolution()[0],
             resY: image.getResolution()[1],
-            noData: image.getGDALNoData() ?? -99999,
+            // The loader resolves no-data per tile (GDAL_NODATA tag, detected
+            // fill value, or user override) — only fall back to the tag when
+            // the source predates that.
+            noData: Number.isFinite(item.noData) ? item.noData : (image.getGDALNoData() ?? -99999),
+            // Priority stack position; 0 unless the upload resolved to several
+            // survey layers (see elevationLayers.js).
+            layerIndex: Number.isFinite(item.layerIndex) ? item.layerIndex : 0,
             epsgCode,
         });
     }
@@ -270,6 +294,7 @@ const prepareGridTiles = (sourceData) => {
 
             const noData = Number.isFinite(tile?.noData) ? Number(tile.noData) : -99999;
             const epsgCode = Number.isFinite(tile?.epsgCode) ? Number(tile.epsgCode) : null;
+            const layerIndex = Number.isFinite(tile?.layerIndex) ? Number(tile.layerIndex) : 0;
             const raster = tile?.raster instanceof Float32Array
                 ? new Float32Array(tile.raster)
                 : new Float32Array(tile?.raster || []);
@@ -284,6 +309,7 @@ const prepareGridTiles = (sourceData) => {
                 resY,
                 noData,
                 epsgCode,
+                layerIndex,
             };
         })
         .filter(Boolean);
@@ -317,6 +343,7 @@ export const resampleHeightMapOffThread = async (
     targetBounds = null,
     onProgress = null,
     expandFilledGaps = true,
+    gapFillData = null,
 ) => {
     // Attempt worker path
     if (getWorker()) {
@@ -363,6 +390,7 @@ export const resampleHeightMapOffThread = async (
                 rasterCache,
                 fallback: fallbackForWorker,
                 epsgDefs,
+                ...buildGapFillPayload(gapFillData, transferables),
             }, transferables, { onProgress });
 
             if (result) {
@@ -392,6 +420,7 @@ export const resampleHeightAndImageOffThread = async (
     onProgress = null,
     expandFilledGaps = true,
     flat = false,
+    gapFillData = null,
 ) => {
     if (getWorker() && imageSourceData) {
         try {
@@ -440,6 +469,7 @@ export const resampleHeightAndImageOffThread = async (
                 rasterCache,
                 fallback: fallbackForWorker,
                 epsgDefs,
+                ...buildGapFillPayload(gapFillData, transferables),
                 imageSource: { ...imageSourceData, pixels: imagePixels },
             }, transferables, { onProgress });
 
@@ -480,6 +510,7 @@ export const resampleHeightAndImageOffThread = async (
             targetBounds,
             onProgress,
             expandFilledGaps,
+            gapFillData,
         ),
         Promise.resolve(safeImageSampler
             ? resampleImageToMeterGrid({ sampler: safeImageSampler }, center, width, height, targetBounds)

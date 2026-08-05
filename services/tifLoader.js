@@ -1,6 +1,8 @@
 import * as GeoTIFF from 'geotiff';
 import { isLikelyGmlText, parseGmlFile, parseGmlText, parseGmlZipFile } from './gmlLoader.js';
 import { parseAscFile, parseAscText } from './ascLoader.js';
+import { detectNoDataInRaster, reconcileTileNoData, NODATA_FALLBACK } from './nodataDetect.js';
+import { groupTilesIntoLayers } from './elevationLayers.js';
 import {
   computeGeoMetadata,
   detectUnitFromText,
@@ -136,7 +138,15 @@ export const parseRasterOrGridElevationFile = async (file) => {
     suggestedResolution = geoMeta.suggestedResolution;
   }
 
-  const noData = image.getGDALNoData() ?? null;
+  // GDAL_NODATA is absent on a lot of national LiDAR exports, which fill the
+  // area outside their survey polygon with a constant instead. Left unmasked
+  // that fill reads as real terrain — see nodataDetect.js.
+  const noDataDetection = detectNoDataInRaster(raster, { taggedNoData: image.getGDALNoData() });
+  const noData = noDataDetection.value;
+  if (noDataDetection.source === 'detected') {
+    console.info(`[tifLoader] ${file.name}: no GDAL_NODATA tag — detected fill value ${noData} (${(noDataDetection.share * 100).toFixed(1)}% of pixels, ${noDataDetection.reason}).`);
+  }
+
   return {
     sourceType: 'geotiff',
     sourceFormat: 'geotiff',
@@ -155,6 +165,8 @@ export const parseRasterOrGridElevationFile = async (file) => {
     suggestedResolution,
     nativeMetersPerPixel,
     noData,
+    noDataDetection,
+    layers: [{ id: 'upload', label: file.name, year: null, indices: [0] }],
     isLikelyElevation,
     elevationValidationMessage,
     fileSize: file.size,
@@ -217,11 +229,45 @@ export const parseTifFiles = async (files = []) => {
   const totalFileSize = parsedList.reduce((sum, meta) => sum + Number(meta.fileSize || 0), 0);
   const unitMeta = parsedList.find((meta) => meta.verticalUnitDetected && meta.verticalUnitDetected !== UNIT_UNKNOWN);
 
+  // Group the tiles back into the surveys they came from. Each survey clips to
+  // its own polygon, so consensus on the fill value is reached per layer and
+  // the layers form the priority stack the resampler falls through.
+  const layers = groupTilesIntoLayers(list.map((file) => ({ fileName: file.name })));
+
+  // Tiles fully inside a survey polygon carry no fill and detect nothing, and
+  // tiles clipped by a sliver carry too little to be sure — so the value the
+  // confident tiles of that survey agree on is applied to all of its tiles.
+  // Without this the mosaic keeps letting a filled tile win over an overlapping
+  // tile that has real data there, and the terrain comes out full of holes.
+  const layerNoData = new Array(parsedList.length).fill(null);
+  const layerDetections = layers.map((layer) => {
+    const detection = reconcileTileNoData(layer.indices.map((i) => parsedList[i].noDataDetection));
+    for (const i of layer.indices) layerNoData[i] = detection.value;
+    return detection;
+  });
+  const noDataDetection = reconcileTileNoData(parsedList.map((meta) => meta.noDataDetection));
+  const mergedNoData = noDataDetection.value;
+  layers.forEach((layer, index) => {
+    const detection = layerDetections[index];
+    if (detection.source === 'detected') {
+      console.info(`[tifLoader] Layer "${layer.label}" (${layer.indices.length} tiles): no GDAL_NODATA tag — applying detected fill value ${detection.value} (agreed by ${detection.tileCount}/${detection.totalTiles}, ${detection.reason}).`);
+    }
+  });
+  console.info(`[tifLoader] Upload resolved to ${layers.length} elevation layer(s): ${layers.map((l) => `${l.label} (${l.indices.length})`).join(' → ')}`);
+
   return {
     sourceType: 'geotiff',
     sourceFormat: 'geotiff',
     formatLabel: `GeoTIFF (${list.length} tiles)`,
-    images: parsedList.map((meta) => ({ image: meta.image, raster: meta.raster })),
+    images: parsedList.map((meta, index) => ({
+      image: meta.image,
+      raster: meta.raster,
+      fileName: list[index]?.name || '',
+      // Per-survey no-data: each project clips to its own polygon, so a tile
+      // keeps the fill value its own survey agreed on when there is one.
+      noData: Number.isFinite(layerNoData[index]) ? layerNoData[index] : NODATA_FALLBACK,
+    })),
+    layers,
     isGeoTiff: true,
     isGeoReferenced: true,
     epsgCode: parsedList[0]?.epsgCode ?? null,
@@ -231,13 +277,108 @@ export const parseTifFiles = async (files = []) => {
     nativeHeight: coverageSummary.nativeHeight,
     suggestedResolution: coverageSummary.suggestedResolution,
     nativeMetersPerPixel: coverageSummary.nativeMetersPerPixel,
-    noData: parsedList[0]?.noData ?? null,
+    noData: mergedNoData,
+    noDataDetection,
     isLikelyElevation: true,
     elevationValidationMessage: '',
     fileSize: totalFileSize,
     verticalUnitDetected: unitMeta?.verticalUnitDetected ?? UNIT_UNKNOWN,
     verticalUnitDetectionSource: unitMeta?.verticalUnitDetectionSource ?? null,
     uploadFileNames: list.map((file) => file.name),
+  };
+};
+
+/**
+ * Merge the already-parsed uploads of several layer slots into one source.
+ *
+ * Each slot is its own upload (the base survey, then each fallback the user
+ * added). Slot order *is* priority order: the layers a slot resolved to keep
+ * their relative order and land behind everything from the slots above it.
+ *
+ * Slots are merged rather than re-parsed together because a slot can be
+ * hundreds of megabytes of rasters — adding a fallback must not re-read the
+ * ones already in memory.
+ *
+ * @param {Array<{ meta: object, files: File[] }>} slots
+ * @returns {object|null} merged upload metadata, or null when nothing is loaded
+ */
+export const mergeElevationSlots = (slots = []) => {
+  const usable = (slots || []).filter((slot) => slot?.meta);
+  if (usable.length === 0) return null;
+  if (usable.length === 1) return usable[0].meta;
+
+  const first = usable[0].meta;
+  const sourceType = first.sourceType;
+  const isGrid = sourceType === 'grid';
+
+  const images = [];
+  const gridTiles = [];
+  const layers = [];
+  const uploadFileNames = [];
+  let fileSize = 0;
+
+  usable.forEach((slot, slotIndex) => {
+    const meta = slot.meta;
+    const offset = isGrid ? gridTiles.length : images.length;
+    const slotEntries = isGrid ? (meta.gridTiles || []) : (meta.images || []);
+    // A single-file upload has no `images` array of its own.
+    const entries = (!isGrid && slotEntries.length === 0 && meta.raster)
+      ? [{ image: meta.image, raster: meta.raster, fileName: meta.uploadFileNames?.[0] || '', noData: meta.noData }]
+      : slotEntries;
+
+    if (isGrid) gridTiles.push(...entries);
+    else images.push(...entries);
+
+    const slotLayers = meta.layers?.length
+      ? meta.layers
+      : [{ id: 'upload', label: slot.files?.[0]?.name || `Layer ${slotIndex + 1}`, year: null, indices: entries.map((_, i) => i) }];
+
+    for (const layer of slotLayers) {
+      layers.push({
+        ...layer,
+        // Slot-scoped so two slots holding the same survey stay distinct.
+        id: `s${slotIndex}:${layer.id}`,
+        slotIndex,
+        indices: layer.indices.map((i) => i + offset),
+      });
+    }
+
+    fileSize += Number(meta.fileSize || 0);
+    uploadFileNames.push(...(meta.uploadFileNames || (slot.files || []).map((f) => f.name)));
+  });
+
+  const mergedBounds = unionBounds(usable.map((slot) => slot.meta.bounds));
+  const coverageSummary = summarizeCoverageBounds(mergedBounds);
+  const unitMeta = usable.find((slot) => slot.meta.verticalUnitDetected
+    && slot.meta.verticalUnitDetected !== UNIT_UNKNOWN)?.meta;
+  const notElevation = usable.find((slot) => slot.meta.isLikelyElevation === false)?.meta;
+
+  return {
+    sourceType,
+    sourceFormat: first.sourceFormat,
+    formatLabel: `${usable.length} layers (${isGrid ? gridTiles.length : images.length} tiles)`,
+    images: isGrid ? undefined : images,
+    gridTiles: isGrid ? gridTiles : undefined,
+    layers,
+    isGeoTiff: !isGrid,
+    isGeoReferenced: !!mergedBounds,
+    epsgCode: first.epsgCode ?? null,
+    bounds: mergedBounds,
+    center: coverageSummary.center,
+    nativeWidth: coverageSummary.nativeWidth,
+    nativeHeight: coverageSummary.nativeHeight,
+    suggestedResolution: coverageSummary.suggestedResolution,
+    nativeMetersPerPixel: coverageSummary.nativeMetersPerPixel,
+    noData: first.noData,
+    // The card reports the base layer's detection; each layer keeps its own
+    // value on its tiles regardless.
+    noDataDetection: first.noDataDetection,
+    isLikelyElevation: !notElevation,
+    elevationValidationMessage: notElevation?.elevationValidationMessage || '',
+    fileSize,
+    verticalUnitDetected: unitMeta?.verticalUnitDetected ?? UNIT_UNKNOWN,
+    verticalUnitDetectionSource: unitMeta?.verticalUnitDetectionSource ?? null,
+    uploadFileNames,
   };
 };
 

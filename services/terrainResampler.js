@@ -314,7 +314,11 @@ export const resampleToMeterGrid = async (
             const height = image.getHeight();
             const [originX, originY] = image.getOrigin();
             const [resX, resY] = image.getResolution();
-            const noData = Number.isFinite(image.getGDALNoData()) ? image.getGDALNoData() : -99999;
+            // Mirrors prepareTiles() in resamplerClient.js: the loader's
+            // resolved no-data wins over the raw GDAL_NODATA tag.
+            const noData = Number.isFinite(item.noData)
+                ? item.noData
+                : (Number.isFinite(image.getGDALNoData()) ? image.getGDALNoData() : -99999);
 
             const geoKeys = image.getGeoKeys();
             const epsgCode = geoKeys.ProjectedCSTypeGeoKey || geoKeys.GeographicTypeGeoKey;

@@ -1,5 +1,8 @@
 import { fetchOSMData, getLastOSMRequestInfo, getOSMQueryParameters } from "./osm.js";
 import { parseRasterOrGridElevationFile, parseTifFile, parseTifFiles, parseGridFiles } from "./tifLoader.js";
+import { resolveNoDataValue, NODATA_AUTO, NODATA_FALLBACK } from "./nodataDetect.js";
+import { GAP_FILL_STANDARD, GAP_FILL_GPXZ, GAP_FILL_NONE } from "./gapFillSources.js";
+import { applyLayerOrder, assignLayerIndices } from "./elevationLayers.js";
 export { parseRasterOrGridElevationFile };
 // Backward-compatible export; prefer parseElevationFile() in new call sites.
 export { parseTifFile };
@@ -256,7 +259,15 @@ const fetchSatelliteMosaic = async (
   };
 };
 
-const createTerrariumHeightSampler = async (
+/**
+ * Download the global Terrarium elevation tiles covering `bounds` and return
+ * the stitched mosaic in the serializable form the resampler worker consumes
+ * (`{ pixels, width, height, zoom, minTileX, minTileY }`).
+ *
+ * Shared by the plain sampler below and by the BYOD gap-fill path, which needs
+ * the raw pixels rather than a closure so they can cross into the worker.
+ */
+export const fetchTerrariumMosaic = async (
   bounds,
   signal,
   onProgress,
@@ -320,22 +331,41 @@ const createTerrariumHeightSampler = async (
   terrainCanvas.width = 0;
   terrainCanvas.height = 0;
 
+  return {
+    pixels: terrainDataImg.data,
+    width: terrainDataImg.width,
+    height: terrainDataImg.height,
+    zoom: TERRAIN_ZOOM,
+    minTileX,
+    minTileY,
+    tileCount: requests.length,
+  };
+};
+
+const createTerrariumHeightSampler = async (
+  bounds,
+  signal,
+  onProgress,
+  globalTileConcurrency = 20,
+) => {
+  const mosaic = await fetchTerrariumMosaic(bounds, signal, onProgress, globalTileConcurrency);
+
   return (lat, lng) => {
     const p = project(lat, lng, TERRAIN_ZOOM);
-    const localX = p.x - minTileX * TILE_SIZE;
-    const localY = p.y - minTileY * TILE_SIZE;
+    const localX = p.x - mosaic.minTileX * TILE_SIZE;
+    const localY = p.y - mosaic.minTileY * TILE_SIZE;
 
     const x = Math.floor(localX);
     const y = Math.floor(localY);
-    if (x < 0 || x >= terrainDataImg.width || y < 0 || y >= terrainDataImg.height) {
+    if (x < 0 || x >= mosaic.width || y < 0 || y >= mosaic.height) {
       return NO_DATA_VALUE;
     }
 
-    const i = (y * terrainDataImg.width + x) * 4;
+    const i = (y * mosaic.width + x) * 4;
     return decodeTerrariumHeight(
-      terrainDataImg.data[i],
-      terrainDataImg.data[i + 1],
-      terrainDataImg.data[i + 2],
+      mosaic.pixels[i],
+      mosaic.pixels[i + 1],
+      mosaic.pixels[i + 2],
     );
   };
 };
@@ -609,6 +639,78 @@ export const parseElevationFile = async (fileOrFiles) => {
     return parseLazFile(file);
   }
   return parseRasterOrGridElevationFile(file);
+};
+
+/**
+ * Acquire the secondary elevation source used to fill gaps in an upload.
+ *
+ * Uploaded LiDAR rarely covers the whole export area: survey polygons are
+ * irregular, and the no-data fill outside them leaves holes (see
+ * nodataDetect.js). Rather than synthesising terrain for those gaps, we drop in
+ * a real dataset and let the worker blend the seam.
+ *
+ * Returns the two payload shapes the worker understands:
+ *  - `fallbackData` — the global Terrarium mosaic
+ *  - `gapFillData`  — geo-referenced rasters (GPXZ hires chunks)
+ * GPXZ falls back to the global tiles if the request yields nothing, so a
+ * missing key or a failed fetch degrades instead of leaving holes.
+ */
+const fetchGapFillSource = async ({
+  gapFillSource,
+  bounds,
+  gpxzApiKey,
+  signal,
+  emitProgress,
+  globalTileConcurrency = 20,
+}) => {
+  const empty = { fallbackData: null, gapFillData: null };
+  const mode = String(gapFillSource || GAP_FILL_STANDARD).toLowerCase();
+  if (mode === GAP_FILL_NONE) return empty;
+
+  const fetchStandard = async () => {
+    emitProgress?.({ status: 'Downloading fallback elevation tiles for gaps...', percent: null });
+    try {
+      const mosaic = await fetchTerrariumMosaic(
+        bounds,
+        signal,
+        (message) => emitProgress?.({ status: message, percent: null }),
+        globalTileConcurrency,
+      );
+      console.info(`[BYOD] Gap fill: global elevation mosaic ready (${mosaic.tileCount} tiles).`);
+      return { fallbackData: mosaic, gapFillData: null };
+    } catch (error) {
+      if (signal?.aborted) throw error;
+      console.warn('[BYOD] Gap fill: global elevation tiles unavailable, leaving gaps to the inpainter:', error);
+      return empty;
+    }
+  };
+
+  if (mode === GAP_FILL_GPXZ) {
+    if (!gpxzApiKey) {
+      console.warn('[BYOD] Gap fill: GPXZ selected without an API key — using global elevation tiles instead.');
+      return fetchStandard();
+    }
+    emitProgress?.({ status: 'Fetching GPXZ elevation for gaps...', percent: null });
+    try {
+      const gpxzResult = await fetchGPXZRaw(
+        bounds,
+        gpxzApiKey,
+        (message) => emitProgress?.({ status: message, percent: null }),
+        signal,
+      );
+      if (gpxzResult?.data?.length) {
+        console.info(`[BYOD] Gap fill: GPXZ returned ${gpxzResult.data.length} raster chunk(s).`);
+        return { fallbackData: null, gapFillData: gpxzResult.data };
+      }
+      console.warn('[BYOD] Gap fill: GPXZ returned no data — using global elevation tiles instead.');
+    } catch (error) {
+      if (signal?.aborted) throw error;
+      console.warn('[BYOD] Gap fill: GPXZ request failed — using global elevation tiles instead:', error);
+    }
+    return fetchStandard();
+  }
+
+  return fetchStandard();
 };
 
 /**
@@ -1714,6 +1816,9 @@ export const loadTerrainFromTif = async (
     preferNativeCoverage = true,
     enhanceRoads = false,
     levelRoads = false,
+    gapFillSource = GAP_FILL_STANDARD,
+    gpxzApiKey = '',
+    layerOrder = null,
   } = generationOptions || {};
 
   const effectiveMetersPerPixel = Number.isFinite(Number(processingMetersPerPixel)) && Number(processingMetersPerPixel) > 0
@@ -1721,6 +1826,38 @@ export const loadTerrainFromTif = async (
     : 1;
   const normalizedCenter = { lat: center.lat, lng: normalizeLng(center.lng) };
   const emitProgress = (update) => onProgress?.(update);
+
+  // No-data masking: whatever parsing worked out (GDAL_NODATA tag or a detected
+  // fill value), unless the user overrode it in the upload card. NODATA_FALLBACK
+  // stands in for "mask nothing" — no real DEM holds -99999.
+  const resolvedNoData = resolveNoDataValue(
+    uploadedRasterData.noDataDetection,
+    uploadedRasterData.noDataOverride ?? NODATA_AUTO,
+  );
+  const effectiveNoData = Number.isFinite(resolvedNoData) ? resolvedNoData : NODATA_FALLBACK;
+  const noDataOverridden = !!uploadedRasterData.noDataOverride
+    && uploadedRasterData.noDataOverride !== NODATA_AUTO;
+  if (uploadedRasterData.noDataDetection?.source || uploadedRasterData.noDataOverride) {
+    console.info(`[BYOD] No-data value in use: ${effectiveNoData === NODATA_FALLBACK ? 'none' : effectiveNoData} (override: ${uploadedRasterData.noDataOverride ?? NODATA_AUTO}, detected: ${uploadedRasterData.noDataDetection?.value ?? 'none'}).`);
+  }
+
+  // ── Layer priority stack ──────────────────────────────────────────────────
+  // An upload of several surveys resolves to several layers; the first supplies
+  // everything it has, each next one fills what is still empty, and the gap-fill
+  // source below backs up whatever no layer reached. Every handover is
+  // seam-blended in the worker.
+  const orderedLayers = applyLayerOrder(uploadedRasterData.layers || [], layerOrder);
+  const rasterEntries = uploadedRasterData.images
+    || [{ image: uploadedRasterData.image, raster: uploadedRasterData.raster, noData: uploadedRasterData.noData }];
+  const layeredImages = assignLayerIndices(rasterEntries, orderedLayers).map((entry) => ({
+    ...entry,
+    // A manual override replaces every layer's value; otherwise each layer keeps
+    // the fill value its own tiles agreed on.
+    noData: noDataOverridden || !Number.isFinite(entry.noData) ? effectiveNoData : entry.noData,
+  }));
+  if (orderedLayers.length > 1) {
+    console.info(`[BYOD] Elevation layer priority: ${orderedLayers.map((l, i) => `${i + 1}. ${l.label}`).join(', ')}`);
+  }
   let width;
   let height;
   let fetchBounds;
@@ -1809,10 +1946,17 @@ export const loadTerrainFromTif = async (
       minTileY: satMinTileY,
     };
     const source = uploadedRasterData.sourceType === 'grid'
-      ? { type: 'grid', data: { tiles: uploadedRasterData.gridTiles || [] } }
-      : { type: 'geotiff', data: uploadedRasterData.images
-          || [{ image: uploadedRasterData.image, raster: uploadedRasterData.raster }] };
+      ? { type: 'grid', data: { tiles: assignLayerIndices(uploadedRasterData.gridTiles || [], orderedLayers) } }
+      : { type: 'geotiff', data: layeredImages };
     const skipGapExpansion = String(uploadedRasterData.sourceFormat || '').toLowerCase() === 'gml-zip';
+    const { fallbackData, gapFillData } = await fetchGapFillSource({
+      gapFillSource,
+      bounds: fetchBounds,
+      gpxzApiKey,
+      signal,
+      emitProgress,
+      globalTileConcurrency,
+    });
     const result = await resampleHeightAndImageOffThread(
       source,
       colorSampler,
@@ -1821,7 +1965,7 @@ export const loadTerrainFromTif = async (
       height,
       'bilinear',
       false,
-      null,
+      fallbackData,
       true,
       imageSamplerData,
       fetchBounds,
@@ -1834,6 +1978,8 @@ export const loadTerrainFromTif = async (
         stage: progress.stage || null,
       }),
       !skipGapExpansion,
+      false,
+      gapFillData,
     );
     heightMap = result.heightMap;
     finalBounds = result.bounds;
@@ -1844,7 +1990,7 @@ export const loadTerrainFromTif = async (
     // with the TIF data regardless of coordinate metadata.
     const srcW = uploadedRasterData.sourceWidth;
     const srcH = uploadedRasterData.sourceHeight;
-    const noDataVal = uploadedRasterData.noData ?? -99999;
+    const noDataVal = effectiveNoData;
     heightMap = new Float32Array(width * height);
 
     for (let oy = 0; oy < height; oy++) {

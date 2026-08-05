@@ -35,21 +35,29 @@
         :uploaded-elevation-file="uploadedElevationFile"
         :uploaded-elevation-meta="uploadedElevationMeta"
         :uploaded-asc-coordinate-system="uploadedAscCoordinateSystem"
+        :uploaded-no-data-override="uploadedNoDataOverride"
+        :uploaded-layer-order="uploadedLayerOrder"
+        :elevation-layer-slots="elevationSlots"
+        :max-elevation-slots="MAX_ELEVATION_SLOTS"
         :uploaded-area-mode="uploadedAreaMode"
         :processing-meters-per-pixel="processingMetersPerPixel"
         @location-change="handleLocationChange"
         @resolution-change="store.setResolution"
         @update:uploaded-asc-coordinate-system="handleUploadedAscCoordinateSystemChange"
+        @update:uploaded-no-data-override="(v) => uploadedNoDataOverride = v"
+        @update:uploaded-layer-order="(v) => uploadedLayerOrder = v"
         @update:uploaded-area-mode="handleUploadedAreaModeChange"
         @update:processingMetersPerPixel="handleProcessingMetersPerPixelChange"
         @update:preview-stale="(v) => previewStale = v"
         @zoom-change="store.setZoom"
-        @generate="(preview, fetchOSM, elevationSource, gpxzApiKey, elevationUnitOverride, metersPerPixel, enhanceRoads, levelRoads) => handleGenerate(preview, fetchOSM, elevationSource, gpxzApiKey, elevationUnitOverride, metersPerPixel, enhanceRoads, levelRoads)"
+        @generate="(preview, fetchOSM, elevationSource, gpxzApiKey, elevationUnitOverride, metersPerPixel, enhanceRoads, levelRoads, gapFillSource) => handleGenerate(preview, fetchOSM, elevationSource, gpxzApiKey, elevationUnitOverride, metersPerPixel, enhanceRoads, levelRoads, gapFillSource)"
         @fetch-osm="handleFetchOSM"
         @surrounding-tiles-change="(v) => surroundingTilePositions = v"
         @import-data="handleImportData"
         @elevation-file-selected="handleElevationFileSelected"
         @elevation-file-clear="handleElevationFileClear"
+        @elevation-slot-selected="handleElevationSlotSelected"
+        @elevation-slot-removed="handleElevationSlotRemoved"
         @show-support="openSupportTip('manual')"
         @export-success="handleSingleExportSuccess"
       />
@@ -219,6 +227,9 @@ import ViewTabs from './components/ui/ViewTabs.vue';
 import { fetchTerrainData, addOSMToTerrain, parseElevationFile, loadTerrainFromUploadedElevation } from './services/terrain';
 import { releaseUploadRasterCache } from './services/resamplerClient';
 import { applyAscCoordinateSystem } from './services/ascLoader.js';
+import { NODATA_AUTO } from './services/nodataDetect.js';
+import { mergeElevationSlots } from './services/tifLoader.js';
+import { DEFAULT_GAP_FILL_SOURCE } from './services/gapFillSources.js';
 import { computeUploadedCropBounds } from './services/uploadBounds';
 import {
   computeGridTiles,
@@ -322,11 +333,23 @@ const handleSingleExportSuccess = () => {
 };
 
 // BYOD upload state shared across upload, map overlay, and generation pipeline.
-const uploadedElevationFile = ref(null);   // File | File[] | null
+// Flattened view of every slot's files, kept for the consumers that only care
+// whether a custom upload is active (map overlay, cache key, generate path).
+const uploadedElevationFile = computed(() => {
+  const files = elevationSlots.value.flatMap((slot) => slot.files || []);
+  if (files.length === 0) return null;
+  return files.length === 1 ? files[0] : files;
+});
 const uploadedElevationMeta = ref(null);   // parseElevationFile() result | null
 const uploadedAreaMode = ref(localStorage.getItem('mapng_uploaded_area_mode') || 'native');
 const previewStale = ref(false);   // 3D preview no longer matches current upload settings
 const uploadedAscCoordinateSystem = ref(localStorage.getItem('mapng_uploaded_asc_crs') || 'auto');
+// Belongs to the current upload (the detected fill value is a property of those
+// files), so it is deliberately not persisted and resets with every new upload.
+const uploadedNoDataOverride = ref(NODATA_AUTO);
+// Layer priority for the current upload, as an array of layer ids. Null means
+// "as detected" (newest survey first); also per-upload, so never persisted.
+const uploadedLayerOrder = ref(null);
 const normalizeProcessingMpp = (value) => {
   const parsed = Number(value);
   if (!Number.isFinite(parsed) || parsed <= 0) return 1;
@@ -479,7 +502,7 @@ const signatureForKey = (key) => {
 
 // Build a cache key from the parameters that affect terrain generation.
 // If this key matches the last generation, we can skip re-fetching.
-const buildGenerationKey = (c, res, osm, elevationSource, gpxzKey, uploadedElevationFile = null, elevationUnitOverride = 'auto', processingMpp = 1, enhanceRoads = false, levelRoads = false) => {
+const buildGenerationKey = (c, res, osm, elevationSource, gpxzKey, uploadedElevationFile = null, elevationUnitOverride = 'auto', processingMpp = 1, enhanceRoads = false, levelRoads = false, gapFillSource = DEFAULT_GAP_FILL_SOURCE) => {
   const uploadSignature = Array.isArray(uploadedElevationFile)
     ? uploadedElevationFile
         .map((file) => `${file.name}|${file.size}|${file.lastModified}`)
@@ -501,44 +524,117 @@ const buildGenerationKey = (c, res, osm, elevationSource, gpxzKey, uploadedEleva
     gpxzKeySig: elevationSource === 'gpxz' ? signatureForKey(gpxzKey) : '',
     elevationUnitOverride,
     uploadedAscCoordinateSystem: uploadedAscCoordinateSystem.value,
+    uploadedNoDataOverride: uploadedNoDataOverride.value,
+    uploadedLayerOrder: uploadedLayerOrder.value,
+    gapFillSource,
     uploadedAreaMode: uploadedAreaMode.value,
     // Include file identity so changing uploads always invalidates cached terrain.
     uploadedElevation: uploadSignature,
   });
 };
 
-const handleElevationFileSelected = async (fileOrFiles) => {
-  const files = Array.isArray(fileOrFiles) ? fileOrFiles : [fileOrFiles];
-  const selectedUpload = files.length > 1 ? files : files[0];
+// ── Elevation layer slots ───────────────────────────────────────────────────
+// Slot 0 is the base upload; each slot after it is a fallback the user added,
+// consulted only where everything above it has no data. Each slot keeps its own
+// parsed metadata so adding a fallback never re-reads the rasters already held.
+const MAX_ELEVATION_SLOTS = 5;
+const elevationSlots = ref([]); // [{ id, files: File[], meta, error }]
+let elevationSlotSeq = 0;
 
-  // New upload always resets generation state because bounds/resolution may change.
-  uploadedElevationFile.value = selectedUpload;
-  uploadedElevationMeta.value = null;
+const rebuildMergedUpload = () => {
+  const merged = mergeElevationSlots(elevationSlots.value);
+  uploadedElevationMeta.value = merged;
+  return merged;
+};
+
+const resetUploadDerivedState = () => {
   uploadedAreaMode.value = 'native';
   localStorage.setItem('mapng_uploaded_area_mode', 'native');
   uploadedAscCoordinateSystem.value = 'auto';
   localStorage.setItem('mapng_uploaded_asc_crs', 'auto');
+  uploadedNoDataOverride.value = NODATA_AUTO;
+  uploadedLayerOrder.value = null;
   terrainData.value = null;
   lastGenerationKey.value = null;
+};
+
+const parseSlotFiles = async (files) => {
+  const selected = files.length > 1 ? files : files[0];
+  const meta = await parseElevationFile(selected);
+  return applyAscCoordinateSelection(meta);
+};
+
+const handleElevationFileSelected = async (fileOrFiles) => {
+  const files = (Array.isArray(fileOrFiles) ? fileOrFiles : [fileOrFiles]).filter(Boolean);
+  if (files.length === 0) return;
+
+  // Replacing the base upload replaces the whole stack: fallbacks were chosen
+  // to complement a specific base and mean nothing without it.
+  elevationSlots.value = [{ id: `slot_${++elevationSlotSeq}`, files, meta: null, error: null }];
+  uploadedElevationMeta.value = null;
+  resetUploadDerivedState();
   try {
-    // Parse every supported upload format via a format-neutral service API.
-    const meta = await parseElevationFile(selectedUpload);
-    const resolvedMeta = await applyAscCoordinateSelection(meta);
-    uploadedElevationMeta.value = resolvedMeta;
-    // Auto-centre map if the file contains coordinate metadata
-    if (isValidCenter(resolvedMeta.center)) store.setCenter(resolvedMeta.center);
+    const resolvedMeta = await parseSlotFiles(files);
+    elevationSlots.value = [{ ...elevationSlots.value[0], meta: resolvedMeta }];
+    const merged = rebuildMergedUpload();
+    if (isValidCenter(merged?.center)) store.setCenter(merged.center);
   } catch (e) {
     console.warn('[BYOD] Failed to read file metadata:', e);
+    elevationSlots.value = [{ ...elevationSlots.value[0], error: e.message || 'Failed to read file' }];
   }
 };
 
+const handleElevationSlotSelected = async (slotIndex, fileOrFiles) => {
+  const files = (Array.isArray(fileOrFiles) ? fileOrFiles : [fileOrFiles]).filter(Boolean);
+  if (files.length === 0) return;
+  if (slotIndex === 0) return handleElevationFileSelected(files);
+  if (slotIndex >= MAX_ELEVATION_SLOTS) return;
+
+  const slots = [...elevationSlots.value];
+  slots[slotIndex] = { id: `slot_${++elevationSlotSeq}`, files, meta: null, error: null };
+  elevationSlots.value = slots;
+  uploadedLayerOrder.value = null;
+  terrainData.value = null;
+  lastGenerationKey.value = null;
+
+  try {
+    const resolvedMeta = await parseSlotFiles(files);
+    const base = elevationSlots.value[0]?.meta;
+    // Mixed source types cannot share one resample pass — the worker samples
+    // either GeoTIFF tiles or grid tiles, not both.
+    if (base && resolvedMeta.sourceType !== base.sourceType) {
+      throw new Error(`Fallback layers must match the base upload's format (${base.sourceType}).`);
+    }
+    const next = [...elevationSlots.value];
+    next[slotIndex] = { ...next[slotIndex], meta: resolvedMeta };
+    elevationSlots.value = next;
+    rebuildMergedUpload();
+  } catch (e) {
+    console.warn('[BYOD] Failed to read fallback layer metadata:', e);
+    const next = [...elevationSlots.value];
+    next[slotIndex] = { ...next[slotIndex], error: e.message || 'Failed to read file' };
+    elevationSlots.value = next;
+  }
+};
+
+const handleElevationSlotRemoved = (slotIndex) => {
+  if (slotIndex === 0) return handleElevationFileClear();
+  elevationSlots.value = elevationSlots.value.filter((_, i) => i !== slotIndex);
+  uploadedLayerOrder.value = null;
+  terrainData.value = null;
+  lastGenerationKey.value = null;
+  rebuildMergedUpload();
+};
+
 const handleElevationFileClear = () => {
-  uploadedElevationFile.value = null;
+  elevationSlots.value = [];
   uploadedElevationMeta.value = null;
   uploadedAreaMode.value = 'native';
   localStorage.setItem('mapng_uploaded_area_mode', 'native');
   uploadedAscCoordinateSystem.value = 'auto';
   localStorage.setItem('mapng_uploaded_asc_crs', 'auto');
+  uploadedNoDataOverride.value = NODATA_AUTO;
+  uploadedLayerOrder.value = null;
   // Free the worker-resident copy of the uploaded rasters (can be GBs).
   releaseUploadRasterCache();
 };
@@ -598,7 +694,7 @@ const applyLoadingUpdate = (update) => {
   }
 };
 
-const handleGenerate = async (showPreview, fetchOSM, elevationSource = 'default', gpxzApiKey = '', elevationUnitOverride = 'auto', processingMpp = 1, enhanceRoads = false, levelRoads = false) => {
+const handleGenerate = async (showPreview, fetchOSM, elevationSource = 'default', gpxzApiKey = '', elevationUnitOverride = 'auto', processingMpp = 1, enhanceRoads = false, levelRoads = false, gapFillSource = DEFAULT_GAP_FILL_SOURCE) => {
   const normalizedSource = String(elevationSource || 'default').toLowerCase();
   const useUSGS = normalizedSource === 'usgs';
   const useGPXZ = normalizedSource === 'gpxz';
@@ -620,7 +716,8 @@ const handleGenerate = async (showPreview, fetchOSM, elevationSource = 'default'
     elevationUnitOverride,
     processingMpp,
     enhanceRoads,
-    levelRoads
+    levelRoads,
+    gapFillSource
   );
 
   // If we already have terrain data for the exact same parameters, reuse it
@@ -699,8 +796,10 @@ const handleGenerate = async (showPreview, fetchOSM, elevationSource = 'default'
     if (uploadedElevationFile.value) {
       // BYOD path: local upload defines terrain heights while texture/OSM
       // overlays still come from the normal network tile flow.
-      const meta = uploadedElevationMeta.value
-        ?? await parseElevationFile(uploadedElevationFile.value);
+      const parsedMeta = uploadedElevationMeta.value ?? rebuildMergedUpload();
+      if (!parsedMeta) throw new Error('Uploaded elevation could not be read.');
+      // The upload card can override the no-data value the loader detected.
+      const meta = { ...parsedMeta, noDataOverride: uploadedNoDataOverride.value };
       const targetBounds = uploadedAreaMode.value === 'crop' && meta?.bounds
         ? computeUploadedCropBounds(center.value, Number(resolution.value) * Number(processingMpp || 1), meta.bounds)
         : null;
@@ -714,6 +813,9 @@ const handleGenerate = async (showPreview, fetchOSM, elevationSource = 'default'
         signal,
         {
           elevationUnitOverride,
+          gapFillSource,
+          gpxzApiKey,
+          layerOrder: uploadedLayerOrder.value,
           processingMetersPerPixel: Number(processingMpp || 1),
           targetBounds,
           preferNativeCoverage: uploadedAreaMode.value !== 'crop',

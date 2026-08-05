@@ -71,6 +71,19 @@ const detectionSourceLabel = computed(() => {
   return s;
 });
 
+const noDataLabel = computed(() => {
+  const detection = props.meta?.noDataDetection;
+  const value = props.meta?.noData;
+  if (!Number.isFinite(value)) return 'none declared';
+  const shown = Math.abs(value) >= 1e6 ? value.toExponential(2) : String(Number(value.toFixed(4)));
+  if (detection?.source === 'tag') return `${shown} (tagged)`;
+  if (detection?.source === 'detected') {
+    const pct = Number.isFinite(detection.share) ? ` — ${(detection.share * 100).toFixed(1)}% of pixels` : '';
+    return `${shown} (detected${pct})`;
+  }
+  return shown;
+});
+
 const rows = computed(() => {
   const m = props.meta || {};
   const list = [];
@@ -118,6 +131,8 @@ const rows = computed(() => {
   if (cov) {
     list.push({ label: 'Coverage', value: `${cov.w.toFixed(2)} × ${cov.h.toFixed(2)} km` });
   }
+
+  list.push({ label: 'No-data value', value: noDataLabel.value });
 
   list.push({ label: 'Detected elevation units', value: detectedUnitLabel.value });
   list.push({ label: 'Detection source', value: detectionSourceLabel.value });

@@ -6,8 +6,19 @@
       :uploaded-elevation-meta="uploadedElevationMeta"
       :vertical-unit-override="elevationUnitOverride"
       :asc-coordinate-system="uploadedAscCoordinateSystem"
+      :no-data-override="uploadedNoDataOverride"
+      :gap-fill-source="gapFillSource"
+      :layer-order="uploadedLayerOrder"
+      :layer-slots="elevationLayerSlots"
+      :max-slots="maxElevationSlots"
+      :gpxz-key-available="!!gpxzApiKey"
       @update:verticalUnitOverride="(v) => elevationUnitOverride = v"
+      @update:gapFillSource="(v) => gapFillSource = v"
+      @update:layerOrder="(v) => $emit('update:uploadedLayerOrder', v)"
+      @slot-selected="(i, files) => $emit('elevationSlotSelected', i, files)"
+      @slot-removed="(i) => $emit('elevationSlotRemoved', i)"
       @update:ascCoordinateSystem="(v) => $emit('update:uploadedAscCoordinateSystem', v)"
+      @update:noDataOverride="(v) => $emit('update:uploadedNoDataOverride', v)"
       @file-selected="$emit('elevationFileSelected', $event)"
       @clear="$emit('elevationFileClear')"
     />
@@ -32,7 +43,7 @@
       :use-gpxz="useGPXZ"
       :gpxz-api-key="gpxzApiKey"
       :has-custom-elevation="!!uploadedElevationFile"
-      @generate="(preview) => $emit('generate', preview, fetchOSM, elevationSource, gpxzApiKey, elevationUnitOverride, metersPerPixel, enhanceRoads, levelRoads)"
+      @generate="(preview) => $emit('generate', preview, fetchOSM, elevationSource, gpxzApiKey, elevationUnitOverride, metersPerPixel, enhanceRoads, levelRoads, gapFillSource)"
     />
 
     <!-- Output Settings -->
@@ -296,12 +307,13 @@ import { downloadJsonFile } from '../../services/traceability';
 import { exportJobData, importJobData } from '../../services/jobData';
 import { buildRunConfiguration as buildRunConfigurationBase } from '../../services/runConfiguration';
 import { getMaxSquareCropResolution, scaleNativeDimsToProcessingMpp } from '../../services/uploadBounds';
+import { normalizeGapFillSource } from '../../services/gapFillSources.js';
 
 const { t } = useI18n({ useScope: 'global' });
 
-const props = defineProps(['center', 'zoom', 'resolution', 'devMode', 'isGenerating', 'terrainData', 'generationCacheKey', 'uploadedElevationFile', 'uploadedElevationMeta', 'uploadedAscCoordinateSystem', 'uploadedAreaMode', 'processingMetersPerPixel']);
+const props = defineProps(['center', 'zoom', 'resolution', 'devMode', 'isGenerating', 'terrainData', 'generationCacheKey', 'uploadedElevationFile', 'uploadedElevationMeta', 'uploadedAscCoordinateSystem', 'uploadedNoDataOverride', 'uploadedLayerOrder', 'elevationLayerSlots', 'maxElevationSlots', 'uploadedAreaMode', 'processingMetersPerPixel']);
 
-const emit = defineEmits(['locationChange', 'resolutionChange', 'zoomChange', 'generate', 'fetchOsm', 'surroundingTilesChange', 'importData', 'elevationFileSelected', 'elevationFileClear', 'showSupport', 'exportSuccess', 'update:uploadedAscCoordinateSystem', 'update:uploadedAreaMode', 'update:processingMetersPerPixel', 'update:previewStale']);
+const emit = defineEmits(['locationChange', 'resolutionChange', 'zoomChange', 'generate', 'fetchOsm', 'surroundingTilesChange', 'importData', 'elevationFileSelected', 'elevationFileClear', 'elevationSlotSelected', 'elevationSlotRemoved', 'showSupport', 'exportSuccess', 'update:uploadedAscCoordinateSystem', 'update:uploadedNoDataOverride', 'update:uploadedLayerOrder', 'update:uploadedAreaMode', 'update:processingMetersPerPixel', 'update:previewStale']);
 
 const handleLocationChange = (newLocation) => {
   emit('locationChange', { ...props.center, ...newLocation });
@@ -355,6 +367,8 @@ const levelRoads = ref(localStorage.getItem('mapng_levelRoads') === 'true');
 const useUSGS = ref(false);
 const useGPXZ = ref(false);
 const elevationUnitOverride = ref(localStorage.getItem('mapng_elevationUnitOverride') || 'auto');
+// Which dataset fills the parts of an export the upload does not cover.
+const gapFillSource = ref(normalizeGapFillSource(localStorage.getItem('mapng_gapFillSource')));
 const elevationSource = ref(localStorage.getItem('mapng_elevationSource') || 'default');
 const gpxzApiKey = ref(localStorage.getItem('mapng_gpxzApiKey') || '');
 const gpxzStatus = ref(null); // { plan, used, limit, remaining, concurrency, valid }
@@ -416,6 +430,10 @@ watch(levelRoads, (newVal) => {
 watch(gpxzApiKey, (newVal) => {
   localStorage.setItem('mapng_gpxzApiKey', newVal);
   gpxzStatus.value = null;
+});
+
+watch(gapFillSource, (newVal) => {
+  localStorage.setItem('mapng_gapFillSource', normalizeGapFillSource(newVal));
 });
 
 watch(elevationUnitOverride, (newVal) => {
@@ -526,6 +544,9 @@ watch(
     metersPerPixel.value,
     props.uploadedAreaMode,
     props.uploadedAscCoordinateSystem,
+    props.uploadedNoDataOverride,
+    props.uploadedLayerOrder,
+    gapFillSource.value,
     elevationUnitOverride.value,
     fetchOSM.value,
     enhanceRoads.value,
