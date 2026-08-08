@@ -446,11 +446,11 @@ const ROAD_STYLE = {
 
 // Linear waterway types → half-width in metres for terrain-layer rasterisation.
 const WATERWAY_STYLE = {
-  river:  { halfWidthM: 12.0 },
+  river:  { halfWidthM: 10.0 },
   canal:  { halfWidthM:  6.0 },
-  stream: { halfWidthM:  2.5 },
-  drain:  { halfWidthM:  2.0 },
-  ditch:  { halfWidthM:  1.5 },
+  stream: { halfWidthM:  1.75 },
+  drain:  { halfWidthM:  1.25 },
+  ditch:  { halfWidthM:  0.75 },
 };
 
 const CONCRETE_LANDUSES = new Set(['commercial', 'industrial', 'retail']);
