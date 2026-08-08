@@ -3438,19 +3438,19 @@ function writeSimGroupTree(zip, folderPath, items) {
 }
 
 const WATERWAY_WIDTHS = {
-  river: 26,
-  canal: 14,
-  stream: 8,
-  drain: 4,
-  ditch: 3,
+  river: 20,
+  canal: 12,
+  stream: 3.5,
+  drain: 2.5,
+  ditch: 1.5,
 };
 
 const WATERWAY_DEPTHS = {
-  river: 8,
-  canal: 5,
-  stream: 3,
-  drain: 2,
-  ditch: 1.5,
+  river: 6,
+  canal: 4,
+  stream: 1.2,
+  drain: 1,
+  ditch: 0.6,
 };
 
 
@@ -5276,8 +5276,8 @@ function buildRiverObjects(terrainData, squareSize, biome) {
   return features.map((feature, index) => {
     const geom = simplifyPolyline(feature.geometry, 72);
     const fallbackWidth = WATERWAY_WIDTHS[feature.tags.waterway] ?? 10;
-    const width = Math.max(3, parseNumericWidth(feature.tags.width, fallbackWidth));
-    const depth = Math.max(1.5, WATERWAY_DEPTHS[feature.tags.waterway] ?? Math.max(2, width * 0.25));
+    const width = Math.max(1.5, parseNumericWidth(feature.tags.width, fallbackWidth));
+    const depth = WATERWAY_DEPTHS[feature.tags.waterway] ?? Math.max(0.6, width * 0.15);
     const worldPts = geom.map((pt) => geoToWorldPoint(pt.lat, pt.lng, terrainData, squareSize, 0));
     const heights = smoothHeights(worldPts.map((pt) => pt[2] + 0.9));
     const nodes = worldPts.map((pt, ptIndex) => ([

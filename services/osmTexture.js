@@ -1580,12 +1580,11 @@ const renderFeaturesToCanvas = (
         ctx.strokeStyle = ctx.fillStyle; // Use same color
 
         // Width adaptivity
-        let w = 1.5; // Stream default
+        let w = 1; // Stream / ditch default
         if (f.tags.width) w = parseFloat(f.tags.width);
-        else if (f.tags.waterway === "river") w = 6;
-        else if (f.tags.waterway === "canal") w = 4;
-        else if (f.tags.waterway === "drain" || f.tags.waterway === "ditch")
-          w = 1;
+        else if (f.tags.waterway === "river") w = 5;
+        else if (f.tags.waterway === "canal") w = 3;
+        else if (f.tags.waterway === "drain") w = 1;
 
         ctx.lineWidth = w * SCALE_FACTOR;
         ctx.stroke();
