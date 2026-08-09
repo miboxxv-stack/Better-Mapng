@@ -977,6 +977,7 @@ const handleBatchCancel = () => {
   if (batchState.value) {
     batchState.value.status = 'canceled';
     saveBatchState(batchState.value);
+    batchState.value = { ...batchState.value };
   }
   if (batchAbortController) {
     batchAbortController.abort();
@@ -1021,11 +1022,13 @@ const executeBatchJob = async (state) => {
     await runBatchJob(
       state,
       // onProgress
-      ({ tileIndex, step, tile }) => {
+      ({ tileIndex, step, tile, status, completedAt }) => {
         batchCurrentStep.value = step;
         if (batchState.value) {
           if (Number.isInteger(tileIndex)) batchState.value.currentTileIndex = tileIndex;
           if (tile?.id) batchState.value.currentTileId = tile.id;
+          if (status != null) batchState.value.status = status;
+          if (completedAt != null) batchState.value.completedAt = completedAt;
         }
         // Force reactivity on tile status changes
         batchState.value = { ...batchState.value };
@@ -1044,6 +1047,10 @@ const executeBatchJob = async (state) => {
   } catch (error) {
     if (error.name !== 'AbortError') {
       console.error('[Batch] Unexpected error:', error);
+      if (batchState.value) {
+        batchState.value.status = 'failed';
+        saveBatchState(batchState.value);
+      }
     }
   } finally {
     batchRunning.value = false;

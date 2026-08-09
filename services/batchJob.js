@@ -1893,19 +1893,24 @@ export async function runBatchJob(state, onProgress, onTileComplete, onError, si
       updateCounts(state);
       state.currentTileIndex = -1;
       state.currentTileId = null;
-      state.completedAt = Date.now();
-      state.status = state.totalFailed > 0 ? JOB_STATES.FAILED : JOB_STATES.COMPLETED;
-      if (state.status === JOB_STATES.COMPLETED && compositeHeightmap?.writtenTiles?.size === state.tiles.length) {
+      if (state.totalFailed === 0 && compositeHeightmap?.writtenTiles?.size === state.tiles.length) {
         onProgress({ tileIndex: -1, step: 'Generating stitched grid heightmap...', tile: null });
         downloadCompositeHeightmap(state, compositeHeightmap);
+      }
+      if (combinedLevel?.writtenTiles?.size > 0) {
+        await finalizeCombinedLevel(state, combinedLevel, onProgress);
+        if (state.status !== JOB_STATES.RUNNING) {
+          checkpoint(state);
+          return;
+        }
       }
       if (state.totalCompleted > 0) {
         onProgress({ tileIndex: -1, step: 'Generating elevation report...', tile: null });
         downloadBatchElevationReport(state);
       }
-      if (state.status === JOB_STATES.COMPLETED && combinedLevel?.writtenTiles?.size === state.tiles.length) {
-        await finalizeCombinedLevel(state, combinedLevel, onProgress);
-      }
+      state.completedAt = Date.now();
+      state.status = state.totalFailed > 0 ? JOB_STATES.FAILED : JOB_STATES.COMPLETED;
+      onProgress({ tileIndex: -1, step: '', tile: null, status: state.status, completedAt: state.completedAt });
       sampleMemory(state, { label: 'job_completed', force: true });
       checkpoint(state);
     }

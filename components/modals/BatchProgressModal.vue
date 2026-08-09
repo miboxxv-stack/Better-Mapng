@@ -81,8 +81,8 @@
           class="bg-blue-50 dark:bg-blue-900/20 border border-blue-100 dark:border-blue-800 rounded-lg p-3 space-y-1">
           <div class="flex items-center gap-2 text-sm font-medium text-blue-800 dark:text-blue-200">
             <Loader2 :size="14" class="animate-spin text-blue-500" />
-            {{ t('batchProgress.processingTile', { tile: tileLabel(currentTile) }) }}
-            <span class="text-xs font-normal text-blue-600 dark:text-blue-400">({{ currentTileDisplayIndex }}/{{ totalTiles }})</span>
+            {{ currentTile ? t('batchProgress.processingTile', { tile: tileLabel(currentTile) }) : t('batchProgress.assemblingCombinedLevel') }}
+            <span v-if="currentTile" class="text-xs font-normal text-blue-600 dark:text-blue-400">({{ currentTileDisplayIndex }}/{{ totalTiles }})</span>
           </div>
           <p class="text-xs text-blue-600 dark:text-blue-400 animate-pulse">{{ currentStep }}</p>
         </div>
@@ -97,6 +97,16 @@
             </p>
             <p v-if="elapsedText" class="text-xs mt-2 opacity-70" :class="summarySubtextClass">
               {{ t('batchProgress.totalTime') }}: {{ elapsedText }}
+            </p>
+          </div>
+
+          <!-- Combined Level Partial Export Warning -->
+          <div v-if="isCombinedLevelPartial" class="bg-orange-50 dark:bg-orange-900/20 border border-orange-200 dark:border-orange-800 rounded-lg p-3">
+            <p class="text-sm font-medium text-orange-800 dark:text-orange-200">
+              {{ t('batchProgress.combinedLevelPartialTitle') }}
+            </p>
+            <p class="text-xs text-orange-600 dark:text-orange-400 mt-1">
+              {{ t('batchProgress.combinedLevelPartialDesc', { count: failedCount, name: levelName }) }}
             </p>
           </div>
 
@@ -216,7 +226,7 @@
           <button v-if="failedCount > 0" @click="$emit('retryFailed')"
             class="flex-1 py-2.5 text-sm font-medium rounded-lg flex items-center justify-center gap-2 bg-[#FF6600] hover:bg-[#E65C00] text-white transition-colors">
             <RotateCcw :size="14" />
-            {{ t('batchProgress.retryFailed', { count: failedCount, suffix: failedCount !== 1 ? 's' : '' }) }}
+            {{ isCombinedLevel ? t('batchProgress.retryFailedCombined', { count: failedCount, suffix: failedCount !== 1 ? 's' : '' }) : t('batchProgress.retryFailed', { count: failedCount, suffix: failedCount !== 1 ? 's' : '' }) }}
           </button>
           <button @click="$emit('close')"
             :class="['py-2.5 text-sm font-medium rounded-lg transition-colors', failedCount > 0
@@ -273,6 +283,13 @@ const totalTiles = computed(() => props.state.tiles.length);
 const completedCount = computed(() => props.state.tiles.filter(t => t.status === 'done' || t.status === 'completed').length);
 const failedCount = computed(() => props.state.tiles.filter(t => t.status === 'failed').length);
 const failedTiles = computed(() => props.state.tiles.filter(t => t.status === 'failed'));
+const isCombinedLevel = computed(() => !!(props.state.combinedLevel && props.state.tiles?.some(t => t.status === 'done' || t.status === 'completed')));
+const isCombinedLevelPartial = computed(() => isCombinedLevel.value && failedCount.value > 0 && completedCount.value > 0 && props.state.status !== 'canceled');
+const levelName = computed(() => {
+  if (!isCombinedLevel.value) return '';
+  const lo = props.state.levelOptions || {};
+  return (lo.levelName || '').trim() || t('batchProgress.untitledLevel');
+});
 const tilesWithInstrumentation = computed(() => props.state.tiles.filter((t) => {
   const hasTimings = t.stageTimings && Object.keys(t.stageTimings).length > 0;
   const hasMemory = t.memory && Object.values(t.memory).some((v) => Number(v) > 0);
@@ -288,8 +305,11 @@ const currentTile = computed(() => {
   return props.state.currentTileIndex >= 0 ? props.state.tiles[props.state.currentTileIndex] : null;
 });
 
+const isAssembling = computed(() => isRunning.value && isTerminalByCounts.value && isCombinedLevel.value);
+const isJobFailed = computed(() => props.state.status === 'failed' || props.state.status === 'canceled');
+
 const currentTileDisplayIndex = computed(() => {
-  if (!currentTile.value) return 0;
+  if (!currentTile.value) return totalTiles.value;
   const i = props.state.tiles.findIndex((tile) => (tile.id || tile.index) === (currentTile.value.id || currentTile.value.index));
   return i >= 0 ? i + 1 : Math.max(1, (props.state.currentTileIndex || 0) + 1);
 });
@@ -299,14 +319,12 @@ const isTerminalByCounts = computed(() => {
   return completedCount.value + failedCount.value >= totalTiles.value;
 });
 
-const isRunning = computed(() => props.state.status === 'running' && !isTerminalByCounts.value);
+const isRunning = computed(() => props.state.status === 'running');
 const isPaused = computed(() => props.state.status === 'paused');
 const isDone = computed(() =>
   props.state.status === 'completed' ||
   props.state.status === 'failed' ||
-  props.state.status === 'canceled' ||
-  props.state.status === 'completed_with_errors' ||
-  isTerminalByCounts.value
+  props.state.status === 'canceled'
 );
 
 watch(isDone, (done) => {
@@ -318,9 +336,12 @@ watch(isDone, (done) => {
   }
 });
 
-const progressPercent = computed(() =>
-  totalTiles.value > 0 ? (completedCount.value / totalTiles.value) * 100 : 0
-);
+const progressPercent = computed(() => {
+  if (totalTiles.value <= 0) return 0;
+  const pct = (completedCount.value / totalTiles.value) * 100;
+  if (isAssembling.value && pct >= 100) return 99;
+  return pct;
+});
 
 const progressSummaryText = computed(() => {
   const failedText = failedCount.value > 0
@@ -406,27 +427,31 @@ const tileClass = (tile) => {
 
 // Header
 const headerTitle = computed(() => {
-  if (isDone.value) return failedCount.value > 0 ? t('batchProgress.headerCompleteWithErrors') : t('batchProgress.headerComplete');
+  if (isDone.value) {
+    if (isJobFailed.value) return t('batchProgress.headerJobFailed');
+    if (failedCount.value > 0) return t('batchProgress.headerCompleteWithErrors');
+    return t('batchProgress.headerComplete');
+  }
   if (isPaused.value) return t('batchProgress.headerPaused');
   return t('batchProgress.headerRunning');
 });
 
 const headerBgClass = computed(() => {
-  if (isDone.value && failedCount.value === 0) return 'bg-emerald-100 dark:bg-emerald-900/30';
+  if (isDone.value && !isJobFailed.value && failedCount.value === 0) return 'bg-emerald-100 dark:bg-emerald-900/30';
   if (isDone.value) return 'bg-amber-100 dark:bg-amber-900/30';
   if (isPaused.value) return 'bg-amber-100 dark:bg-amber-900/30';
   return 'bg-[#FF6600]/10';
 });
 
 const headerIcon = computed(() => {
-  if (isDone.value && failedCount.value === 0) return CheckCircle2;
+  if (isDone.value && !isJobFailed.value && failedCount.value === 0) return CheckCircle2;
   if (isDone.value) return AlertTriangle;
   if (isPaused.value) return Pause;
   return Package;
 });
 
 const headerIconClass = computed(() => {
-  if (isDone.value && failedCount.value === 0) return 'text-emerald-600 dark:text-emerald-400';
+  if (isDone.value && !isJobFailed.value && failedCount.value === 0) return 'text-emerald-600 dark:text-emerald-400';
   if (isDone.value) return 'text-amber-600 dark:text-amber-400';
   if (isPaused.value) return 'text-amber-600 dark:text-amber-400';
   return 'text-[#FF6600]';
@@ -434,29 +459,37 @@ const headerIconClass = computed(() => {
 
 // Summary
 const summaryBgClass = computed(() =>
-  failedCount.value > 0
+  (isJobFailed.value || failedCount.value > 0)
     ? 'bg-amber-50 dark:bg-amber-900/20 border border-amber-100 dark:border-amber-800'
     : 'bg-emerald-50 dark:bg-emerald-900/20 border border-emerald-100 dark:border-emerald-800'
 );
-const summaryIcon = computed(() => failedCount.value > 0 ? AlertTriangle : CheckCircle2);
+const summaryIcon = computed(() => (failedCount.value > 0 || isJobFailed.value) ? AlertTriangle : CheckCircle2);
 const summaryIconClass = computed(() =>
-  failedCount.value > 0 ? 'text-amber-500' : 'text-emerald-500'
+  (failedCount.value > 0 || isJobFailed.value) ? 'text-amber-500' : 'text-emerald-500'
 );
-const summaryTitle = computed(() =>
-  failedCount.value > 0 ? t('batchProgress.summaryWithErrors') : t('batchProgress.summaryAllExported')
-);
+const summaryTitle = computed(() => {
+  if (isJobFailed.value && failedCount.value === 0) return t('batchProgress.summaryJobFailed');
+  if (isCombinedLevelPartial.value) return t('batchProgress.summaryCombinedPartial');
+  if (failedCount.value > 0) return t('batchProgress.summaryWithErrors');
+  if (isCombinedLevel.value) return t('batchProgress.summaryCombinedExported');
+  return t('batchProgress.summaryAllExported');
+});
 const summaryTextClass = computed(() =>
-  failedCount.value > 0
+  (failedCount.value > 0 || isJobFailed.value)
     ? 'text-amber-900 dark:text-amber-100'
     : 'text-emerald-900 dark:text-emerald-100'
 );
 const summarySubtextClass = computed(() =>
-  failedCount.value > 0
+  (failedCount.value > 0 || isJobFailed.value)
     ? 'text-amber-700 dark:text-amber-300'
     : 'text-emerald-700 dark:text-emerald-300'
 );
 
 const summarySubtitleText = computed(() => {
+  if (isCombinedLevel.value && failedCount.value === 0) {
+    const name = levelName.value || t('batchProgress.untitledLevel');
+    return t('batchProgress.summarySubtitleCombinedExported', { name });
+  }
   const exported = t('batchProgress.summaryExported', {
     count: completedCount.value,
     suffix: completedCount.value !== 1 ? 's' : '',
