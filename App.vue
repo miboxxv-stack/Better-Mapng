@@ -1021,11 +1021,13 @@ const executeBatchJob = async (state) => {
     await runBatchJob(
       state,
       // onProgress
-      ({ tileIndex, step, tile }) => {
+      ({ tileIndex, step, tile, status, completedAt }) => {
         batchCurrentStep.value = step;
         if (batchState.value) {
           if (Number.isInteger(tileIndex)) batchState.value.currentTileIndex = tileIndex;
           if (tile?.id) batchState.value.currentTileId = tile.id;
+          if (status) batchState.value.status = status;
+          if (completedAt) batchState.value.completedAt = completedAt;
         }
         // Force reactivity on tile status changes
         batchState.value = { ...batchState.value };
