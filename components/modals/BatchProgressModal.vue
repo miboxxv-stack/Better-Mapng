@@ -81,7 +81,7 @@
           class="bg-blue-50 dark:bg-blue-900/20 border border-blue-100 dark:border-blue-800 rounded-lg p-3 space-y-1">
           <div class="flex items-center gap-2 text-sm font-medium text-blue-800 dark:text-blue-200">
             <Loader2 :size="14" class="animate-spin text-blue-500" />
-            {{ t('batchProgress.processingTile', { tile: tileLabel(currentTile) }) }}
+            {{ currentTile ? t('batchProgress.processingTile', { tile: tileLabel(currentTile) }) : t('batchProgress.assemblingCombinedLevel') }}
             <span class="text-xs font-normal text-blue-600 dark:text-blue-400">({{ currentTileDisplayIndex }}/{{ totalTiles }})</span>
           </div>
           <p class="text-xs text-blue-600 dark:text-blue-400 animate-pulse">{{ currentStep }}</p>
@@ -316,14 +316,14 @@ const isTerminalByCounts = computed(() => {
   return completedCount.value + failedCount.value >= totalTiles.value;
 });
 
-const isRunning = computed(() => props.state.status === 'running' && !isTerminalByCounts.value);
+const isRunning = computed(() => props.state.status === 'running');
 const isPaused = computed(() => props.state.status === 'paused');
 const isDone = computed(() =>
   props.state.status === 'completed' ||
   props.state.status === 'failed' ||
   props.state.status === 'canceled' ||
   props.state.status === 'completed_with_errors' ||
-  isTerminalByCounts.value
+  (isTerminalByCounts.value && props.state.status !== 'running')
 );
 
 watch(isDone, (done) => {

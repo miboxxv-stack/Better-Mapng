@@ -709,6 +709,7 @@
     "remaining": "remaining",
     "elapsed": "elapsed",
     "processingTile": "Processing tile {tile}",
+    "assemblingCombinedLevel": "Assembling Combined Level",
     "failedTiles": "Failed Tiles",
     "unknownError": "Unknown error",
     "jobSummary": "Job Summary",
