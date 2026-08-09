@@ -82,7 +82,7 @@
           <div class="flex items-center gap-2 text-sm font-medium text-blue-800 dark:text-blue-200">
             <Loader2 :size="14" class="animate-spin text-blue-500" />
             {{ currentTile ? t('batchProgress.processingTile', { tile: tileLabel(currentTile) }) : t('batchProgress.assemblingCombinedLevel') }}
-            <span class="text-xs font-normal text-blue-600 dark:text-blue-400">({{ currentTileDisplayIndex }}/{{ totalTiles }})</span>
+            <span v-if="currentTile" class="text-xs font-normal text-blue-600 dark:text-blue-400">({{ currentTileDisplayIndex }}/{{ totalTiles }})</span>
           </div>
           <p class="text-xs text-blue-600 dark:text-blue-400 animate-pulse">{{ currentStep }}</p>
         </div>
@@ -283,7 +283,7 @@ const totalTiles = computed(() => props.state.tiles.length);
 const completedCount = computed(() => props.state.tiles.filter(t => t.status === 'done' || t.status === 'completed').length);
 const failedCount = computed(() => props.state.tiles.filter(t => t.status === 'failed').length);
 const failedTiles = computed(() => props.state.tiles.filter(t => t.status === 'failed'));
-const isCombinedLevel = computed(() => !!props.state.combinedLevel);
+const isCombinedLevel = computed(() => !!(props.state.combinedLevel && props.state.tiles?.some(t => t.status === 'done' || t.status === 'completed')));
 const isCombinedLevelPartial = computed(() => isCombinedLevel.value && failedCount.value > 0 && completedCount.value > 0 && props.state.status !== 'canceled');
 const levelName = computed(() => {
   if (!isCombinedLevel.value) return '';
@@ -305,6 +305,9 @@ const currentTile = computed(() => {
   return props.state.currentTileIndex >= 0 ? props.state.tiles[props.state.currentTileIndex] : null;
 });
 
+const isAssembling = computed(() => isRunning.value && isTerminalByCounts.value && isCombinedLevel.value);
+const isJobFailed = computed(() => props.state.status === 'failed' || props.state.status === 'canceled');
+
 const currentTileDisplayIndex = computed(() => {
   if (!currentTile.value) return totalTiles.value;
   const i = props.state.tiles.findIndex((tile) => (tile.id || tile.index) === (currentTile.value.id || currentTile.value.index));
@@ -321,9 +324,7 @@ const isPaused = computed(() => props.state.status === 'paused');
 const isDone = computed(() =>
   props.state.status === 'completed' ||
   props.state.status === 'failed' ||
-  props.state.status === 'canceled' ||
-  props.state.status === 'completed_with_errors' ||
-  (isTerminalByCounts.value && props.state.status !== 'running')
+  props.state.status === 'canceled'
 );
 
 watch(isDone, (done) => {
@@ -335,9 +336,12 @@ watch(isDone, (done) => {
   }
 });
 
-const progressPercent = computed(() =>
-  totalTiles.value > 0 ? (completedCount.value / totalTiles.value) * 100 : 0
-);
+const progressPercent = computed(() => {
+  if (totalTiles.value <= 0) return 0;
+  const pct = (completedCount.value / totalTiles.value) * 100;
+  if (isAssembling.value && pct >= 100) return 99;
+  return pct;
+});
 
 const progressSummaryText = computed(() => {
   const failedText = failedCount.value > 0
@@ -423,27 +427,31 @@ const tileClass = (tile) => {
 
 // Header
 const headerTitle = computed(() => {
-  if (isDone.value) return failedCount.value > 0 ? t('batchProgress.headerCompleteWithErrors') : t('batchProgress.headerComplete');
+  if (isDone.value) {
+    if (isJobFailed.value) return t('batchProgress.headerJobFailed');
+    if (failedCount.value > 0) return t('batchProgress.headerCompleteWithErrors');
+    return t('batchProgress.headerComplete');
+  }
   if (isPaused.value) return t('batchProgress.headerPaused');
   return t('batchProgress.headerRunning');
 });
 
 const headerBgClass = computed(() => {
-  if (isDone.value && failedCount.value === 0) return 'bg-emerald-100 dark:bg-emerald-900/30';
+  if (isDone.value && !isJobFailed.value && failedCount.value === 0) return 'bg-emerald-100 dark:bg-emerald-900/30';
   if (isDone.value) return 'bg-amber-100 dark:bg-amber-900/30';
   if (isPaused.value) return 'bg-amber-100 dark:bg-amber-900/30';
   return 'bg-[#FF6600]/10';
 });
 
 const headerIcon = computed(() => {
-  if (isDone.value && failedCount.value === 0) return CheckCircle2;
+  if (isDone.value && !isJobFailed.value && failedCount.value === 0) return CheckCircle2;
   if (isDone.value) return AlertTriangle;
   if (isPaused.value) return Pause;
   return Package;
 });
 
 const headerIconClass = computed(() => {
-  if (isDone.value && failedCount.value === 0) return 'text-emerald-600 dark:text-emerald-400';
+  if (isDone.value && !isJobFailed.value && failedCount.value === 0) return 'text-emerald-600 dark:text-emerald-400';
   if (isDone.value) return 'text-amber-600 dark:text-amber-400';
   if (isPaused.value) return 'text-amber-600 dark:text-amber-400';
   return 'text-[#FF6600]';
@@ -451,26 +459,27 @@ const headerIconClass = computed(() => {
 
 // Summary
 const summaryBgClass = computed(() =>
-  failedCount.value > 0
+  (isJobFailed.value || failedCount.value > 0)
     ? 'bg-amber-50 dark:bg-amber-900/20 border border-amber-100 dark:border-amber-800'
     : 'bg-emerald-50 dark:bg-emerald-900/20 border border-emerald-100 dark:border-emerald-800'
 );
-const summaryIcon = computed(() => failedCount.value > 0 ? AlertTriangle : CheckCircle2);
+const summaryIcon = computed(() => (failedCount.value > 0 || isJobFailed.value) ? AlertTriangle : CheckCircle2);
 const summaryIconClass = computed(() =>
-  failedCount.value > 0 ? 'text-amber-500' : 'text-emerald-500'
+  (failedCount.value > 0 || isJobFailed.value) ? 'text-amber-500' : 'text-emerald-500'
 );
 const summaryTitle = computed(() => {
+  if (isJobFailed.value && failedCount.value === 0) return t('batchProgress.summaryJobFailed');
   if (isCombinedLevelPartial.value) return t('batchProgress.summaryCombinedPartial');
   if (failedCount.value > 0) return t('batchProgress.summaryWithErrors');
   return t('batchProgress.summaryAllExported');
 });
 const summaryTextClass = computed(() =>
-  failedCount.value > 0
+  (failedCount.value > 0 || isJobFailed.value)
     ? 'text-amber-900 dark:text-amber-100'
     : 'text-emerald-900 dark:text-emerald-100'
 );
 const summarySubtextClass = computed(() =>
-  failedCount.value > 0
+  (failedCount.value > 0 || isJobFailed.value)
     ? 'text-amber-700 dark:text-amber-300'
     : 'text-emerald-700 dark:text-emerald-300'
 );

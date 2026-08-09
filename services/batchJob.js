@@ -1899,6 +1899,10 @@ export async function runBatchJob(state, onProgress, onTileComplete, onError, si
       }
       if (combinedLevel?.writtenTiles?.size > 0) {
         await finalizeCombinedLevel(state, combinedLevel, onProgress);
+        if (state.status !== JOB_STATES.RUNNING) {
+          checkpoint(state);
+          return;
+        }
       }
       state.completedAt = Date.now();
       state.status = state.totalFailed > 0 ? JOB_STATES.FAILED : JOB_STATES.COMPLETED;
