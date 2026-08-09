@@ -1899,12 +1899,18 @@ export async function runBatchJob(state, onProgress, onTileComplete, onError, si
         onProgress({ tileIndex: -1, step: 'Generating stitched grid heightmap...', tile: null });
         downloadCompositeHeightmap(state, compositeHeightmap);
       }
+      if (combinedLevel?.writtenTiles?.size > 0) {
+        if (combinedLevel.writtenTiles.size < state.tiles.length) {
+          state.combinedLevelPartial = true;
+          state.combinedLevelFailedTileCount = state.tiles.filter(
+            (t) => t.status === TILE_STATES.FAILED,
+          ).length;
+        }
+        await finalizeCombinedLevel(state, combinedLevel, onProgress);
+      }
       if (state.totalCompleted > 0) {
         onProgress({ tileIndex: -1, step: 'Generating elevation report...', tile: null });
         downloadBatchElevationReport(state);
-      }
-      if (state.status === JOB_STATES.COMPLETED && combinedLevel?.writtenTiles?.size === state.tiles.length) {
-        await finalizeCombinedLevel(state, combinedLevel, onProgress);
       }
       sampleMemory(state, { label: 'job_completed', force: true });
       checkpoint(state);

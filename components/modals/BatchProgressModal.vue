@@ -100,6 +100,16 @@
             </p>
           </div>
 
+          <!-- Combined Level Partial Export Warning -->
+          <div v-if="isCombinedLevelPartial" class="bg-orange-50 dark:bg-orange-900/20 border border-orange-200 dark:border-orange-800 rounded-lg p-3">
+            <p class="text-sm font-medium text-orange-800 dark:text-orange-200">
+              {{ t('batchProgress.combinedLevelPartialTitle') }}
+            </p>
+            <p class="text-xs text-orange-600 dark:text-orange-400 mt-1">
+              {{ t('batchProgress.combinedLevelPartialDesc', { count: failedCount, name: levelName }) }}
+            </p>
+          </div>
+
           <!-- Failed Tiles List -->
           <div v-if="failedTiles.length > 0" class="space-y-2">
             <h4 class="text-xs font-semibold uppercase tracking-wider text-red-500 dark:text-red-400">{{ t('batchProgress.failedTiles') }}</h4>
@@ -216,7 +226,7 @@
           <button v-if="failedCount > 0" @click="$emit('retryFailed')"
             class="flex-1 py-2.5 text-sm font-medium rounded-lg flex items-center justify-center gap-2 bg-[#FF6600] hover:bg-[#E65C00] text-white transition-colors">
             <RotateCcw :size="14" />
-            {{ t('batchProgress.retryFailed', { count: failedCount, suffix: failedCount !== 1 ? 's' : '' }) }}
+            {{ isCombinedLevel ? t('batchProgress.retryFailedCombined', { count: failedCount, suffix: failedCount !== 1 ? 's' : '' }) : t('batchProgress.retryFailed', { count: failedCount, suffix: failedCount !== 1 ? 's' : '' }) }}
           </button>
           <button @click="$emit('close')"
             :class="['py-2.5 text-sm font-medium rounded-lg transition-colors', failedCount > 0
@@ -273,6 +283,13 @@ const totalTiles = computed(() => props.state.tiles.length);
 const completedCount = computed(() => props.state.tiles.filter(t => t.status === 'done' || t.status === 'completed').length);
 const failedCount = computed(() => props.state.tiles.filter(t => t.status === 'failed').length);
 const failedTiles = computed(() => props.state.tiles.filter(t => t.status === 'failed'));
+const isCombinedLevel = computed(() => !!props.state.combinedLevel);
+const isCombinedLevelPartial = computed(() => isCombinedLevel.value && failedCount.value > 0 && completedCount.value > 0);
+const levelName = computed(() => {
+  if (!isCombinedLevel.value) return '';
+  const lo = props.state.levelOptions || {};
+  return (lo.levelName || '').trim() || t('batchProgress.untitledLevel');
+});
 const tilesWithInstrumentation = computed(() => props.state.tiles.filter((t) => {
   const hasTimings = t.stageTimings && Object.keys(t.stageTimings).length > 0;
   const hasMemory = t.memory && Object.values(t.memory).some((v) => Number(v) > 0);
@@ -442,9 +459,11 @@ const summaryIcon = computed(() => failedCount.value > 0 ? AlertTriangle : Check
 const summaryIconClass = computed(() =>
   failedCount.value > 0 ? 'text-amber-500' : 'text-emerald-500'
 );
-const summaryTitle = computed(() =>
-  failedCount.value > 0 ? t('batchProgress.summaryWithErrors') : t('batchProgress.summaryAllExported')
-);
+const summaryTitle = computed(() => {
+  if (isCombinedLevelPartial.value) return t('batchProgress.summaryCombinedPartial');
+  if (failedCount.value > 0) return t('batchProgress.summaryWithErrors');
+  return t('batchProgress.summaryAllExported');
+});
 const summaryTextClass = computed(() =>
   failedCount.value > 0
     ? 'text-amber-900 dark:text-amber-100'
