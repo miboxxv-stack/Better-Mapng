@@ -471,6 +471,7 @@ const summaryTitle = computed(() => {
   if (isJobFailed.value && failedCount.value === 0) return t('batchProgress.summaryJobFailed');
   if (isCombinedLevelPartial.value) return t('batchProgress.summaryCombinedPartial');
   if (failedCount.value > 0) return t('batchProgress.summaryWithErrors');
+  if (isCombinedLevel.value) return t('batchProgress.summaryCombinedExported');
   return t('batchProgress.summaryAllExported');
 });
 const summaryTextClass = computed(() =>
@@ -485,6 +486,10 @@ const summarySubtextClass = computed(() =>
 );
 
 const summarySubtitleText = computed(() => {
+  if (isCombinedLevel.value && failedCount.value === 0) {
+    const name = levelName.value || t('batchProgress.untitledLevel');
+    return t('batchProgress.summarySubtitleCombinedExported', { name });
+  }
   const exported = t('batchProgress.summaryExported', {
     count: completedCount.value,
     suffix: completedCount.value !== 1 ? 's' : '',

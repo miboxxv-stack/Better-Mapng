@@ -1904,14 +1904,13 @@ export async function runBatchJob(state, onProgress, onTileComplete, onError, si
           return;
         }
       }
+      if (state.totalCompleted > 0) {
+        onProgress({ tileIndex: -1, step: 'Generating elevation report...', tile: null });
+        downloadBatchElevationReport(state);
+      }
       state.completedAt = Date.now();
       state.status = state.totalFailed > 0 ? JOB_STATES.FAILED : JOB_STATES.COMPLETED;
-      if (state.totalCompleted > 0) {
-        onProgress({ tileIndex: -1, step: 'Generating elevation report...', tile: null, status: state.status, completedAt: state.completedAt });
-        downloadBatchElevationReport(state);
-      } else {
-        onProgress({ tileIndex: -1, step: '', tile: null, status: state.status, completedAt: state.completedAt });
-      }
+      onProgress({ tileIndex: -1, step: '', tile: null, status: state.status, completedAt: state.completedAt });
       sampleMemory(state, { label: 'job_completed', force: true });
       checkpoint(state);
     }
