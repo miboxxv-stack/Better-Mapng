@@ -1898,12 +1898,6 @@ export async function runBatchJob(state, onProgress, onTileComplete, onError, si
         downloadCompositeHeightmap(state, compositeHeightmap);
       }
       if (combinedLevel?.writtenTiles?.size > 0) {
-        if (combinedLevel.writtenTiles.size < state.tiles.length) {
-          state.combinedLevelPartial = true;
-          state.combinedLevelFailedTileCount = state.tiles.filter(
-            (t) => t.status === TILE_STATES.FAILED,
-          ).length;
-        }
         await finalizeCombinedLevel(state, combinedLevel, onProgress);
       }
       state.completedAt = Date.now();

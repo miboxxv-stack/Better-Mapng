@@ -284,7 +284,7 @@ const completedCount = computed(() => props.state.tiles.filter(t => t.status ===
 const failedCount = computed(() => props.state.tiles.filter(t => t.status === 'failed').length);
 const failedTiles = computed(() => props.state.tiles.filter(t => t.status === 'failed'));
 const isCombinedLevel = computed(() => !!props.state.combinedLevel);
-const isCombinedLevelPartial = computed(() => isCombinedLevel.value && failedCount.value > 0 && completedCount.value > 0);
+const isCombinedLevelPartial = computed(() => isCombinedLevel.value && failedCount.value > 0 && completedCount.value > 0 && props.state.status !== 'canceled');
 const levelName = computed(() => {
   if (!isCombinedLevel.value) return '';
   const lo = props.state.levelOptions || {};
@@ -306,7 +306,7 @@ const currentTile = computed(() => {
 });
 
 const currentTileDisplayIndex = computed(() => {
-  if (!currentTile.value) return 0;
+  if (!currentTile.value) return totalTiles.value;
   const i = props.state.tiles.findIndex((tile) => (tile.id || tile.index) === (currentTile.value.id || currentTile.value.index));
   return i >= 0 ? i + 1 : Math.max(1, (props.state.currentTileIndex || 0) + 1);
 });
