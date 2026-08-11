@@ -286,6 +286,9 @@ const lastLoggedLoadingStatus = ref('');
 const lastLoggedLoadingPercent = ref(-1);
 let abortController = null;
 let batchAbortController = null;
+// The raw job object runBatchJob mutates. batchState holds shallow copies of it
+// for reactivity, so anything that must reach the runner writes here.
+let batchLiveState = null;
 
 const KOFI_URL = 'https://ko-fi.com/nikluz';
 const TIP_LAST_SHOWN_KEY = 'mapng_tip_last_shown_at';
@@ -974,10 +977,12 @@ const handleRetryFailed = () => {
 };
 
 const handleBatchCancel = () => {
-  if (batchState.value) {
-    batchState.value.status = 'canceled';
-    saveBatchState(batchState.value);
-    batchState.value = { ...batchState.value };
+  // Mark the runner's own object — it checks status to tell cancel from pause.
+  const target = batchLiveState || batchState.value;
+  if (target) {
+    target.status = 'canceled';
+    saveBatchState(target);
+    batchState.value = { ...target };
   }
   if (batchAbortController) {
     batchAbortController.abort();
@@ -1017,47 +1022,49 @@ const handleClearBatchCache = async () => {
 const executeBatchJob = async (state) => {
   batchRunning.value = true;
   batchAbortController = new AbortController();
+  batchLiveState = state;
+
+  // Re-snapshot the runner's own object, not the previous snapshot: copying a
+  // copy freezes top-level fields (status, finalizing, counts) at their first
+  // value, so the UI never sees the job leave the tile loop.
+  const syncBatchState = () => {
+    batchState.value = { ...state };
+  };
 
   try {
     await runBatchJob(
       state,
       // onProgress
-      ({ tileIndex, step, tile, status, completedAt }) => {
+      ({ tileIndex, step, tile }) => {
         batchCurrentStep.value = step;
-        if (batchState.value) {
-          if (Number.isInteger(tileIndex)) batchState.value.currentTileIndex = tileIndex;
-          if (tile?.id) batchState.value.currentTileId = tile.id;
-          if (status != null) batchState.value.status = status;
-          if (completedAt != null) batchState.value.completedAt = completedAt;
-        }
+        if (Number.isInteger(tileIndex)) state.currentTileIndex = tileIndex;
+        if (tile?.id) state.currentTileId = tile.id;
         // Force reactivity on tile status changes
-        batchState.value = { ...batchState.value };
+        syncBatchState();
       },
       // onTileComplete
       (tile) => {
-        batchState.value = { ...batchState.value };
+        syncBatchState();
       },
       // onError
       (tile, error) => {
         console.error(`[Batch] Tile ${tile.label || `R${tile.row + 1}C${tile.col + 1}`} failed:`, error);
-        batchState.value = { ...batchState.value };
+        syncBatchState();
       },
       batchAbortController.signal
     );
   } catch (error) {
     if (error.name !== 'AbortError') {
       console.error('[Batch] Unexpected error:', error);
-      if (batchState.value) {
-        batchState.value.status = 'failed';
-        saveBatchState(batchState.value);
-      }
+      state.status = 'failed';
+      saveBatchState(state);
     }
   } finally {
     batchRunning.value = false;
     batchAbortController = null;
     batchCurrentStep.value = '';
     // Force final state update
-    batchState.value = { ...batchState.value };
+    syncBatchState();
     savedBatchState.value = loadBatchState();
   }
 };

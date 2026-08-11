@@ -423,6 +423,11 @@ export function createBatchJobState(config) {
     scheduler,
 
     status: JOB_STATES.PENDING,
+    // Post-tile work (stitched heightmap, combined level assembly + ZIP,
+    // elevation report) runs while the job is still RUNNING. The UI reads this
+    // to keep reporting progress instead of announcing completion early.
+    finalizing: null,
+    finalizeError: null,
     currentTileIndex: -1,
     currentTileId: null,
     tiles,
@@ -474,6 +479,10 @@ const migrateLoadedState = (state) => {
     : 'balanced';
   state.combinedLevel = !!state.combinedLevel;
   state.levelOptions = state.combinedLevel ? normalizeCombinedLevelOptions(state.levelOptions) : null;
+  // A persisted finalize phase can never survive a reload — the artifacts it
+  // was assembling live only in memory.
+  state.finalizing = null;
+  state.finalizeError = state.finalizeError || null;
   const fallbackScheduler = deriveSchedulerConfig(state);
   state.scheduler = {
     ...fallbackScheduler,
@@ -1415,10 +1424,10 @@ function buildCombinedExportOptions(state, combined, onProgress) {
 /**
  * Assemble and export the combined BeamNG level as a single ZIP download.
  */
-async function finalizeCombinedLevel(state, combined, onProgress) {
+async function finalizeCombinedLevel(state, combined, report) {
   if (!combined?.writtenTiles?.size) return;
 
-  onProgress?.({ tileIndex: -1, step: 'Assembling combined level…', tile: null });
+  report('Assembling combined level…');
   const { terrainData, cleanup } = await assembleCombinedTerrainData(state, combined);
 
   const center = combined.bounds
@@ -1430,10 +1439,11 @@ async function finalizeCombinedLevel(state, combined, onProgress) {
 
   try {
     const options = buildCombinedExportOptions(state, combined, ({ step, pct }) => {
-      onProgress?.({ tileIndex: -1, step: `Combined level: ${step}${Number.isFinite(pct) ? ` (${pct}%)` : ''}`, tile: null });
+      report(`Combined level: ${step}`, pct);
     });
     const { blob, filename } = await exportBeamNGLevel(terrainData, center, options);
     if (blob instanceof Blob) {
+      report('Downloading combined level ZIP…', 100);
       triggerDownload(blob, filename || `MapNG_CombinedLevel_${new Date().toISOString().slice(0, 10)}.zip`);
     }
   } finally {
@@ -1893,24 +1903,58 @@ export async function runBatchJob(state, onProgress, onTileComplete, onError, si
       updateCounts(state);
       state.currentTileIndex = -1;
       state.currentTileId = null;
+      // Every artifact below is still real work — stitching, assembling the
+      // combined level, compressing a multi-hundred-MB ZIP. The job stays
+      // RUNNING in a `finalizing` phase the UI renders, so completion is only
+      // announced once the last download has actually been handed off.
+      state.finalizing = { active: true, step: '', pct: null };
+      state.finalizeError = null;
+      const finalize = (step, pct = null) => {
+        state.finalizing = { active: true, step, pct: Number.isFinite(pct) ? pct : null };
+        onProgress({ tileIndex: -1, step, tile: null, phase: 'finalizing', pct: state.finalizing.pct });
+        checkpoint(state);
+      };
+      // Let the browser paint the new step before a long synchronous encode.
+      const yieldToUi = () => new Promise((resolve) => setTimeout(resolve, 0));
+      // One failed artifact must not strand the job mid-finalize: record it,
+      // keep producing the rest, and surface it on the completion screen.
+      const finalizeStep = async (run) => {
+        try {
+          await run();
+        } catch (error) {
+          console.error('[Batch] Finalization step failed:', error);
+          state.finalizeError = error?.message || String(error);
+        }
+      };
+
       if (state.totalFailed === 0 && compositeHeightmap?.writtenTiles?.size === state.tiles.length) {
-        onProgress({ tileIndex: -1, step: 'Generating stitched grid heightmap...', tile: null });
-        downloadCompositeHeightmap(state, compositeHeightmap);
+        await finalizeStep(async () => {
+          finalize('Generating stitched grid heightmap…');
+          await yieldToUi();
+          downloadCompositeHeightmap(state, compositeHeightmap);
+        });
       }
       if (combinedLevel?.writtenTiles?.size > 0) {
-        await finalizeCombinedLevel(state, combinedLevel, onProgress);
+        await finalizeStep(() => finalizeCombinedLevel(state, combinedLevel, finalize));
+        // Canceled or paused while the level was being assembled.
         if (state.status !== JOB_STATES.RUNNING) {
+          state.finalizing = null;
           checkpoint(state);
           return;
         }
       }
       if (state.totalCompleted > 0) {
-        onProgress({ tileIndex: -1, step: 'Generating elevation report...', tile: null });
-        downloadBatchElevationReport(state);
+        await finalizeStep(async () => {
+          finalize('Generating elevation report…');
+          await yieldToUi();
+          downloadBatchElevationReport(state);
+        });
       }
+
+      state.finalizing = null;
       state.completedAt = Date.now();
-      state.status = state.totalFailed > 0 ? JOB_STATES.FAILED : JOB_STATES.COMPLETED;
-      onProgress({ tileIndex: -1, step: '', tile: null, status: state.status, completedAt: state.completedAt });
+      state.status = (state.finalizeError || state.totalFailed > 0) ? JOB_STATES.FAILED : JOB_STATES.COMPLETED;
+      onProgress({ tileIndex: -1, step: '', tile: null });
       sampleMemory(state, { label: 'job_completed', force: true });
       checkpoint(state);
     }

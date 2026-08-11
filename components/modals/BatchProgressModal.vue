@@ -76,8 +76,23 @@
           </div>
         </div>
 
+        <!-- Finalizing (stitched heightmap, combined level ZIP, reports) -->
+        <div v-if="isFinalizing"
+          class="bg-indigo-50 dark:bg-indigo-900/20 border border-indigo-100 dark:border-indigo-800 rounded-lg p-3 space-y-2">
+          <div class="flex items-center gap-2 text-sm font-medium text-indigo-800 dark:text-indigo-200">
+            <Loader2 :size="14" class="animate-spin text-indigo-500" />
+            {{ t('batchProgress.finalizing') }}
+          </div>
+          <p class="text-xs text-indigo-600 dark:text-indigo-400 animate-pulse">{{ finalizeStep }}</p>
+          <div v-if="finalizePercent !== null" class="w-full bg-indigo-100 dark:bg-indigo-900/50 rounded-full h-1.5 overflow-hidden">
+            <div class="h-full rounded-full bg-indigo-500 transition-all duration-500 ease-out"
+              :style="{ width: finalizePercent + '%' }"></div>
+          </div>
+          <p class="text-[10px] text-indigo-500 dark:text-indigo-400">{{ t('batchProgress.finalizingHint') }}</p>
+        </div>
+
         <!-- Current Tile Status (during processing) -->
-        <div v-if="isRunning && currentStep"
+        <div v-if="isRunning && !isFinalizing && currentStep"
           class="bg-blue-50 dark:bg-blue-900/20 border border-blue-100 dark:border-blue-800 rounded-lg p-3 space-y-1">
           <div class="flex items-center gap-2 text-sm font-medium text-blue-800 dark:text-blue-200">
             <Loader2 :size="14" class="animate-spin text-blue-500" />
@@ -98,6 +113,16 @@
             <p v-if="elapsedText" class="text-xs mt-2 opacity-70" :class="summarySubtextClass">
               {{ t('batchProgress.totalTime') }}: {{ elapsedText }}
             </p>
+          </div>
+
+          <!-- Post-processing failure (heightmap stitch, level ZIP, report) -->
+          <div v-if="finalizeError"
+            class="flex items-start gap-2 text-xs bg-red-50 dark:bg-red-900/20 border border-red-100 dark:border-red-800 rounded p-2">
+            <XCircle :size="12" class="text-red-500 mt-0.5 flex-shrink-0" />
+            <div>
+              <span class="font-medium text-red-800 dark:text-red-200">{{ t('batchProgress.finalizeFailed') }}</span>
+              <span class="text-red-600 dark:text-red-400 ml-1">{{ finalizeError }}</span>
+            </div>
           </div>
 
           <!-- Combined Level Partial Export Warning -->
@@ -202,7 +227,16 @@
 
       <!-- Footer Actions -->
       <div class="p-4 border-t border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 flex items-center gap-3">
-        <template v-if="isRunning">
+        <!-- Finalizing is not cancelable: the artifacts are already being written. -->
+        <template v-if="isFinalizing">
+          <button disabled
+            class="flex-1 py-2.5 text-sm font-medium rounded-lg flex items-center justify-center gap-2 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 text-gray-500 dark:text-gray-400 cursor-not-allowed">
+            <Loader2 :size="14" class="animate-spin" />
+            {{ t('batchProgress.finalizing') }}
+          </button>
+        </template>
+
+        <template v-else-if="isRunning">
           <button @click="$emit('cancel')"
             class="flex-1 py-2.5 text-sm font-medium rounded-lg flex items-center justify-center gap-2 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-600 transition-colors">
             <Square :size="14" />
@@ -305,7 +339,18 @@ const currentTile = computed(() => {
   return props.state.currentTileIndex >= 0 ? props.state.tiles[props.state.currentTileIndex] : null;
 });
 
-const isAssembling = computed(() => isRunning.value && isTerminalByCounts.value && isCombinedLevel.value);
+// The runner is past the tiles and building artifacts (stitched heightmap,
+// level ZIP, elevation report). Still running, never complete.
+const isFinalizing = computed(() => !!props.state.finalizing?.active);
+const finalizeStep = computed(() => props.state.finalizing?.step || props.currentStep || '');
+const finalizePercent = computed(() => {
+  const pct = Number(props.state.finalizing?.pct);
+  return Number.isFinite(pct) ? Math.max(0, Math.min(100, pct)) : null;
+});
+const finalizeError = computed(() => props.state.finalizeError || null);
+
+const isAssembling = computed(() => isRunning.value
+  && (isFinalizing.value || (isTerminalByCounts.value && isCombinedLevel.value)));
 const isJobFailed = computed(() => props.state.status === 'failed' || props.state.status === 'canceled');
 
 const currentTileDisplayIndex = computed(() => {
@@ -486,7 +531,8 @@ const summarySubtextClass = computed(() =>
 );
 
 const summarySubtitleText = computed(() => {
-  if (isCombinedLevel.value && failedCount.value === 0) {
+  // Only claim the level shipped when nothing failed on the way out.
+  if (isCombinedLevel.value && failedCount.value === 0 && !finalizeError.value) {
     const name = levelName.value || t('batchProgress.untitledLevel');
     return t('batchProgress.summarySubtitleCombinedExported', { name });
   }
