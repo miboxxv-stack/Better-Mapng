@@ -1,5 +1,6 @@
 import { createMetricProjector } from './geoUtils.js';
 import { buildRoadNetwork, mergeLinearRoadSegments } from './roadNetwork.js';
+import { estimateRoadHalfWidth, isOneWayRoad } from './roadWidth.js';
 
 const NO_DATA_VALUE = -99999;
 
@@ -158,6 +159,34 @@ function isGroundLevelRoad(feature) {
 }
 
 /**
+ * Half-width in metres of the terrain strip to flatten for a corridor.
+ *
+ * This has to agree with the width the BeamNG export draws the DecalRoad at
+ * (services/roadWidth.js), otherwise the outer lanes of anything wider than a
+ * residential street sit on unflattened terrain and keep the original
+ * cross-slope — which is exactly what "Level Roads" is supposed to remove.
+ * The old fixed 6 m corridor left ~80% of the tilt on a default motorway.
+ *
+ * Merged corridors take the widest of their member ways, mirroring the
+ * export's stable-width pass: OSM segmentation splits a constant-width road
+ * into differently-tagged pieces, and the road is drawn at the wider value.
+ */
+function corridorHalfWidthMeters(corridor) {
+    const members = Array.isArray(corridor.members) && corridor.members.length > 0
+        ? corridor.members
+        : [corridor];
+
+    let half = 0;
+    for (const member of members) {
+        const tags = member?.tags || {};
+        const highway = member?.highway || tags.highway || corridor.highway;
+        const w = estimateRoadHalfWidth(tags, highway, isOneWayRoad(tags));
+        if (Number.isFinite(w) && w > half) half = w;
+    }
+    return half > 0 ? half : 3.0;
+}
+
+/**
  * Build per-corridor elevation profiles: pixel-space sample points, original
  * and smoothed Z arrays, and cumulative arc length in metres.
  */
@@ -295,10 +324,8 @@ export function smoothRoadsInHeightmap(heightMap, width, height, bounds, osmFeat
 
     for (const profile of profiles) {
         const { corridor, points, zOrig, zSmooth } = profile;
-        const tags = corridor.tags || {};
 
-        const roadWidthMeters = tags.width ? parseFloat(tags.width) : 6.0;
-        const radiusMeters = (Number.isFinite(roadWidthMeters) && roadWidthMeters > 0 ? roadWidthMeters : 6.0) / 2;
+        const radiusMeters = corridorHalfWidthMeters(corridor);
         // The core is flat. We add an extra margin for feathering back to the terrain.
         const radiusPx = Math.max(1, (radiusMeters + FEATHER_M) / metersPerPixel);
         const coreRadiusPx = Math.max(1, radiusMeters / metersPerPixel);

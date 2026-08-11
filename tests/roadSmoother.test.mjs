@@ -196,3 +196,61 @@ test('levelRoads flattens the cross-section; delta mode preserves it', () => {
   }
   assert.ok(maxChange < 0.05, `delta mode should not reshape flat-profile terrain (max change ${maxChange.toFixed(3)} m)`);
 });
+
+test('levelRoads flattens the full width the export draws the road at', () => {
+  const mpp = 1;
+  const bounds = makeBounds(W, H, mpp);
+  // Constant transverse slope (along y); flat along the road direction (x).
+  const makeSlope = () => {
+    const hm = new Float32Array(W * H);
+    for (let y = 0; y < H; y++) {
+      for (let x = 0; x < W; x++) hm[y * W + x] = y * 0.5;
+    }
+    return hm;
+  };
+
+  const roadAtY = (highway, py) => ({
+    type: 'road',
+    id: highway,
+    tags: { highway },
+    geometry: [
+      { lat: latAtPy(bounds, py), lng: lngAtPx(bounds, 20) },
+      { lat: latAtPy(bounds, py), lng: lngAtPx(bounds, 235) },
+    ],
+  });
+
+  // A wide road must be flat all the way to its own edge, not just across a
+  // fixed 6 m core — the export draws these at 2·halfWidth, and terrain left
+  // tilted under the outer lanes is the bug this guards.
+  const cases = [
+    // highway, half-width the export uses (services/roadWidth.js)
+    ['trunk', 7.4],
+    ['motorway', 3.7], // implicitly one-way: 2 lanes per carriageway
+    ['primary', 3.5],
+    ['residential', 3.0],
+  ];
+
+  for (const [highway, halfWidth] of cases) {
+    const hm = makeSlope();
+    smoothRoadsInHeightmap(hm, W, H, bounds, [roadAtY(highway, 128)], mpp, false, true);
+
+    // Sample just inside each edge of the road surface.
+    const edge = Math.floor(halfWidth) - 1;
+    for (let x = 40; x <= 215; x += 25) {
+      const drop = Math.abs(hm[(128 - edge) * W + x] - hm[(128 + edge) * W + x]);
+      assert.ok(
+        drop < 0.05,
+        `${highway}: expected flat surface across ±${edge} m at x=${x} (drop ${drop.toFixed(3)} m)`,
+      );
+    }
+
+    // Sanity: the flattening must stop somewhere — terrain well outside the
+    // road plus its feather is untouched.
+    const outside = Math.ceil(halfWidth) + 8;
+    const untouched = hm[(128 + outside) * W + 128];
+    assert.ok(
+      Math.abs(untouched - (128 + outside) * 0.5) < 0.05,
+      `${highway}: terrain ${outside} m off the centerline should be untouched`,
+    );
+  }
+});

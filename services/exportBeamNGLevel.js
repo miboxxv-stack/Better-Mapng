@@ -16,6 +16,12 @@ import { validateBeamNGZipStructure } from './beamngExportConformance.js';
 import { buildManualMapNavigationData, inferManualLaneData } from './beamngMapNavigation.js';
 import { buildBeamNGSignalExportBundle } from './beamngSignals.js';
 import {
+  estimateRoadHalfWidth,
+  getDefaultLaneCount,
+  getDefaultLaneWidthMeters,
+  isOneWayRoad,
+} from './roadWidth.js';
+import {
   getBeamNGBiomeById,
   getGlobalEnvironmentMap,
   getGroundCoverProfile,
@@ -1571,18 +1577,6 @@ function shouldGenerateDecalRoads(highway, tags = {}) {
 }
 
 /**
- * Infer one-way traffic from common OSM tags and implied highway types.
- */
-function isOneWayRoad(tags = {}) {
-  const value = String(tags.oneway ?? '').trim().toLowerCase();
-  if (value === 'yes' || value === '1' || value === 'true') return true;
-  if (value === '-1' || value === 'reverse') return true;
-  if (tags.junction === 'roundabout') return true;
-  if (tags.highway === 'motorway' || tags.highway === 'motorway_link') return true;
-  return false;
-}
-
-/**
  * Detect oneway=-1/reverse: travel runs against the OSM digitization order.
  */
 function isReverseOneWayRoad(tags = {}) {
@@ -1626,96 +1620,6 @@ function getDecalRoadNavMetadata(highway, tags = {}) {
 function parsePositiveInt(value) {
   const parsed = Number.parseInt(value, 10);
   return Number.isFinite(parsed) && parsed > 0 ? parsed : 0;
-}
-
-/**
- * Parse OSM width-style values to meters.
- *
- * Supports values like "12", "12 m", and "40 ft". Unit-less large values
- * above 40 are interpreted as feet, matching common OSM tagging practice.
- */
-function parseRoadWidthMeters(value) {
-  if (!value) return null;
-  const raw = String(value).trim().toLowerCase();
-
-  if (raw.includes('ft')) {
-    const parsed = Number.parseFloat(raw.replace('ft', '').trim());
-    return Number.isFinite(parsed) && parsed > 0 ? parsed * 0.3048 : null;
-  }
-
-  if (raw.includes('m')) {
-    const parsed = Number.parseFloat(raw.replace('m', '').trim());
-    return Number.isFinite(parsed) && parsed > 0 ? parsed : null;
-  }
-
-  const parsed = Number.parseFloat(raw);
-  if (!Number.isFinite(parsed) || parsed <= 0) return null;
-
-  // OSM width values above ~40 without units are commonly feet.
-  return parsed > 40 ? parsed * 0.3048 : parsed;
-}
-
-/**
- * Return a class-based default lane width in meters.
- */
-function getDefaultLaneWidthMeters(highway) {
-  if (['motorway', 'motorway_link', 'trunk', 'trunk_link'].includes(highway)) return 3.7;
-  if (['primary', 'primary_link', 'secondary', 'secondary_link'].includes(highway)) return 3.5;
-  if (['tertiary', 'tertiary_link'].includes(highway)) return 3.25;
-  if (['service', 'track'].includes(highway)) return 2.8;
-  return 3.0;
-}
-
-/**
- * Return a class-based default lane count, adjusted for one-way roads.
- */
-function getDefaultLaneCount(highway, isOneWay) {
-  if (['motorway', 'trunk'].includes(highway)) return isOneWay ? 2 : 4;
-  if (['motorway_link', 'trunk_link', 'primary_link', 'secondary_link', 'tertiary_link'].includes(highway)) {
-    return 1;
-  }
-  if (['service', 'track'].includes(highway)) return 1;
-  return isOneWay ? 1 : 2;
-}
-
-/**
- * Return min/max half-width bounds for a given highway class.
- */
-function getRoadHalfWidthClamp(highway) {
-  if (['motorway', 'motorway_link', 'trunk', 'trunk_link'].includes(highway)) {
-    return { min: 3.5, max: 9.0 };
-  }
-  if (['primary', 'primary_link', 'secondary', 'secondary_link'].includes(highway)) {
-    return { min: 2.8, max: 6.0 };
-  }
-  if (['service', 'track'].includes(highway)) {
-    return { min: 1.8, max: 3.5 };
-  }
-  return { min: 2.2, max: 5.0 };
-}
-
-/**
- * Estimate road half-width in meters from OSM tags and roadway class.
- *
- * Priority: explicit `width` tag -> lane-based estimate -> style fallback,
- * always clamped to class-specific practical limits.
- */
-function estimateRoadHalfWidth(tags = {}, highway, isOneWay = false, fallbackHalfWidth = 3.5) {
-  const explicitWidth = parseRoadWidthMeters(tags.width);
-  const limits = getRoadHalfWidthClamp(highway);
-  if (Number.isFinite(explicitWidth) && explicitWidth > 0) {
-    return clamp(explicitWidth / 2, limits.min, limits.max);
-  }
-
-  const lanesFromTotal = parsePositiveInt(tags.lanes);
-  const lanesFromDir = parsePositiveInt(tags['lanes:forward']) + parsePositiveInt(tags['lanes:backward']);
-  const inferredLanes = Math.max(
-    getDefaultLaneCount(highway, isOneWay),
-    lanesFromTotal || lanesFromDir || 0,
-  );
-  const estimatedHalf = (inferredLanes * getDefaultLaneWidthMeters(highway)) / 2;
-
-  return clamp(estimatedHalf || fallbackHalfWidth, limits.min, limits.max);
 }
 
 /**
