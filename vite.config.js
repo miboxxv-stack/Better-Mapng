@@ -6,15 +6,20 @@ import { execSync } from 'child_process';
 const nowIso = new Date().toISOString();
 
 const buildBranch = String(
-  process.env.WORKERS_CI_BRANCH
-  || process.env.CF_PAGES_BRANCH
-  || process.env.GITHUB_REF_NAME
-  || process.env.CI_COMMIT_REF_NAME
-  || process.env.VERCEL_GIT_COMMIT_REF
-  || ''
-).trim().toLowerCase();
+  process.env.WORKERS_CI_BRANCH ||
+  process.env.CF_PAGES_BRANCH ||
+  process.env.GITHUB_REF_NAME ||
+  process.env.CI_COMMIT_REF_NAME ||
+  process.env.VERCEL_GIT_COMMIT_REF ||
+  ''
+)
+  .trim()
+  .toLowerCase();
 
-const isMainBranch = buildBranch === 'main' || buildBranch === 'master';
+const isMainBranch =
+  buildBranch === 'main' ||
+  buildBranch === 'master';
+
 const isDevBranch =
   buildBranch === 'dev' ||
   buildBranch === 'develop' ||
@@ -24,7 +29,9 @@ const git = (command) => {
   try {
     return execSync(command, {
       stdio: ['ignore', 'pipe', 'ignore']
-    }).toString().trim();
+    })
+      .toString()
+      .trim();
   } catch {
     return '';
   }
@@ -33,35 +40,46 @@ const git = (command) => {
 const resolveRefInfo = (candidates) => {
   for (const ref of candidates) {
     const hash = git(`git rev-parse --short ${ref}`);
+
     if (!hash) continue;
 
-    const time = git(`git show -s --format=%cI ${ref}`) || '';
-    return { hash, time };
+    const time =
+      git(`git show -s --format=%cI ${ref}`) || '';
+
+    return {
+      hash,
+      time
+    };
   }
 
-  return { hash: 'n/a', time: '' };
+  return {
+    hash: 'n/a',
+    time: ''
+  };
 };
 
 const commitHash = (() => {
   const headHash = git('git rev-parse --short HEAD');
 
-  if (headHash) return headHash;
+  if (headHash) {
+    return headHash;
+  }
 
   return (
-    process.env.WORKERS_CI_COMMIT_SHA?.slice(0, 7)
-    || process.env.CF_PAGES_COMMIT_SHA?.slice(0, 7)
-    || process.env.GITHUB_SHA?.slice(0, 7)
-    || process.env.CI_COMMIT_SHA?.slice(0, 7)
-    || process.env.VERCEL_GIT_COMMIT_SHA?.slice(0, 7)
-    || 'dev'
+    process.env.WORKERS_CI_COMMIT_SHA?.slice(0, 7) ||
+    process.env.CF_PAGES_COMMIT_SHA?.slice(0, 7) ||
+    process.env.GITHUB_SHA?.slice(0, 7) ||
+    process.env.CI_COMMIT_SHA?.slice(0, 7) ||
+    process.env.VERCEL_GIT_COMMIT_SHA?.slice(0, 7) ||
+    'dev'
   );
 })();
 
 const commitTime =
-  process.env.CF_PAGES_COMMIT_TIMESTAMP
-  || process.env.CI_COMMIT_TIMESTAMP
-  || process.env.VERCEL_GIT_COMMIT_DATE
-  || nowIso;
+  process.env.CF_PAGES_COMMIT_TIMESTAMP ||
+  process.env.CI_COMMIT_TIMESTAMP ||
+  process.env.VERCEL_GIT_COMMIT_DATE ||
+  nowIso;
 
 const mainRefInfo = resolveRefInfo([
   'origin/main',
@@ -79,8 +97,14 @@ const devRefInfo = resolveRefInfo([
   'development'
 ]);
 
-const withBranchFallback = (refInfo, branchFlag, fallbackToCurrentBuild = false) => {
-  if (refInfo.hash !== 'n/a') return refInfo;
+const withBranchFallback = (
+  refInfo,
+  branchFlag,
+  fallbackToCurrentBuild = false
+) => {
+  if (refInfo.hash !== 'n/a') {
+    return refInfo;
+  }
 
   if (branchFlag || fallbackToCurrentBuild) {
     return {
@@ -97,32 +121,45 @@ const bothRefsMissing =
   devRefInfo.hash === 'n/a';
 
 const resolvedMainRefInfo =
-  withBranchFallback(mainRefInfo, isMainBranch, false);
+  withBranchFallback(
+    mainRefInfo,
+    isMainBranch,
+    false
+  );
 
 const resolvedDevRefInfo =
   withBranchFallback(
     devRefInfo,
     isDevBranch,
-    bothRefsMissing && !isMainBranch && !isDevBranch
+    bothRefsMissing &&
+      !isMainBranch &&
+      !isDevBranch
   );
 
 const mainBuildHash =
-  process.env.MAPNG_MAIN_BUILD_HASH || resolvedMainRefInfo.hash;
+  process.env.MAPNG_MAIN_BUILD_HASH ||
+  resolvedMainRefInfo.hash;
 
 const mainBuildTime =
-  process.env.MAPNG_MAIN_BUILD_TIME || resolvedMainRefInfo.time;
+  process.env.MAPNG_MAIN_BUILD_TIME ||
+  resolvedMainRefInfo.time;
 
 const devBuildHash =
-  process.env.MAPNG_DEV_BUILD_HASH || resolvedDevRefInfo.hash;
+  process.env.MAPNG_DEV_BUILD_HASH ||
+  resolvedDevRefInfo.hash;
 
 const devBuildTime =
-  process.env.MAPNG_DEV_BUILD_TIME || resolvedDevRefInfo.time;
+  process.env.MAPNG_DEV_BUILD_TIME ||
+  resolvedDevRefInfo.time;
 
 export default defineConfig({
-  // GitHub Pages uses /Better-Mapng/, production/Cloudflare uses /
-  base: process.env.GITHUB_ACTIONS === 'true'
-    ? '/Better-Mapng/'
-    : '/',
+  /*
+   * GitHub Pages URL:
+   * https://miboxxv-stack.github.io/Better-Mapng/
+   *
+   * Vite must generate asset URLs relative to /Better-Mapng/.
+   */
+  base: '/Better-Mapng/',
 
   plugins: [
     vue({
@@ -157,12 +194,30 @@ export default defineConfig({
 
   define: {
     'process.env': {},
-    '__BUILD_HASH__': JSON.stringify(commitHash),
-    '__BUILD_TIME__': JSON.stringify(nowIso),
-    '__BUILD_MAIN_HASH__': JSON.stringify(mainBuildHash),
-    '__BUILD_MAIN_TIME__': JSON.stringify(mainBuildTime),
-    '__BUILD_DEV_HASH__': JSON.stringify(devBuildHash),
-    '__BUILD_DEV_TIME__': JSON.stringify(devBuildTime)
+
+    '__BUILD_HASH__': JSON.stringify(
+      commitHash
+    ),
+
+    '__BUILD_TIME__': JSON.stringify(
+      nowIso
+    ),
+
+    '__BUILD_MAIN_HASH__': JSON.stringify(
+      mainBuildHash
+    ),
+
+    '__BUILD_MAIN_TIME__': JSON.stringify(
+      mainBuildTime
+    ),
+
+    '__BUILD_DEV_HASH__': JSON.stringify(
+      devBuildHash
+    ),
+
+    '__BUILD_DEV_TIME__': JSON.stringify(
+      devBuildTime
+    )
   },
 
   server: {
@@ -170,37 +225,57 @@ export default defineConfig({
       '/api/gpxz': {
         target: 'https://api.gpxz.io',
         changeOrigin: true,
-        rewrite: (path) => path.replace(/^\/api\/gpxz/, '')
+        rewrite: (path) =>
+          path.replace(
+            /^\/api\/gpxz/,
+            ''
+          )
       },
 
       '/api/nominatim-osm': {
-        target: 'https://nominatim.openstreetmap.org',
+        target:
+          'https://nominatim.openstreetmap.org',
         changeOrigin: true,
         rewrite: (path) =>
-          path.replace(/^\/api\/nominatim-osm/, '')
+          path.replace(
+            /^\/api\/nominatim-osm/,
+            ''
+          )
       },
 
       '/api/nominatim-geocode': {
-        target: 'https://nominatim.geocoding.ai',
+        target:
+          'https://nominatim.geocoding.ai',
         changeOrigin: true,
         rewrite: (path) =>
-          path.replace(/^\/api\/nominatim-geocode/, '')
+          path.replace(
+            /^\/api\/nominatim-geocode/,
+            ''
+          )
       },
 
       '/api/kron86/': {
-        target: 'https://mapy.geoportal.gov.pl',
+        target:
+          'https://mapy.geoportal.gov.pl',
         changeOrigin: true,
         followRedirects: true,
         rewrite: (path) =>
-          path.replace(/^\/api\/kron86/, '')
+          path.replace(
+            /^\/api\/kron86/,
+            ''
+          )
       },
 
       '/api/kron86-opendata': {
-        target: 'https://opendata.geoportal.gov.pl',
+        target:
+          'https://opendata.geoportal.gov.pl',
         changeOrigin: true,
         followRedirects: true,
         rewrite: (path) =>
-          path.replace(/^\/api\/kron86-opendata/, '')
+          path.replace(
+            /^\/api\/kron86-opendata/,
+            ''
+          )
       }
     }
   }
